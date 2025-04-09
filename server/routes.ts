@@ -260,8 +260,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       if (error instanceof ZodError) {
+        console.error("ZodError in chat-message:", JSON.stringify(error.format()));
         return res.status(400).json({ message: "Invalid chat request", errors: error.format() });
       }
+      console.error("Error in chat-message:", error);
       res.status(500).json({ message: "Failed to process message" });
     }
   });

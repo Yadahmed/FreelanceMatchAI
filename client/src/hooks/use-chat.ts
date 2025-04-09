@@ -25,13 +25,16 @@ export const useChat = () => {
     setIsProcessing(true);
     
     try {
+      console.log("Sending chat message data:", { message: content, chatId });
+      
       // Make API request to get AI response
       const response = await apiRequest('POST', '/api/chat-message', {
         message: content,
-        chatId: chatId
+        chatId: chatId ?? undefined
       });
       
       const responseData = await response.json();
+      console.log("Response from server:", responseData);
       
       // Set chat ID if it's new
       if (!chatId && responseData.chatId) {
