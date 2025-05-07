@@ -1,0 +1,79 @@
+Improved Prompt for Replit AI:
+
+We’ve already created a basic version of a web app using Replit’s AI, and now we’d like to implement several important modifications. Please follow the structure and logic below while updating the app:
+
+1. User Authentication & Role-Based Onboarding
+When a user first opens the app, prompt them to either log in or sign up.
+
+On the sign-up page, ask the user whether they are signing up as:
+
+A Client (someone looking to hire freelancers)
+
+A Freelancer (someone offering services)
+
+If the user selects Client:
+Proceed with a simple signup and redirect them to the main chat interface where they can interact with the AI assistant to find freelancers.
+
+If the user selects Freelancer:
+Present additional signup fields to collect detailed information:
+
+Type of freelancer (e.g., designer, writer, developer)
+
+Skills and services offered
+
+Location or time zone
+
+Hourly rate
+
+Years of experience (optional but recommended)
+
+Portfolio or website link (optional)
+
+Save this data into the app’s freelancer database.
+
+After successful signup, redirect the freelancer not to the chat interface, but to a Freelancer Dashboard.
+
+2. Freelancer Dashboard Features
+The dashboard should include the following sections:
+
+Calendar View: Shows upcoming and confirmed bookings.
+
+Client Requests Page: Shows client inquiries or job offers. Each job offer should include:
+
+Client name
+
+Project title or brief
+
+Option to accept or decline the request
+
+Accepted jobs should automatically populate the calendar.
+
+3. Persistent Chat and AI Memory for Clients
+For users signed in as Clients, ensure:
+
+Chat history is persistently saved between sessions.
+
+The AI assistant has memory capabilities — it should learn client preferences over time and:
+
+Recommend freelancers based on past interactions.
+
+Remember frequently requested skills or freelancer types.
+
+Improve suggestion accuracy with repeated use.
+
+4. Technical Requirements
+Ensure user role (Client or Freelancer) is stored securely in the database and used to conditionally render different UIs.
+
+Use secure authentication practices (session or token-based).
+
+Make all user data stored in a backend database (e.g., Firebase, Supabase, or your stack of choice).
+
+Chat data and AI memory should be stored per user, retrievable upon login.
+
+Optional Enhancements (if time allows):
+
+Add profile editing capability for freelancers.
+
+Enable ratings/reviews from clients after a job is completed.
+
+Provide a notification center for freelancers (e.g., "New job offer from X").
