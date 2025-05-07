@@ -18,7 +18,7 @@ import { Loader2 } from 'lucide-react';
 // Login form schema
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
 // Register form schema with enhanced password validation
@@ -26,10 +26,10 @@ const registerSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
   email: z.string().email('Please enter a valid email'),
   password: z.string()
-    .min(8, 'Password must be at least 8 characters')
+    .min(6, 'Password must be at least 6 characters')
     .max(100, 'Password must be less than 100 characters'),
   confirmPassword: z.string()
-    .min(8, 'Password must be at least 8 characters'), 
+    .min(6, 'Password must be at least 6 characters'), 
   displayName: z.string().optional(),
   isFreelancer: z.boolean().optional().default(false),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -139,10 +139,10 @@ export function AuthModal({ mode = 'login', isOpen = false, onOpenChange, trigge
             description: 'Username already taken. Please choose another one.',
             variant: 'destructive',
           });
-        } else if (error.message.includes('at least 8 characters')) {
+        } else if (error.message.includes('at least 6 characters')) {
           toast({
             title: 'Registration Failed',
-            description: 'Password must be at least 8 characters long.',
+            description: 'Password must be at least 6 characters long.',
             variant: 'destructive',
           });
         } else if (!error.message.includes('redirect')) {

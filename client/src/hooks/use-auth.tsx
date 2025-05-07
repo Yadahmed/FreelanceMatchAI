@@ -117,6 +117,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       setCurrentUser(response.user);
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      
+      // Redirect based on user role
+      if (response.user) {
+        // If user is a freelancer with a profile, redirect to freelancer dashboard
+        if (!response.user.isClient && response.user.hasFreelancerProfile) {
+          setTimeout(() => {
+            window.location.href = '/freelancer-dashboard';
+          }, 500);
+        } 
+        // If user is a freelancer without a profile, redirect to create one
+        else if (!response.user.isClient && !response.user.hasFreelancerProfile) {
+          setTimeout(() => {
+            window.location.href = '/freelancer-profile';
+          }, 500);
+        }
+        // If user is a client, redirect to client dashboard
+        else if (response.user.isClient) {
+          setTimeout(() => {
+            window.location.href = '/client/dashboard';
+          }, 500);
+        }
+      }
     } catch (error) {
       console.error('Google sign in error:', error);
       throw error;
@@ -170,6 +192,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         setCurrentUser(response.user);
         queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+        
+        // Redirect based on user role
+        if (response.user) {
+          // If user is a freelancer with a profile, redirect to freelancer dashboard
+          if (!response.user.isClient && response.user.hasFreelancerProfile) {
+            setTimeout(() => {
+              window.location.href = '/freelancer-dashboard';
+            }, 500);
+          } 
+          // If user is a freelancer without a profile, redirect to create one
+          else if (!response.user.isClient && !response.user.hasFreelancerProfile) {
+            setTimeout(() => {
+              window.location.href = '/freelancer-profile';
+            }, 500);
+          }
+          // If user is a client, redirect to client dashboard
+          else if (response.user.isClient) {
+            setTimeout(() => {
+              window.location.href = '/client/dashboard';
+            }, 500);
+          }
+        }
       } catch (backendError: any) {
         // If there's a username conflict during automatic account creation
         if (backendError.message && backendError.message.includes('Username already taken')) {

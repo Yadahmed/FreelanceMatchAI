@@ -249,7 +249,7 @@ export type ChatRequest = z.infer<typeof chatRequestSchema>;
 export const registerSchema = z.object({
   username: z.string().min(3).max(50),
   email: z.string().email(),
-  password: z.string().min(8, "Password must be at least 8 characters long").max(100),
+  password: z.string().min(6, "Password must be at least 6 characters long").max(100),
   displayName: z.string().nullable().optional(),
   photoURL: z.string().nullable().optional(),
   firebaseUid: z.string().optional(), // Make firebaseUid optional for flexibility
@@ -272,10 +272,10 @@ export const freelancerProfileSchema = z.object({
 
 export const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
-  // We have two cases: Firebase auth (empty password) or regular login (8+ chars)
+  // We have two cases: Firebase auth (empty password) or regular login (6+ chars)
   password: z.string().refine(
-    val => val === '' || val.length >= 8, 
-    { message: "Password must be at least 8 characters" }
+    val => val === '' || val.length >= 6, 
+    { message: "Password must be at least 6 characters" }
   ),
   displayName: z.string().nullable().optional(),
   photoURL: z.string().nullable().optional(),
