@@ -450,11 +450,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User> {
+    console.log(`Updating user ${id} with data:`, userData);
+    
+    // Ensure we're explicitly setting isClient when changing to freelancer
+    if (userData.isClient === false) {
+      console.log(`Explicitly marking user ${id} as freelancer (isClient=false)`);
+    }
+    
     const [user] = await db
       .update(schema.users)
       .set({ ...userData, lastLogin: new Date() })
       .where(eq(schema.users.id, id))
       .returning();
+    
+    console.log(`Updated user ${id} result:`, user);
     return user;
   }
 

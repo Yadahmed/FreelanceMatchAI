@@ -86,12 +86,20 @@ export function Header() {
                 )}
                 
                 {isFreelancer && (
-                  <DropdownMenuItem className="cursor-pointer" asChild>
-                    <Link href="/freelancer/dashboard" className="flex items-center">
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      <span>Freelancer Dashboard</span>
-                    </Link>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem className="cursor-pointer" asChild>
+                      <Link href="/freelancer-dashboard" className="flex items-center">
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        <span>Freelancer Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" asChild>
+                      <Link href="/freelancer-profile" className="flex items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Edit Freelancer Profile</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
                 )}
                 
                 <DropdownMenuItem className="cursor-pointer" asChild>
