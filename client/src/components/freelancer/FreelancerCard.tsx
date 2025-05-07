@@ -73,7 +73,8 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
           </div>
           <div className="text-right">
             <div className="text-lg font-bold">${freelancer.hourlyRate}/hr</div>
-            <Badge variant={freelancer.availability ? "success" : "secondary"}>
+            <Badge variant={freelancer.availability ? "outline" : "secondary"} 
+              className={freelancer.availability ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}>
               {freelancer.availability ? "Available" : "Busy"}
             </Badge>
           </div>

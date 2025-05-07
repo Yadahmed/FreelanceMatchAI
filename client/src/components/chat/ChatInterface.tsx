@@ -99,10 +99,10 @@ export function ChatInterface() {
       // Add bot response to chat
       const botMessage: Message = {
         id: response.id || (Date.now() + 1).toString(),
-        content: response.content,
+        content: response.content || "I'm processing your request...",
         isUserMessage: false,
         timestamp: new Date(response.timestamp || Date.now()),
-        freelancerResults: response.freelancerResults,
+        freelancerResults: response.freelancerResults || [],
       };
       
       setMessages((prev) => [...prev, botMessage]);
