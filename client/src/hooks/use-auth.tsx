@@ -1,84 +1,203 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
-  createContext, 
-  useContext, 
-  useState, 
-  useEffect, 
-  ReactNode 
-} from "react";
-import { 
-  getAuth, 
-  signInWithPopup, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
+  User as FirebaseUser,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
   signOut as firebaseSignOut,
-  onAuthStateChanged, 
-  GoogleAuthProvider, 
-  User 
-} from "firebase/auth";
-import { app, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
-import { useToast } from "@/hooks/use-toast";
+  onAuthStateChanged,
+  updateProfile
+} from 'firebase/auth';
+import { auth, googleProvider, isFirebaseConfigured } from '@/lib/firebase';
+import { User } from '@shared/schema';
+import { apiRequest } from '@/lib/queryClient';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AuthContextType {
   currentUser: User | null;
+  firebaseUser: FirebaseUser | null;
   isAuthenticated: boolean;
+  isClient: boolean;
+  isFreelancer: boolean;
   isLoading: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
-  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (username: string, email: string, password: string, displayName?: string, isClient?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
+  createFreelancerProfile: (profileData: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-  const auth = getAuth(app);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setFirebaseUser(user);
+      
+      if (user) {
+        try {
+          // Get ID token from Firebase
+          const token = await user.getIdToken();
+          
+          // Try to get user data from backend
+          try {
+            const response = await apiRequest('/api/auth/me', {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            setCurrentUser(response.user);
+          } catch (error) {
+            // User exists in Firebase but not in backend database
+            // Try to login/register on the backend
+            try {
+              const loginData = {
+                email: user.email,
+                password: '', // Password is handled by Firebase
+                displayName: user.displayName,
+                photoURL: user.photoURL,
+                firebaseUid: user.uid
+              };
+              
+              const response = await apiRequest('/api/auth/login', {
+                method: 'POST',
+                body: JSON.stringify(loginData)
+              });
+              
+              setCurrentUser(response.user);
+            } catch (loginError) {
+              console.error('Error logging in user:', loginError);
+              setCurrentUser(null);
+            }
+          }
+        } catch (error) {
+          console.error('Authentication error:', error);
+          setCurrentUser(null);
+        }
+      } else {
+        setCurrentUser(null);
+      }
+      
       setIsLoading(false);
     });
-
-    return unsubscribe;
-  }, [auth]);
+    
+    return () => unsubscribe();
+  }, []);
 
   const signInWithGoogle = async () => {
     if (!isFirebaseConfigured()) {
-      toast({
-        title: "Firebase not configured",
-        description: "Please set up Firebase credentials in your environment variables.",
-        variant: "destructive",
-      });
-      throw new Error("Firebase not configured");
+      throw new Error('Firebase not configured. Please add the required Firebase secrets.');
     }
     
     try {
       setIsLoading(true);
       const result = await signInWithPopup(auth, googleProvider);
-      return result.user;
+      const user = result.user;
+      const idToken = await user.getIdToken();
+      
+      // Login with backend
+      const loginData = {
+        email: user.email,
+        password: '', // Password is handled by Firebase
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        firebaseUid: user.uid
+      };
+      
+      const response = await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(loginData)
+      });
+      
+      setCurrentUser(response.user);
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
   const signInWithEmail = async (email: string, password: string) => {
+    if (!isFirebaseConfigured()) {
+      throw new Error('Firebase not configured. Please add the required Firebase secrets.');
+    }
+    
     try {
       setIsLoading(true);
       const result = await signInWithEmailAndPassword(auth, email, password);
-      return result.user;
+      const user = result.user;
+      const idToken = await user.getIdToken();
+      
+      // Login with backend
+      const loginData = {
+        email: user.email,
+        password: '', // Password is handled by Firebase
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        firebaseUid: user.uid
+      };
+      
+      const response = await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(loginData)
+      });
+      
+      setCurrentUser(response.user);
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+    } catch (error) {
+      console.error('Email sign in error:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signUpWithEmail = async (email: string, password: string) => {
+  const signUpWithEmail = async (username: string, email: string, password: string, displayName?: string, isClient: boolean = true) => {
+    if (!isFirebaseConfigured()) {
+      throw new Error('Firebase not configured. Please add the required Firebase secrets.');
+    }
+    
     try {
       setIsLoading(true);
       const result = await createUserWithEmailAndPassword(auth, email, password);
-      return result.user;
+      const user = result.user;
+      
+      // Update profile if display name provided
+      if (displayName) {
+        await updateProfile(user, { displayName });
+      }
+      
+      const idToken = await user.getIdToken();
+      
+      // Register with backend
+      const userData = {
+        username,
+        email: user.email || email,
+        password: '', // Password is handled by Firebase
+        displayName: displayName || user.displayName || username,
+        photoURL: user.photoURL,
+        firebaseUid: user.uid,
+        isClient
+      };
+      
+      const response = await apiRequest('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(userData)
+      });
+      
+      setCurrentUser(response.user);
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+    } catch (error) {
+      console.error('Email sign up error:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -88,19 +207,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
       await firebaseSignOut(auth);
+      await apiRequest('/api/auth/logout', { method: 'POST' });
+      setCurrentUser(null);
+      queryClient.invalidateQueries(); // Invalidate all queries
+    } catch (error) {
+      console.error('Sign out error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const createFreelancerProfile = async (profileData: any) => {
+    if (!currentUser) {
+      throw new Error('You must be logged in to create a freelancer profile');
+    }
+    
+    try {
+      setIsLoading(true);
+      const response = await apiRequest('/api/auth/freelancer-profile', {
+        method: 'POST',
+        body: JSON.stringify(profileData)
+      });
+      
+      // Refresh user data
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      
+      // Update current user info to reflect freelancer status
+      setCurrentUser({
+        ...currentUser,
+        isClient: false
+      });
+      
+      return response;
+    } catch (error) {
+      console.error('Create freelancer profile error:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const value = {
+  const value: AuthContextType = {
     currentUser,
+    firebaseUser,
     isAuthenticated: !!currentUser,
+    isClient: !!currentUser && currentUser.isClient,
+    isFreelancer: !!currentUser && !currentUser.isClient,
     isLoading,
     signInWithGoogle,
     signInWithEmail,
     signUpWithEmail,
     signOut,
+    createFreelancerProfile
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -109,7 +268,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };

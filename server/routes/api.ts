@@ -1,41 +1,72 @@
 import { Router } from 'express';
-import * as authController from '../controllers/authController';
-import * as freelancerController from '../controllers/freelancerController';
-import * as clientController from '../controllers/clientController';
-import { authenticateUser, requireAuth, requireClient, requireFreelancer } from '../middleware/auth';
+import { 
+  register, 
+  login, 
+  createFreelancerProfile, 
+  getCurrentUser, 
+  logout 
+} from '../controllers/authController';
+import { 
+  sendMessage 
+} from '../controllers/chatController';
+import {
+  getDashboard,
+  updateProfile,
+  getJobRequests as getFreelancerJobRequests,
+  updateJobRequestStatus,
+  getBookings as getFreelancerBookings,
+  getNotifications,
+  markNotificationAsRead
+} from '../controllers/freelancerController';
+import {
+  createJobRequest,
+  getJobRequests as getClientJobRequests,
+  getBookings as getClientBookings,
+  createReview,
+  getChatHistory,
+  getChatMessages,
+  getUserPreferences,
+  updateUserPreferences
+} from '../controllers/clientController';
+import { 
+  authenticateUser, 
+  requireAuth, 
+  requireClient, 
+  requireFreelancer 
+} from '../middleware/auth';
 
-const apiRouter = Router();
+const router = Router();
 
 // Apply authentication middleware to all routes
-apiRouter.use(authenticateUser);
+router.use(authenticateUser);
 
 // Auth routes
-apiRouter.post('/auth/register', authController.register);
-apiRouter.post('/auth/login', authController.login);
-apiRouter.get('/auth/me', requireAuth, authController.getCurrentUser);
-apiRouter.post('/auth/logout', authController.logout);
-apiRouter.post('/auth/freelancer-profile', requireAuth, authController.createFreelancerProfile);
+router.post('/auth/register', register);
+router.post('/auth/login', login);
+router.post('/auth/freelancer-profile', requireAuth, createFreelancerProfile);
+router.get('/auth/me', requireAuth, getCurrentUser);
+router.post('/auth/logout', logout);
+
+// Chat routes
+router.post('/chat/message', requireAuth, sendMessage);
 
 // Freelancer routes
-apiRouter.get('/freelancer/dashboard', requireFreelancer, freelancerController.getDashboard);
-apiRouter.put('/freelancer/profile', requireFreelancer, freelancerController.updateProfile);
-apiRouter.get('/freelancer/job-requests', requireFreelancer, freelancerController.getJobRequests);
-apiRouter.put('/freelancer/job-requests/:id', requireFreelancer, freelancerController.updateJobRequestStatus);
-apiRouter.get('/freelancer/bookings', requireFreelancer, freelancerController.getBookings);
-apiRouter.put('/freelancer/bookings/:id', requireFreelancer, freelancerController.updateBooking);
-apiRouter.get('/freelancer/notifications', requireFreelancer, freelancerController.getNotifications);
-apiRouter.put('/freelancer/notifications/:id', requireFreelancer, freelancerController.markNotificationAsRead);
+router.get('/freelancer/dashboard', requireFreelancer, getDashboard);
+router.patch('/freelancer/profile', requireFreelancer, updateProfile);
+router.get('/freelancer/job-requests', requireFreelancer, getFreelancerJobRequests);
+router.patch('/freelancer/job-requests/:id', requireFreelancer, updateJobRequestStatus);
+router.get('/freelancer/bookings', requireFreelancer, getFreelancerBookings);
+router.get('/freelancer/notifications', requireFreelancer, getNotifications);
+router.patch('/freelancer/notifications/:id', requireFreelancer, markNotificationAsRead);
 
 // Client routes
-apiRouter.post('/client/job-requests', requireClient, clientController.createJobRequest);
-apiRouter.get('/client/job-requests', requireClient, clientController.getJobRequests);
-apiRouter.get('/client/bookings', requireClient, clientController.getBookings);
-apiRouter.post('/client/reviews', requireClient, clientController.createReview);
-apiRouter.get('/client/chats', requireClient, clientController.getChatHistory);
-apiRouter.get('/client/chats/:chatId/messages', requireClient, clientController.getChatMessages);
-apiRouter.get('/client/preferences', requireClient, clientController.getUserPreferences);
-apiRouter.put('/client/preferences', requireClient, clientController.updateUserPreferences);
+router.post('/client/job-requests', requireClient, createJobRequest);
+router.get('/client/job-requests', requireClient, getClientJobRequests);
+router.get('/client/bookings', requireClient, getClientBookings);
+router.post('/client/reviews', requireClient, createReview);
+router.get('/client/chats', requireClient, getChatHistory);
+router.get('/client/chats/:chatId/messages', requireClient, getChatMessages);
+router.get('/client/preferences', requireClient, getUserPreferences);
+router.post('/client/preferences', requireClient, updateUserPreferences);
 
-// Existing chat and other routes should be added here
-
-export default apiRouter;
+export default router;

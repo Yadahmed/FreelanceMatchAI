@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
 import { loginSchema, registerSchema, freelancerProfileSchema } from '@shared/schema';
-import { getAuth } from 'firebase/auth';
 import { auth as firebaseAdminAuth } from '../firebase';
 
 // Register a new user
