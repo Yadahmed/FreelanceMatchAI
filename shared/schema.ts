@@ -24,6 +24,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   photoURL: true,
   firebaseUid: true,
   isClient: true,
+  lastLogin: true,
 });
 
 // Freelancers table - enhanced with years of experience
@@ -62,6 +63,12 @@ export const insertFreelancerSchema = createInsertSchema(freelancers).pick({
   portfolioLinks: true,
   websiteUrl: true,
   imageUrl: true,
+  rating: true,
+  jobPerformance: true,
+  skillsExperience: true,
+  responsiveness: true,
+  fairnessScore: true,
+  completedJobs: true,
 });
 
 // Job requests from clients to freelancers
@@ -244,6 +251,8 @@ export const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   displayName: z.string().optional(),
+  photoURL: z.string().optional(),
+  firebaseUid: z.string(),
   isClient: z.boolean(),
 });
 
@@ -255,13 +264,18 @@ export const freelancerProfileSchema = z.object({
   yearsOfExperience: z.number().min(0).optional(),
   location: z.string(),
   timeZone: z.string().optional(),
+  availability: z.boolean().optional(),
   portfolioLinks: z.array(z.string().url()).optional(),
   websiteUrl: z.string().url().optional(),
+  imageUrl: z.string().optional(),
 });
 
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string(),
+  displayName: z.string().optional(),
+  photoURL: z.string().optional(),
+  firebaseUid: z.string(),
 });
 
 export type RegisterRequest = z.infer<typeof registerSchema>;

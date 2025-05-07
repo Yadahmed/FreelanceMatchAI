@@ -1,166 +1,146 @@
 import { Request, Response } from 'express';
-import { registerSchema, loginSchema, freelancerProfileSchema } from '@shared/schema';
 import { storage } from '../storage';
-import { auth } from '../firebase';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword,
-  UserCredential 
-} from 'firebase/auth';
+import { loginSchema, registerSchema, freelancerProfileSchema } from '@shared/schema';
+import { getAuth } from 'firebase/auth';
+import { auth as firebaseAdminAuth } from '../firebase';
 
 // Register a new user
 export async function register(req: Request, res: Response) {
   try {
-    // Validate request data
+    // Validate request body
     const userData = registerSchema.parse(req.body);
     
-    // Check if username already exists
-    const existingUser = await storage.getUserByUsername(userData.username);
-    if (existingUser) {
-      return res.status(400).json({ message: 'Username already taken' });
+    // Check if firebase uid is provided (from auth middleware)
+    if (!userData.firebaseUid) {
+      return res.status(400).json({ message: 'Firebase authentication required' });
     }
     
-    // Check if email already exists
-    const existingEmail = await storage.getUserByEmail(userData.email);
-    if (existingEmail) {
-      return res.status(400).json({ message: 'Email already registered' });
+    // Check if email is already registered
+    const existingUserByEmail = await storage.getUserByEmail(userData.email);
+    if (existingUserByEmail) {
+      return res.status(409).json({ message: 'Email already registered' });
     }
     
-    let firebaseUid = null;
-
-    try {
-      // Create Firebase user if Firebase is configured
-      if (auth) {
-        const userCredential = await createUserWithEmailAndPassword(
-          auth,
-          userData.email,
-          userData.password
-        );
-        firebaseUid = userCredential.user.uid;
-      }
-    } catch (firebaseError: any) {
-      console.error('Firebase registration error:', firebaseError);
-      // Return specific error message if email already exists in Firebase
-      if (firebaseError.code === 'auth/email-already-in-use') {
-        return res.status(400).json({ message: 'Email already registered' });
-      }
-      // Continue with local authentication if Firebase is not available
+    // Check if username is already taken
+    const existingUserByUsername = await storage.getUserByUsername(userData.username);
+    if (existingUserByUsername) {
+      return res.status(409).json({ message: 'Username already taken' });
     }
     
-    // Create user in database
+    // Create user account
     const user = await storage.createUser({
-      ...userData,
-      firebaseUid
+      username: userData.username,
+      email: userData.email,
+      password: '',  // Password is handled by Firebase
+      displayName: userData.displayName || null,
+      photoURL: userData.photoURL || null,
+      firebaseUid: userData.firebaseUid,
+      isClient: userData.isClient
     });
     
-    // Sanitize user data before sending response
-    const { password, ...userWithoutPassword } = user;
+    // Update Firebase user display name and photo URL if provided
+    if (firebaseAdminAuth && (userData.displayName || userData.photoURL)) {
+      await firebaseAdminAuth.updateUser(userData.firebaseUid, {
+        displayName: userData.displayName,
+        photoURL: userData.photoURL
+      });
+    }
     
     return res.status(201).json({
       message: 'User registered successfully',
-      user: userWithoutPassword
+      user
     });
   } catch (error: any) {
-    console.error('Registration error:', error);
+    console.error('Register error:', error);
     return res.status(400).json({ message: error.message });
   }
 }
 
-// Create a freelancer profile
+// Create a freelancer profile for an existing user
 export async function createFreelancerProfile(req: Request, res: Response) {
   try {
-    // Ensure user is authenticated
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication required' });
     }
     
-    // Validate freelancer profile data
+    // Validate request body
     const profileData = freelancerProfileSchema.parse(req.body);
     
     // Check if user already has a freelancer profile
     const existingProfile = await storage.getFreelancerByUserId(req.user.id);
     if (existingProfile) {
-      return res.status(400).json({ message: 'User already has a freelancer profile' });
+      return res.status(409).json({ message: 'Freelancer profile already exists' });
     }
     
     // Create freelancer profile
     const freelancer = await storage.createFreelancer({
-      ...profileData,
-      userId: req.user.id
+      userId: req.user.id,
+      profession: profileData.profession,
+      skills: profileData.skills,
+      bio: profileData.bio,
+      hourlyRate: profileData.hourlyRate,
+      location: profileData.location,
+      yearsOfExperience: profileData.yearsOfExperience || null,
+      timeZone: profileData.timeZone || null,
+      availability: profileData.availability,
+      portfolioLinks: profileData.portfolioLinks || [],
+      websiteUrl: profileData.websiteUrl || null,
+      imageUrl: profileData.imageUrl || null
     });
     
-    // Update user isClient status
+    // Update user to not be a client
     await storage.updateUser(req.user.id, { isClient: false });
     
     return res.status(201).json({
       message: 'Freelancer profile created successfully',
-      profile: freelancer
+      freelancer
     });
   } catch (error: any) {
-    console.error('Freelancer profile creation error:', error);
+    console.error('Create freelancer profile error:', error);
     return res.status(400).json({ message: error.message });
   }
 }
 
-// Login user
+// Login a user
 export async function login(req: Request, res: Response) {
   try {
-    // Validate login data
+    // Validate request body
     const loginData = loginSchema.parse(req.body);
     
-    // Try Firebase authentication first if available
-    let firebaseUid: string | null = null;
-    
-    try {
-      if (auth) {
-        const userCredential = await signInWithEmailAndPassword(
-          auth, 
-          loginData.email, 
-          loginData.password
-        );
-        firebaseUid = userCredential.user.uid;
-        
-        // Find user by Firebase UID
-        const user = await storage.getUserByFirebaseUid(firebaseUid);
-        if (user) {
-          // Update last login time
-          const updatedUser = await storage.updateUser(user.id, {});
-          
-          // Sanitize user data
-          const { password, ...userWithoutPassword } = updatedUser;
-          
-          return res.status(200).json({
-            message: 'Login successful',
-            user: userWithoutPassword
-          });
-        }
-      }
-    } catch (firebaseError) {
-      // Continue with local authentication if Firebase fails
-      console.error('Firebase login error:', firebaseError);
+    // Check if firebase uid is provided (from auth middleware)
+    if (!loginData.firebaseUid) {
+      return res.status(400).json({ message: 'Firebase authentication required' });
     }
     
-    // If Firebase auth failed or user not found by UID, try local authentication
-    const user = await storage.getUserByEmail(loginData.email);
+    // Check if user exists
+    let user = await storage.getUserByFirebaseUid(loginData.firebaseUid);
     
     if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      // User doesn't exist yet, create a new user account
+      user = await storage.createUser({
+        username: loginData.email.split('@')[0], // Default username from email
+        email: loginData.email,
+        password: '', // Password handled by Firebase
+        displayName: loginData.displayName || null,
+        photoURL: loginData.photoURL || null,
+        firebaseUid: loginData.firebaseUid,
+        isClient: true // By default, new users are clients
+      });
+      
+      // Update Firebase user display name if provided
+      if (firebaseAdminAuth && loginData.displayName) {
+        await firebaseAdminAuth.updateUser(loginData.firebaseUid, {
+          displayName: loginData.displayName
+        });
+      }
+    } else {
+      // Update last login time
+      user = await storage.updateUser(user.id, { lastLogin: new Date() });
     }
-    
-    // Simple password check (in a real app, use proper hashing)
-    if (user.password !== loginData.password) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-    
-    // Update last login time
-    const updatedUser = await storage.updateUser(user.id, {});
-    
-    // Sanitize user data
-    const { password, ...userWithoutPassword } = updatedUser;
     
     return res.status(200).json({
       message: 'Login successful',
-      user: userWithoutPassword
+      user
     });
   } catch (error: any) {
     console.error('Login error:', error);
@@ -168,29 +148,21 @@ export async function login(req: Request, res: Response) {
   }
 }
 
-// Get current user
+// Get the current authenticated user
 export async function getCurrentUser(req: Request, res: Response) {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Not authenticated' });
-    }
-    
-    // Retrieve fresh user data
-    const user = await storage.getUser(req.user.id);
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(401).json({ message: 'Authentication required' });
     }
     
     // Check if user is a freelancer
-    const freelancerProfile = await storage.getFreelancerByUserId(user.id);
-    
-    // Sanitize user data
-    const { password, ...userWithoutPassword } = user;
+    const freelancer = !req.user.isClient 
+      ? await storage.getFreelancerByUserId(req.user.id)
+      : null;
     
     return res.status(200).json({
-      user: userWithoutPassword,
-      freelancerProfile: freelancerProfile || null
+      user: req.user,
+      freelancer
     });
   } catch (error: any) {
     console.error('Get current user error:', error);
@@ -198,9 +170,7 @@ export async function getCurrentUser(req: Request, res: Response) {
   }
 }
 
-// Logout user (for session-based auth)
+// Logout a user (client-side only, just for API consistency)
 export function logout(req: Request, res: Response) {
-  // Firebase auth is client-side, so we just clear any server-side session
-  // For now, just return success
-  return res.status(200).json({ message: 'Logged out successfully' });
+  return res.status(200).json({ message: 'Logout successful' });
 }

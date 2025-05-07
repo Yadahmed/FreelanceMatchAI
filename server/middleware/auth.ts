@@ -1,56 +1,57 @@
 import { Request, Response, NextFunction } from 'express';
+import { auth } from '../firebase';
 import { storage } from '../storage';
-import { auth as firebaseAdmin } from 'firebase-admin';
 
-// Extend the Express Request type to include user
+// Add user property to Express Request
 declare global {
-  namespace Express {
-    interface Request {
-      user?: any;
+    namespace Express {
+        interface Request {
+            user?: any;
+        }
     }
-  }
 }
 
-// Middleware to authenticate requests using Firebase token
+// Middleware to authenticate a user based on Firebase token
 export async function authenticateUser(req: Request, res: Response, next: NextFunction) {
   try {
-    // Extract token from Authorization header
+    // Extract the token from the Authorization header
     const authHeader = req.headers.authorization;
-    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return next(); // Continue without setting req.user
+      // No token, but don't block the request - just mark as unauthenticated
+      return next();
     }
     
-    const token = authHeader.split(' ')[1];
+    const token = authHeader.split('Bearer ')[1];
     
     if (!token) {
-      return next(); // Continue without setting req.user
-    }
-    
-    if (!firebaseAdmin.auth) {
-      console.warn('Firebase auth not initialized. Skipping token verification.');
       return next();
     }
     
     try {
-      // Verify and decode the token
-      const decodedToken = await firebaseAdmin.auth().verifyIdToken(token);
+      // Verify token with Firebase
+      if (!auth) {
+        console.warn('Firebase Auth not initialized, skipping token verification');
+        return next();
+      }
+      
+      const decodedToken = await auth.verifyIdToken(token);
       const firebaseUid = decodedToken.uid;
       
-      // Get user by Firebase UID
+      // Find user in database
       const user = await storage.getUserByFirebaseUid(firebaseUid);
       
       if (user) {
+        // Attach user to request
         req.user = user;
       }
-    } catch (error) {
-      console.error('Error verifying token:', error);
-      // Continue without setting req.user
+      
+      next();
+    } catch (tokenError) {
+      console.error('Token verification error:', tokenError);
+      next();
     }
-    
-    next();
   } catch (error) {
-    console.error('Authentication error:', error);
+    console.error('Authentication middleware error:', error);
     next();
   }
 }
@@ -60,7 +61,6 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.user) {
     return res.status(401).json({ message: 'Authentication required' });
   }
-  
   next();
 }
 

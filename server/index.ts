@@ -1,11 +1,35 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import cors from "cors";
+import session from "express-session";
+import MemoryStore from "memorystore";
+
+// Initialize the DB if we're using it
+import "./db";
 
 const app = express();
+
+// Basic middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cors({
+  origin: 'http://localhost:5000'
+}));
 
+// Session setup for persistent user sessions
+const MemoryStoreSession = MemoryStore(session);
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'freelance-match-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }, // 24 hours
+  store: new MemoryStoreSession({
+    checkPeriod: 86400000 // 24 hours
+  })
+}));
+
+// Logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -37,14 +61,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Register all routes
   const server = await registerRoutes(app);
 
+  // Error handling middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
+    console.error('Server error:', err);
     res.status(status).json({ message });
-    throw err;
   });
 
   // importantly only setup vite in development and after
