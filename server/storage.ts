@@ -122,8 +122,14 @@ export class MemStorage implements IStorage {
     const id = this.currentUserId++;
     const now = new Date();
     const user: User = { 
-      ...insertUser, 
       id,
+      username: insertUser.username,
+      password: insertUser.password,
+      email: insertUser.email,
+      displayName: insertUser.displayName || null,
+      photoURL: insertUser.photoURL || null,
+      firebaseUid: insertUser.firebaseUid || null,
+      isClient: insertUser.isClient !== undefined ? insertUser.isClient : true,
       createdAt: now,
       lastLogin: now
     };
@@ -159,15 +165,20 @@ export class MemStorage implements IStorage {
   async createFreelancer(insertFreelancer: InsertFreelancer): Promise<Freelancer> {
     const id = this.currentFreelancerId++;
     const freelancer: Freelancer = { 
-      ...insertFreelancer, 
       id,
+      userId: insertFreelancer.userId,
+      profession: insertFreelancer.profession,
+      skills: insertFreelancer.skills,
+      bio: insertFreelancer.bio,
+      hourlyRate: insertFreelancer.hourlyRate,
+      location: insertFreelancer.location,
       rating: 0,
       jobPerformance: 0, 
       skillsExperience: 0,
       responsiveness: 0,
       fairnessScore: 0, 
       completedJobs: 0,
-      yearsOfExperience: insertFreelancer.yearsOfExperience || 0,
+      yearsOfExperience: insertFreelancer.yearsOfExperience || null,
       timeZone: insertFreelancer.timeZone || null,
       availability: insertFreelancer.availability !== undefined ? insertFreelancer.availability : true,
       portfolioLinks: insertFreelancer.portfolioLinks || [],
@@ -381,7 +392,27 @@ export class MemStorage implements IStorage {
 
     sampleFreelancers.forEach(freelancer => {
       const id = this.currentFreelancerId++;
-      this.freelancers.set(id, { ...freelancer, id });
+      this.freelancers.set(id, { 
+        id,
+        userId: freelancer.userId,
+        profession: freelancer.profession,
+        skills: freelancer.skills,
+        bio: freelancer.bio,
+        hourlyRate: freelancer.hourlyRate,
+        location: freelancer.location,
+        rating: freelancer.rating || 0,
+        jobPerformance: freelancer.jobPerformance || 0,
+        skillsExperience: freelancer.skillsExperience || 0,
+        responsiveness: freelancer.responsiveness || 0,
+        fairnessScore: freelancer.fairnessScore || 0,
+        completedJobs: freelancer.completedJobs || 0,
+        yearsOfExperience: freelancer.yearsOfExperience || null,
+        timeZone: freelancer.timeZone || null,
+        availability: freelancer.availability || true,
+        portfolioLinks: freelancer.portfolioLinks || [],
+        websiteUrl: freelancer.websiteUrl || null,
+        imageUrl: freelancer.imageUrl || null
+      });
     });
   }
 }
