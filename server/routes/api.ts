@@ -4,7 +4,8 @@ import {
   login, 
   createFreelancerProfile, 
   getCurrentUser, 
-  logout 
+  logout,
+  checkUsername
 } from '../controllers/authController';
 import { 
   sendMessage 

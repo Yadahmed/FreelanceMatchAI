@@ -167,15 +167,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       setIsLoading(true);
-      const result = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // First check if a username is unique on our backend
+      try {
+        const checkResponse = await apiRequest(`/api/auth/check-username?username=${encodeURIComponent(username)}`, {
+          method: 'GET'
+        });
+        
+        if (checkResponse && checkResponse.exists) {
+          throw new Error('Username already taken. Please choose a different username.');
+        }
+      } catch (usernameError: any) {
+        // If it's our custom error, throw it
+        if (usernameError.message && usernameError.message.includes('Username already taken')) {
+          throw usernameError;
+        }
+        // Otherwise continue (might be a server error but we'll let the Firebase auth attempt proceed)
+      }
+      
+      // Attempt to create Firebase user
+      let result;
+      try {
+        result = await createUserWithEmailAndPassword(auth, email, password);
+      } catch (firebaseError: any) {
+        // Format Firebase errors for better user experience
+        if (firebaseError.code === 'auth/email-already-in-use') {
+          throw new Error('This email is already registered. Please log in instead.');
+        } else if (firebaseError.code === 'auth/weak-password') {
+          throw new Error('Password is too weak. Please use at least 8 characters.');
+        } else {
+          // Re-throw the original error
+          throw firebaseError;
+        }
+      }
+      
       const user = result.user;
       
       // Update profile if display name provided
       if (displayName) {
         await updateProfile(user, { displayName });
       }
-      
-      const idToken = await user.getIdToken();
       
       // Register with backend
       const userData = {
@@ -198,8 +229,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // If registering as freelancer, redirect to profile creation page
       if (!isClient) {
-        // Use setLocation from wouter instead of window.location for better navigation
-        // But still throw a special error to prevent showing success messages too early
+        // Redirect to freelancer profile page and throw a special error
+        // to prevent showing success messages too early
         window.location.href = '/freelancer-profile';
         throw new Error('redirecting');
       }

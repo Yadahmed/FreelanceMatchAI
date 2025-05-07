@@ -213,3 +213,24 @@ export async function getCurrentUser(req: Request, res: Response) {
 export function logout(req: Request, res: Response) {
   return res.status(200).json({ message: 'Logout successful' });
 }
+
+// Check if a username is already taken
+export async function checkUsername(req: Request, res: Response) {
+  try {
+    const { username } = req.query;
+    
+    if (!username || typeof username !== 'string') {
+      return res.status(400).json({ message: 'Username parameter is required' });
+    }
+    
+    const existingUser = await storage.getUserByUsername(username);
+    
+    return res.status(200).json({
+      exists: !!existingUser,
+      available: !existingUser
+    });
+  } catch (error: any) {
+    console.error('Check username error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+}
