@@ -8,6 +8,7 @@ import { app } from "./lib/firebase";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import FreelancerProfile from "@/pages/freelancer-profile";
+import FreelancerDashboard from "@/pages/freelancer-dashboard";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";

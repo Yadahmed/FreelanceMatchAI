@@ -341,6 +341,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setCurrentUser(meResponse.user);
         console.log('Updated user role from server:', meResponse.user);
         
+        // Force a page redirect to ensure roles take effect
+        if (meResponse.user && !meResponse.user.isClient && meResponse.user.hasFreelancerProfile) {
+          window.location.href = '/freelancer-dashboard';
+        }
+        
         // Also invalidate any cached queries
         queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       } catch (refreshError) {
