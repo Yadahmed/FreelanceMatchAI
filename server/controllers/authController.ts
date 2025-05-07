@@ -136,8 +136,24 @@ export async function login(req: Request, res: Response) {
     if (!user) {
       // User doesn't exist yet, create a new user account
       try {
+        // Generate a unique username based on email to prevent conflicts
+        const baseUsername = loginData.email.split('@')[0];
+        let username = baseUsername;
+        let counter = 1;
+        let existingUser;
+        
+        // Try to find a unique username by appending numbers if necessary
+        do {
+          existingUser = await storage.getUserByUsername(username);
+          if (existingUser) {
+            username = `${baseUsername}${counter}`;
+            counter++;
+          }
+        } while (existingUser && counter < 100); // Prevent infinite loops
+        
+        // Use the unique username to create the user
         user = await storage.createUser({
-          username: loginData.email.split('@')[0], // Default username from email
+          username: username,
           email: loginData.email,
           password: '', // Password handled by Firebase
           displayName: loginData.displayName || null,
@@ -160,13 +176,10 @@ export async function login(req: Request, res: Response) {
         }
       } catch (error: any) {
         console.error('Error creating user during login:', error);
-        // Return specific error for username conflicts
-        if (error.message && error.message.includes('username')) {
-          return res.status(409).json({ 
-            message: 'Username already taken. Please register with a different username.' 
-          });
-        }
-        throw error;
+        // If all username attempts failed or other database error occurred
+        return res.status(400).json({ 
+          message: 'Could not create account. Please try registering manually.' 
+        });
       }
     } else {
       // Update last login time

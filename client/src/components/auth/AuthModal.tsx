@@ -21,12 +21,15 @@ const loginSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
-// Register form schema
+// Register form schema with enhanced password validation
 const registerSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
   email: z.string().email('Please enter a valid email'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string().min(8, 'Please confirm your password'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(100, 'Password must be less than 100 characters'),
+  confirmPassword: z.string()
+    .min(8, 'Password must be at least 8 characters'), 
   displayName: z.string().optional(),
   isFreelancer: z.boolean().optional().default(false),
 }).refine((data) => data.password === data.confirmPassword, {
