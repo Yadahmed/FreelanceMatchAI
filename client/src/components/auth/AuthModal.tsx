@@ -98,6 +98,8 @@ export function AuthModal({ mode = 'login', isOpen = false, onOpenChange, trigge
       // Store the isFreelancer value before registration
       const isFreelancer = values.isFreelancer;
       
+      console.log('Registration submitted with isFreelancer =', isFreelancer);
+      
       // Attempt to sign up the user
       await signUpWithEmail(
         values.username,
@@ -120,9 +122,12 @@ export function AuthModal({ mode = 'login', isOpen = false, onOpenChange, trigge
       
       // If it's a freelancer, redirect them explicitly (as backup)
       if (isFreelancer) {
+        console.log('User registered as freelancer, redirecting to profile setup...');
         setTimeout(() => {
           window.location.href = '/freelancer-profile';
         }, 1000);
+      } else {
+        console.log('User registered as client');
       }
     } catch (error: any) {
       // Handle different error cases with user-friendly messages

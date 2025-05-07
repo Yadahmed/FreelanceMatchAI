@@ -263,7 +263,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (firebaseError.code === 'auth/email-already-in-use') {
           throw new Error('This email is already registered. Please log in instead.');
         } else if (firebaseError.code === 'auth/weak-password') {
-          throw new Error('Password is too weak. Please use at least 8 characters.');
+          throw new Error('Password is too weak. Please use at least 6 characters.');
         } else {
           // Re-throw the original error
           throw firebaseError;
