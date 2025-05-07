@@ -121,7 +121,7 @@ export function FreelancerProfileForm() {
       });
       
       // Redirect to freelancer dashboard (or another page)
-      navigate('/');
+      setLocation('/');
     } catch (error: any) {
       toast({
         title: 'Profile Creation Failed',

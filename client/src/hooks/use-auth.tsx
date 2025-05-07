@@ -196,10 +196,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setCurrentUser(response.user);
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       
-      // If registering as freelancer, create the freelancer profile
+      // If registering as freelancer, redirect to profile creation page
       if (!isClient) {
-        // Redirect to freelancer profile completion or show a notification
-        console.log("Registered as freelancer. Create profile next.");
+        // Use setLocation from wouter instead of window.location for better navigation
+        // But still throw a special error to prevent showing success messages too early
+        window.location.href = '/freelancer-profile';
+        throw new Error('redirecting');
       }
       
     } catch (error) {

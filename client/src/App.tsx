@@ -7,6 +7,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { app } from "./lib/firebase";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
+import FreelancerProfile from "@/pages/freelancer-profile";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -16,6 +17,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/freelancer-profile" component={FreelancerProfile} />
       <Route component={NotFound} />
     </Switch>
   );

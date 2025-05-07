@@ -99,17 +99,28 @@ export function AuthModal({ mode = 'login', isOpen = false, onOpenChange, trigge
         values.displayName || values.username,
         !values.isFreelancer // isClient is opposite of isFreelancer
       );
+      
+      // Close the modal
+      setOpen(false);
+      
+      // Show a success toast
       toast({
         title: 'Registration Successful',
-        description: 'Welcome to FreelanceMatchAI!',
+        description: values.isFreelancer ? 
+          'Let\'s set up your freelancer profile!' : 
+          'Welcome to FreelanceMatchAI!',
       });
-      setOpen(false);
     } catch (error: any) {
-      toast({
-        title: 'Registration Failed',
-        description: error.message || 'An error occurred during registration',
-        variant: 'destructive',
-      });
+      // Only show error toast for actual errors, not for redirects
+      if (error.message && error.message !== 'redirecting') {
+        toast({
+          title: 'Registration Failed',
+          description: error.message.includes('already in use') ? 
+            'This email is already registered. Try logging in instead.' : 
+            (error.message || 'An error occurred during registration'),
+          variant: 'destructive',
+        });
+      }
     }
   };
 
