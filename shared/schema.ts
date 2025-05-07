@@ -250,8 +250,8 @@ export const registerSchema = z.object({
   username: z.string().min(3).max(50),
   email: z.string().email(),
   password: z.string().min(8),
-  displayName: z.string().optional(),
-  photoURL: z.string().optional(),
+  displayName: z.string().nullable().optional(),
+  photoURL: z.string().nullable().optional(),
   firebaseUid: z.string(),
   isClient: z.boolean(),
 });
@@ -261,20 +261,20 @@ export const freelancerProfileSchema = z.object({
   skills: z.array(z.string()),
   bio: z.string(),
   hourlyRate: z.number().min(0),
-  yearsOfExperience: z.number().min(0).optional(),
+  yearsOfExperience: z.number().min(0).nullable().optional(),
   location: z.string(),
-  timeZone: z.string().optional(),
-  availability: z.boolean().optional(),
-  portfolioLinks: z.array(z.string().url()).optional(),
-  websiteUrl: z.string().url().optional(),
-  imageUrl: z.string().optional(),
+  timeZone: z.string().nullable().optional(),
+  availability: z.boolean().optional().default(true),
+  portfolioLinks: z.array(z.string().url()).optional().default([]),
+  websiteUrl: z.string().url().nullable().optional(),
+  imageUrl: z.string().nullable().optional(),
 });
 
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string(),
-  displayName: z.string().optional(),
-  photoURL: z.string().optional(),
+  displayName: z.string().nullable().optional(),
+  photoURL: z.string().nullable().optional(),
   firebaseUid: z.string(),
 });
 
