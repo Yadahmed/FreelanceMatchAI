@@ -66,6 +66,19 @@ export async function register(req: Request, res: Response) {
       isDefined: userData.isClient !== undefined
     });
     
+    // Convert isClient value ensuring proper handling of all possible formats
+    let isClientValue: boolean;
+    
+    if (typeof userData.isClient === 'boolean') {
+      isClientValue = userData.isClient;
+    } else if (userData.isClient === 'false' || userData.isClient === false || userData.isClient === 0) {
+      isClientValue = false;
+    } else {
+      isClientValue = true; // Default to client for all other cases
+    }
+    
+    console.log(`[register] Final isClient value after conversion: ${isClientValue}`);
+    
     // Create user account with the (potentially new) username
     const user = await storage.createUser({
       username: username,
@@ -74,9 +87,10 @@ export async function register(req: Request, res: Response) {
       displayName: userData.displayName || null,
       photoURL: userData.photoURL || null,
       firebaseUid: userData.firebaseUid,
-      // Ensure we're getting a proper boolean and not a string "true"/"false"
-      isClient: typeof userData.isClient === 'boolean' ? userData.isClient : (userData.isClient === 'false' ? false : true)
+      isClient: isClientValue
     });
+    
+    console.log(`[register] User created with id=${user.id}, isClient=${user.isClient}`);
     
     // Update Firebase user display name and photo URL if provided
     if (firebaseAdminAuth && (userData.displayName || userData.photoURL)) {
@@ -142,6 +156,19 @@ export async function createFreelancerProfile(req: Request, res: Response) {
     console.log(`[createFreelancerProfile] About to update user ${req.user.id} to freelancer role (setting isClient=false)`);
     
     try {
+      // Check the current state of the user
+      const currentUserState = await storage.getUser(req.user.id);
+      if (currentUserState) {
+        console.log(`[createFreelancerProfile] BEFORE UPDATE - Current user state:`, {
+          id: currentUserState.id,
+          username: currentUserState.username,
+          isClient: currentUserState.isClient,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        console.log(`[createFreelancerProfile] WARNING: Could not find user with id ${req.user.id}`);
+      }
+      
       // Force explicit value for isClient
       const updateData = { isClient: false };
       console.log(`[createFreelancerProfile] Updating user role with data:`, updateData);
@@ -150,15 +177,22 @@ export async function createFreelancerProfile(req: Request, res: Response) {
       
       console.log(`[createFreelancerProfile] User ${req.user.id} updated to freelancer role. Result:`, { 
         id: updatedUser.id,
+        username: updatedUser.username,
         isClient: updatedUser.isClient,
         timestamp: new Date().toISOString()
       });
       
       // Double-check the update
       const verifiedUser = await storage.getUser(req.user.id);
-      console.log(`[createFreelancerProfile] Verification - User ${req.user.id} role:`, { 
-        isClient: verifiedUser?.isClient 
-      });
+      if (verifiedUser) {
+        console.log(`[createFreelancerProfile] Verification - User ${req.user.id} role:`, { 
+          username: verifiedUser.username,
+          isClient: verifiedUser.isClient,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        console.log(`[createFreelancerProfile] WARNING: Could not verify user update for id ${req.user.id}`);
+      }
       
       // Make sure we're synchronizing cache and DB
       if (req.user) {
