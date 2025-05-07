@@ -249,13 +249,7 @@ export type ChatRequest = z.infer<typeof chatRequestSchema>;
 export const registerSchema = z.object({
   username: z.string().min(3).max(50),
   email: z.string().email(),
-  password: z.string().min(8).max(100).refine(
-    (password) => password.length >= 8,
-    {
-      message: "Password must be at least 8 characters long",
-      path: ["password"]
-    }
-  ),
+  password: z.string().min(8, "Password must be at least 8 characters long").max(100),
   displayName: z.string().nullable().optional(),
   photoURL: z.string().nullable().optional(),
   firebaseUid: z.string().optional(), // Make firebaseUid optional for flexibility
@@ -277,14 +271,15 @@ export const freelancerProfileSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.string().email(),
-  // Empty string allowed for Firebase auth (no password needed for social logins)
-  password: z.string().refine(val => val === '' || val.length >= 8, {
-    message: "Password must be empty (for Firebase auth) or at least 8 characters"
-  }),
+  email: z.string().email("Please enter a valid email"),
+  // We have two cases: Firebase auth (empty password) or regular login (8+ chars)
+  password: z.string().refine(
+    val => val === '' || val.length >= 8, 
+    { message: "Password must be at least 8 characters" }
+  ),
   displayName: z.string().nullable().optional(),
   photoURL: z.string().nullable().optional(),
-  firebaseUid: z.string(),
+  firebaseUid: z.string().optional(), // Make optional to support both auth methods
 });
 
 export type RegisterRequest = z.infer<typeof registerSchema>;
