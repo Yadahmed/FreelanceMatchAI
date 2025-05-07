@@ -114,10 +114,9 @@ export function Header() {
             </DropdownMenu>
           ) : (
             <>
-              <AuthModal />
-              <Button asChild>
-                <Link href="/register">Get Started</Link>
-              </Button>
+              <AuthModal triggerButton={
+                <Button>Get Started</Button>
+              } />
             </>
           )}
         </div>

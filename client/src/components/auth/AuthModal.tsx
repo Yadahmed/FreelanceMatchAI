@@ -18,15 +18,15 @@ import { Loader2 } from 'lucide-react';
 // Login form schema
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 // Register form schema
 const registerSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
   email: z.string().email('Please enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string().min(6, 'Please confirm your password'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string().min(8, 'Please confirm your password'),
   displayName: z.string().optional(),
   isFreelancer: z.boolean().optional().default(false),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -41,9 +41,10 @@ interface AuthModalProps {
   mode?: 'login' | 'register';
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  triggerButton?: React.ReactNode;
 }
 
-export function AuthModal({ mode = 'login', isOpen = false, onOpenChange }: AuthModalProps) {
+export function AuthModal({ mode = 'login', isOpen = false, onOpenChange, triggerButton }: AuthModalProps) {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(mode);
   const [open, setOpen] = useState(isOpen);
   const { signInWithEmail, signInWithGoogle, signUpWithEmail, isLoading } = useAuth();
@@ -139,7 +140,7 @@ export function AuthModal({ mode = 'login', isOpen = false, onOpenChange }: Auth
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline">Sign In</Button>
+        {triggerButton || <Button variant="outline">Sign In</Button>}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <Tabs
