@@ -41,6 +41,52 @@ const router = Router();
 // Add public routes (no auth required) first
 router.get('/auth/check-username', checkUsername); // No auth required, used during registration
 
+// Add a debug endpoint to fix role issues
+router.get('/debug/fix-role/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = parseInt(id, 10);
+    
+    // Import the storage from the parent file
+    const { storage } = require('../storage');
+    
+    // Get the current user
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Get freelancer to check if this user has a freelancer profile
+    const freelancer = await storage.getFreelancerByUserId(userId);
+    
+    console.log('Debug - Current user state:', { 
+      userId, 
+      isClient: user.isClient,
+      hasFreelancerProfile: !!freelancer 
+    });
+    
+    // If user has a freelancer profile but isClient is true, fix it
+    if (freelancer && user.isClient) {
+      console.log('Debug - Fixing user role. Changing isClient from true to false');
+      const updatedUser = await storage.updateUser(userId, { isClient: false });
+      return res.status(200).json({ 
+        message: 'User role fixed',
+        before: { isClient: true },
+        after: { isClient: updatedUser.isClient }
+      });
+    }
+    
+    return res.status(200).json({ 
+      message: 'User role check completed',
+      user: { id: user.id, username: user.username, isClient: user.isClient },
+      hasFreelancerProfile: !!freelancer
+    });
+  } catch (error) {
+    console.error('Role fix error:', error);
+    return res.status(500).json({ message: 'Error fixing role' });
+  }
+});
+
 // Apply authentication middleware to all other routes
 router.use(authenticateUser);
 

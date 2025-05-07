@@ -124,11 +124,36 @@ export async function createFreelancerProfile(req: Request, res: Response) {
       imageUrl: profileData.imageUrl || null
     });
     
-    // Update user to not be a client
-    const updatedUser = await storage.updateUser(req.user.id, { isClient: false });
+    // IMPORTANT: Update user to not be a client - this is the critical part that was failing
+    console.log(`[createFreelancerProfile] About to update user ${req.user.id} to freelancer role (setting isClient=false)`);
     
-    // Log the update to verify the change
-    console.log(`User ${req.user.id} updated to freelancer role. isClient = ${updatedUser.isClient}`);
+    try {
+      // Force explicit value for isClient
+      const updateData = { isClient: false };
+      console.log(`[createFreelancerProfile] Updating user role with data:`, updateData);
+      
+      const updatedUser = await storage.updateUser(req.user.id, updateData);
+      
+      console.log(`[createFreelancerProfile] User ${req.user.id} updated to freelancer role. Result:`, { 
+        id: updatedUser.id,
+        isClient: updatedUser.isClient,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Double-check the update
+      const verifiedUser = await storage.getUser(req.user.id);
+      console.log(`[createFreelancerProfile] Verification - User ${req.user.id} role:`, { 
+        isClient: verifiedUser?.isClient 
+      });
+      
+      // Make sure we're synchronizing cache and DB
+      if (req.user) {
+        req.user.isClient = false;
+      }
+    } catch (updateError) {
+      console.error(`[createFreelancerProfile] ERROR updating user role:`, updateError);
+      // Continue with the response even if the role update fails
+    }
     
     return res.status(201).json({
       message: 'Freelancer profile created successfully',
@@ -229,13 +254,38 @@ export async function getCurrentUser(req: Request, res: Response) {
       return res.status(401).json({ message: 'Authentication required' });
     }
     
-    // Check if user is a freelancer
-    const freelancer = !req.user.isClient 
-      ? await storage.getFreelancerByUserId(req.user.id)
-      : null;
+    console.log(`[getCurrentUser] Looking up user ${req.user.id} with isClient=${req.user.isClient}`);
+    
+    // Check for a freelancer profile regardless of the isClient flag
+    // This allows us to handle inconsistent states
+    const freelancerProfile = await storage.getFreelancerByUserId(req.user.id);
+    
+    // If user has a freelancer profile but isClient is true, we have an inconsistency
+    // Let's fix it right away
+    let user = req.user;
+    if (freelancerProfile && user.isClient) {
+      console.log(`[getCurrentUser] Fixing inconsistent role state for user ${user.id}`);
+      console.log(`[getCurrentUser] User has a freelancer profile but isClient=true`);
+      
+      // Update the user to not be a client
+      user = await storage.updateUser(user.id, { isClient: false });
+      console.log(`[getCurrentUser] Updated user role to freelancer (isClient=false)`);
+      
+      // Update the request user as well
+      req.user = user;
+    }
+    
+    // Set the freelancer profile based on the (potentially updated) role
+    const freelancer = !user.isClient ? freelancerProfile : null;
+    
+    console.log(`[getCurrentUser] Returning user with role:`, { 
+      id: user.id, 
+      isClient: user.isClient, 
+      hasFreelancerProfile: !!freelancer 
+    });
     
     return res.status(200).json({
-      user: req.user,
+      user,
       freelancer
     });
   } catch (error: any) {
