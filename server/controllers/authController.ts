@@ -14,6 +14,16 @@ export async function register(req: Request, res: Response) {
       return res.status(400).json({ message: 'Firebase authentication required' });
     }
     
+    // Check if user already exists by Firebase UID
+    const existingUserByFirebaseUid = await storage.getUserByFirebaseUid(userData.firebaseUid);
+    if (existingUserByFirebaseUid) {
+      // User already exists, just return the user
+      return res.status(200).json({
+        message: 'User already registered',
+        user: existingUserByFirebaseUid
+      });
+    }
+    
     // Check if email is already registered
     const existingUserByEmail = await storage.getUserByEmail(userData.email);
     if (existingUserByEmail) {
@@ -34,15 +44,20 @@ export async function register(req: Request, res: Response) {
       displayName: userData.displayName || null,
       photoURL: userData.photoURL || null,
       firebaseUid: userData.firebaseUid,
-      isClient: userData.isClient
+      isClient: userData.isClient ?? true // Default to client if not specified
     });
     
     // Update Firebase user display name and photo URL if provided
     if (firebaseAdminAuth && (userData.displayName || userData.photoURL)) {
-      await firebaseAdminAuth.updateUser(userData.firebaseUid, {
-        displayName: userData.displayName,
-        photoURL: userData.photoURL
-      });
+      try {
+        await firebaseAdminAuth.updateUser(userData.firebaseUid, {
+          displayName: userData.displayName || undefined,
+          photoURL: userData.photoURL || undefined
+        });
+      } catch (firebaseError) {
+        console.error('Firebase user update error:', firebaseError);
+        // Continue with registration even if the Firebase update fails
+      }
     }
     
     return res.status(201).json({
@@ -51,7 +66,11 @@ export async function register(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error('Register error:', error);
-    return res.status(400).json({ message: error.message });
+    // Provide more detailed error messages
+    return res.status(400).json({ 
+      message: error.message || 'Registration failed',
+      details: error.errors || error 
+    });
   }
 }
 
@@ -116,21 +135,38 @@ export async function login(req: Request, res: Response) {
     
     if (!user) {
       // User doesn't exist yet, create a new user account
-      user = await storage.createUser({
-        username: loginData.email.split('@')[0], // Default username from email
-        email: loginData.email,
-        password: '', // Password handled by Firebase
-        displayName: loginData.displayName || null,
-        photoURL: loginData.photoURL || null,
-        firebaseUid: loginData.firebaseUid,
-        isClient: true // By default, new users are clients
-      });
-      
-      // Update Firebase user display name if provided
-      if (firebaseAdminAuth && loginData.displayName) {
-        await firebaseAdminAuth.updateUser(loginData.firebaseUid, {
-          displayName: loginData.displayName
+      try {
+        user = await storage.createUser({
+          username: loginData.email.split('@')[0], // Default username from email
+          email: loginData.email,
+          password: '', // Password handled by Firebase
+          displayName: loginData.displayName || null,
+          photoURL: loginData.photoURL || null,
+          firebaseUid: loginData.firebaseUid,
+          isClient: true // By default, new users are clients
         });
+        
+        // Update Firebase user display name if provided
+        if (firebaseAdminAuth && loginData.displayName) {
+          try {
+            await firebaseAdminAuth.updateUser(loginData.firebaseUid, {
+              displayName: loginData.displayName || undefined,
+              photoURL: loginData.photoURL || undefined
+            });
+          } catch (firebaseError) {
+            console.error('Firebase user update error:', firebaseError);
+            // Continue with login even if the Firebase update fails
+          }
+        }
+      } catch (error: any) {
+        console.error('Error creating user during login:', error);
+        // Return specific error for username conflicts
+        if (error.message && error.message.includes('username')) {
+          return res.status(409).json({ 
+            message: 'Username already taken. Please register with a different username.' 
+          });
+        }
+        throw error;
       }
     } else {
       // Update last login time
@@ -143,7 +179,11 @@ export async function login(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error('Login error:', error);
-    return res.status(400).json({ message: error.message });
+    // Provide more detailed error messages
+    return res.status(400).json({ 
+      message: error.message || 'Login failed',
+      details: error.errors || error 
+    });
   }
 }
 

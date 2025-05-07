@@ -252,8 +252,8 @@ export const registerSchema = z.object({
   password: z.string().min(8),
   displayName: z.string().nullable().optional(),
   photoURL: z.string().nullable().optional(),
-  firebaseUid: z.string(),
-  isClient: z.boolean(),
+  firebaseUid: z.string().optional(), // Make firebaseUid optional for flexibility
+  isClient: z.boolean().default(true), // Default to client if not specified
 });
 
 export const freelancerProfileSchema = z.object({
@@ -272,7 +272,10 @@ export const freelancerProfileSchema = z.object({
 
 export const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string(),
+  // Empty string allowed for Firebase auth (no password needed for social logins)
+  password: z.string().refine(val => val === '' || val.length >= 8, {
+    message: "Password must be empty (for Firebase auth) or at least 8 characters"
+  }),
   displayName: z.string().nullable().optional(),
   photoURL: z.string().nullable().optional(),
   firebaseUid: z.string(),
