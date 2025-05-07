@@ -125,7 +125,10 @@ export async function createFreelancerProfile(req: Request, res: Response) {
     });
     
     // Update user to not be a client
-    await storage.updateUser(req.user.id, { isClient: false });
+    const updatedUser = await storage.updateUser(req.user.id, { isClient: false });
+    
+    // Log the update to verify the change
+    console.log(`User ${req.user.id} updated to freelancer role. isClient = ${updatedUser.isClient}`);
     
     return res.status(201).json({
       message: 'Freelancer profile created successfully',

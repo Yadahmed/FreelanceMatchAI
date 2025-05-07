@@ -32,6 +32,7 @@ function Router() {
       
       {/* Core client routes */}
       <Route path="/client-dashboard" component={Home} />
+      <Route path="/client/dashboard" component={Home} />
       <Route path="/job-requests" component={Home} />
       
       {/* Common routes for both user types */}

@@ -120,8 +120,19 @@ export function FreelancerProfileForm() {
         description: 'Your freelancer profile has been created successfully!',
       });
       
-      // Redirect to freelancer dashboard (or another page)
-      setLocation('/');
+      // Add delay to allow server state to update
+      setTimeout(() => {
+        // Clear any cached data that might be stale
+        window.sessionStorage.removeItem('user-data');
+        
+        // Redirect to freelancer dashboard 
+        setLocation('/freelancer-dashboard');
+        
+        // Reload the page after a short delay to ensure fresh state
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }, 300);
     } catch (error: any) {
       toast({
         title: 'Profile Creation Failed',

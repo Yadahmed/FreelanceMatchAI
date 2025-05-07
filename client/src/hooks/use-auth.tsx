@@ -313,19 +313,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         userId: currentUser.id
       };
       
+      // Create the freelancer profile
       const response = await apiRequest('/api/auth/freelancer-profile', {
         method: 'POST',
         body: JSON.stringify(enhancedProfileData)
       });
       
-      // Refresh user data
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      console.log('Freelancer profile created:', response);
       
-      // Update current user info to reflect freelancer status
+      // Update current user in state immediately to reflect role change
       setCurrentUser({
         ...currentUser,
-        isClient: false
+        isClient: false // Mark as freelancer in local state
       });
+      
+      // Force refresh user data from server
+      try {
+        // Get fresh user data from the server
+        const token = await firebaseUser?.getIdToken();
+        const meResponse = await apiRequest('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        // Update with server data
+        setCurrentUser(meResponse.user);
+        console.log('Updated user role from server:', meResponse.user);
+        
+        // Also invalidate any cached queries
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      } catch (refreshError) {
+        console.error('Error refreshing user data:', refreshError);
+        // Continue since we've already updated the local state
+      }
     } catch (error) {
       console.error('Create freelancer profile error:', error);
       throw error;
