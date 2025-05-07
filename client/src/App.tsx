@@ -14,18 +14,48 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import { AuthProvider } from "@/hooks/use-auth";
 
 function Router() {
+  // Get the current location for logging purposes
+  const [location] = useLocation();
+  
+  // Log route changes to help with debugging
+  useEffect(() => {
+    console.log(`Route changed to: ${location}`);
+  }, [location]);
+  
   return (
     <Switch>
       <Route path="/" component={Home} />
+      
+      {/* Core freelancer routes */}
       <Route path="/freelancer-profile" component={FreelancerProfile} />
-      <Route path="/job-requests" component={Home} />
       <Route path="/freelancer-dashboard" component={Home} />
+      
+      {/* Core client routes */}
       <Route path="/client-dashboard" component={Home} />
+      <Route path="/job-requests" component={Home} />
+      
+      {/* Common routes for both user types */}
       <Route path="/bookings" component={Home} />
       <Route path="/messages" component={Home} />
       <Route path="/notifications" component={Home} />
       <Route path="/settings" component={Home} />
       <Route path="/profile" component={Home} />
+      
+      {/* Legacy redirects in case old URLs are bookmarked */}
+      <Route path="/home">
+        {() => {
+          window.location.href = '/';
+          return null;
+        }}
+      </Route>
+      <Route path="/register">
+        {() => {
+          window.location.href = '/';
+          return null;
+        }}
+      </Route>
+      
+      {/* Catch all - 404 route */}
       <Route component={NotFound} />
     </Switch>
   );

@@ -125,20 +125,40 @@ export function AuthModal({ mode = 'login', isOpen = false, onOpenChange, trigge
         }, 1000);
       }
     } catch (error: any) {
-      // Only show error toast for actual errors, not for redirects
-      if (error.message && error.message !== 'redirecting') {
+      // Handle different error cases with user-friendly messages
+      if (error.message) {
+        if (error.message.includes('already in use')) {
+          toast({
+            title: 'Registration Failed',
+            description: 'This email is already registered. Try logging in instead.',
+            variant: 'destructive',
+          });
+        } else if (error.message.includes('Username already taken')) {
+          toast({
+            title: 'Registration Failed',
+            description: 'Username already taken. Please choose another one.',
+            variant: 'destructive',
+          });
+        } else if (error.message.includes('at least 8 characters')) {
+          toast({
+            title: 'Registration Failed',
+            description: 'Password must be at least 8 characters long.',
+            variant: 'destructive',
+          });
+        } else if (!error.message.includes('redirect')) {
+          // General error handler for other errors
+          toast({
+            title: 'Registration Failed',
+            description: error.message || 'An error occurred during registration',
+            variant: 'destructive',
+          });
+        }
+      } else {
+        // Fallback for unknown errors
         toast({
           title: 'Registration Failed',
-          description: error.message.includes('already in use') ? 
-            'This email is already registered. Try logging in instead.' : 
-            (error.message || 'An error occurred during registration'),
+          description: 'An unexpected error occurred. Please try again.',
           variant: 'destructive',
-        });
-      } else if (error.message === 'redirecting' && values.isFreelancer) {
-        // For freelancers, show a specific message
-        toast({
-          title: 'Registration Successful', 
-          description: 'Redirecting to freelancer profile setup...',
         });
       }
     }
