@@ -12,11 +12,18 @@ try {
     // For local development, use a service account if provided
     if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
       // Add credential data if available
+      // Private key from environment variable needs special handling
+      const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+      
+      // Build the credential object
       Object.assign(firebaseConfig, {
         credential: admin.credential.cert({
           projectId: process.env.VITE_FIREBASE_PROJECT_ID,
           clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+          // Handle different formats of private key
+          privateKey: privateKey?.includes('\\n') 
+            ? privateKey.replace(/\\n/g, '\n') 
+            : privateKey
         })
       });
     }
