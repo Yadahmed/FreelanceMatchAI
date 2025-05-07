@@ -1,0 +1,27 @@
+Error logging in user: 
+Error {}
+message: "409: {"message":"Username already taken. Please register with a different username."}"
+stack: "Error: 409: {"message":"Username already taken. Please register with a different username."}↵ at throwIfResNotOk (https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/src/lib/queryClient.ts:5:11)↵ at async apiRequest (https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/src/lib/queryClient.ts:21:3)↵ at async Object.next (https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/src/hooks/use-auth.tsx:60:32)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Email sign up error: 
+Error {}
+message: "400: {"message":"[\n {\n \"code\": \"too_small\",\n \"minimum\": 8,\n \"type\": \"string\",\n \"inclusive\": true,\n \"exact\": false,\n \"message\": \"String must contain at least 8 character(s)\",\n \"path\": [\n \"password\"\n ]\n }\n]","details":[{"code":"too_small","minimum":8,"type":"string","inclusive":true,"exact":false,"message":"String must contain at least 8 character(s)","path":["password"]}]}"
+stack: "Error: 400: {"message":"[\n {\n \"code\": \"too_small\",\n \"minimum\": 8,\n \"type\": \"string\",\n \"inclusive\": true,\n \"exact\": false,\n \"message\": \"String must contain at least 8 character(s)\",\n \"path\": [\n \"password\"\n ]\n }\n]","details":[{"code":"too_small","minimum":8,"type":"string","inclusive":true,"exact":false,"message":"String must contain at least 8 character(s)","path":["password"]}]}↵ at throwIfResNotOk (https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/src/lib/queryClient.ts:5:11)↵ at async apiRequest (https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/src/lib/queryClient.ts:21:3)↵ at async signUpWithEmail (https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/src/hooks/use-auth.tsx:204:24)↵ at async onRegisterSubmit (https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/src/components/auth/AuthModal.tsx:90:7)↵ at async https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RBMNEPGM.js?v=61babe87:1675:9"
+get stack: ƒ ()
+set stack: ƒ ()
+length: 1
+name: ""
+[[Prototype]]: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://0e4b9ca5-d3c1-4c84-b2ef-f108d395797c-00-1f5wweaunrl50.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400

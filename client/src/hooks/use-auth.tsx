@@ -250,6 +250,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       setCurrentUser(response.user);
+      
+      // If username was automatically changed by the backend, notify the user
+      if (response.usernameChanged) {
+        console.log(`Username was changed to ${response.usernameChanged} to ensure uniqueness`);
+        // You could add a toast notification here if desired
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       
       // If registering as freelancer, redirect to profile creation page

@@ -30,15 +30,32 @@ export async function register(req: Request, res: Response) {
       return res.status(409).json({ message: 'Email already registered' });
     }
     
-    // Check if username is already taken
-    const existingUserByUsername = await storage.getUserByUsername(userData.username);
-    if (existingUserByUsername) {
-      return res.status(409).json({ message: 'Username already taken' });
+    // Process username - if supplied by user, check for uniqueness
+    // If not provided or conflicts, generate a unique one
+    let username = userData.username;
+    let usernameChanged = false;
+    
+    if (!username || username.trim() === '') {
+      usernameChanged = true;
+    } else {
+      // Check if username is already taken
+      const existingUserByUsername = await storage.getUserByUsername(username);
+      if (existingUserByUsername) {
+        usernameChanged = true;
+      }
     }
     
-    // Create user account
+    // If username needs to be changed, generate a unique timestamp-based one
+    if (usernameChanged) {
+      const timestamp = Date.now().toString(36);
+      const randomStr = Math.random().toString(36).substring(2, 5);
+      const emailBase = userData.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
+      username = `${emailBase}_${timestamp}${randomStr}`.substring(0, 50);
+    }
+    
+    // Create user account with the (potentially new) username
     const user = await storage.createUser({
-      username: userData.username,
+      username: username,
       email: userData.email,
       password: '',  // Password is handled by Firebase
       displayName: userData.displayName || null,
@@ -62,7 +79,8 @@ export async function register(req: Request, res: Response) {
     
     return res.status(201).json({
       message: 'User registered successfully',
-      user
+      user,
+      usernameChanged: usernameChanged ? username : undefined // Inform the client if username was changed
     });
   } catch (error: any) {
     console.error('Register error:', error);
@@ -134,52 +152,53 @@ export async function login(req: Request, res: Response) {
     let user = await storage.getUserByFirebaseUid(loginData.firebaseUid);
     
     if (!user) {
-      // User doesn't exist yet, create a new user account
-      try {
-        // Generate a unique username based on email to prevent conflicts
-        const baseUsername = loginData.email.split('@')[0];
-        let username = baseUsername;
-        let counter = 1;
-        let existingUser;
-        
-        // Try to find a unique username by appending numbers if necessary
-        do {
-          existingUser = await storage.getUserByUsername(username);
-          if (existingUser) {
-            username = `${baseUsername}${counter}`;
-            counter++;
-          }
-        } while (existingUser && counter < 100); // Prevent infinite loops
-        
-        // Use the unique username to create the user
-        user = await storage.createUser({
-          username: username,
-          email: loginData.email,
-          password: '', // Password handled by Firebase
-          displayName: loginData.displayName || null,
-          photoURL: loginData.photoURL || null,
+      // Check if user exists by email first (for migration scenarios)
+      const existingUserByEmail = await storage.getUserByEmail(loginData.email);
+      
+      if (existingUserByEmail) {
+        // If a user with this email exists, update their Firebase UID
+        user = await storage.updateUser(existingUserByEmail.id, {
           firebaseUid: loginData.firebaseUid,
-          isClient: true // By default, new users are clients
+          lastLogin: new Date()
         });
-        
-        // Update Firebase user display name if provided
-        if (firebaseAdminAuth && loginData.displayName) {
-          try {
-            await firebaseAdminAuth.updateUser(loginData.firebaseUid, {
-              displayName: loginData.displayName || undefined,
-              photoURL: loginData.photoURL || undefined
-            });
-          } catch (firebaseError) {
-            console.error('Firebase user update error:', firebaseError);
-            // Continue with login even if the Firebase update fails
+      } else {
+        // User doesn't exist yet, create a new user account
+        try {
+          // Generate a guaranteed unique username using timestamp and random string
+          const timestamp = Date.now().toString(36);
+          const randomStr = Math.random().toString(36).substring(2, 5);
+          const emailBase = loginData.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
+          const username = `${emailBase}_${timestamp}${randomStr}`.substring(0, 50);
+          
+          user = await storage.createUser({
+            username: username,
+            email: loginData.email,
+            password: '', // Password handled by Firebase
+            displayName: loginData.displayName || null,
+            photoURL: loginData.photoURL || null,
+            firebaseUid: loginData.firebaseUid,
+            isClient: true // By default, new users are clients
+          });
+          
+          // Update Firebase user display name if provided
+          if (firebaseAdminAuth && loginData.displayName) {
+            try {
+              await firebaseAdminAuth.updateUser(loginData.firebaseUid, {
+                displayName: loginData.displayName || undefined,
+                photoURL: loginData.photoURL || undefined
+              });
+            } catch (firebaseError) {
+              console.error('Firebase user update error:', firebaseError);
+              // Continue with login even if the Firebase update fails
+            }
           }
+        } catch (error: any) {
+          console.error('Error creating user during login:', error);
+          // Return a more user-friendly error
+          return res.status(500).json({ 
+            message: 'Unable to create user account. Please try again or register manually.' 
+          });
         }
-      } catch (error: any) {
-        console.error('Error creating user during login:', error);
-        // If all username attempts failed or other database error occurred
-        return res.status(400).json({ 
-          message: 'Could not create account. Please try registering manually.' 
-        });
       }
     } else {
       // Update last login time
