@@ -230,6 +230,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUpWithEmail = async (username: string, email: string, password: string, displayName?: string, isClient: boolean = true) => {
+    // Log the correct role is being passed
+    console.log('[signUpWithEmail] Starting registration with role:', isClient ? 'CLIENT' : 'FREELANCER');
+    
     if (!isFirebaseConfigured()) {
       throw new Error('Firebase not configured. Please add the required Firebase secrets.');
     }
@@ -287,6 +290,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         firebaseUid: user.uid,
         isClient
       };
+      
+      console.log('[signUpWithEmail] Sending user data to backend with isClient =', isClient);
+      console.log('[signUpWithEmail] Full userData object:', userData);
       
       const response = await apiRequest('/api/auth/register', {
         method: 'POST',

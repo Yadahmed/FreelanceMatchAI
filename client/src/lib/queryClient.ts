@@ -15,6 +15,23 @@ export async function apiRequest(
   
   if (options.body && typeof options.body === 'string') {
     defaultHeaders['Content-Type'] = 'application/json';
+    
+    // Debug logging to check what's being sent in the request body
+    try {
+      const jsonData = JSON.parse(options.body);
+      console.log('[apiRequest] Sending data to ' + url + ':', jsonData);
+      
+      // IMPORTANT: Make special note of boolean values to check for potential type coercion
+      if (jsonData.isClient !== undefined) {
+        console.log('[apiRequest] isClient value in request:', {
+          value: jsonData.isClient,
+          type: typeof jsonData.isClient,
+          stringified: JSON.stringify(jsonData.isClient)
+        });
+      }
+    } catch (e) {
+      console.error('[apiRequest] Error parsing JSON body:', e);
+    }
   }
   
   const res = await fetch(url, {

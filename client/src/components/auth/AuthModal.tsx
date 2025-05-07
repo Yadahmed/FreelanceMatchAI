@@ -399,7 +399,14 @@ export function AuthModal({ mode = 'login', isOpen = false, onOpenChange, trigge
                           <FormControl>
                             <Checkbox
                               checked={field.value}
-                              onCheckedChange={field.onChange}
+                              onCheckedChange={(checked) => {
+                                // Explicitly log the state change
+                                console.log('[Checkbox] Changing isFreelancer value:', { 
+                                  from: field.value, 
+                                  to: checked 
+                                });
+                                field.onChange(checked);
+                              }}
                             />
                           </FormControl>
                           <div className="space-y-1 leading-none">

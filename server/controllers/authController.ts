@@ -57,6 +57,15 @@ export async function register(req: Request, res: Response) {
       username = `${emailBase}_${timestamp}${randomStr}`.substring(0, 50);
     }
     
+    // Log the incoming isClient value
+    console.log(`[register] Creating user with isClient=${userData.isClient}`, {
+      rawValue: userData.isClient,
+      stringValue: String(userData.isClient), 
+      boolValue: Boolean(userData.isClient),
+      typeOf: typeof userData.isClient,
+      isDefined: userData.isClient !== undefined
+    });
+    
     // Create user account with the (potentially new) username
     const user = await storage.createUser({
       username: username,
@@ -65,7 +74,8 @@ export async function register(req: Request, res: Response) {
       displayName: userData.displayName || null,
       photoURL: userData.photoURL || null,
       firebaseUid: userData.firebaseUid,
-      isClient: userData.isClient ?? true // Default to client if not specified
+      // Ensure we're getting a proper boolean and not a string "true"/"false"
+      isClient: typeof userData.isClient === 'boolean' ? userData.isClient : (userData.isClient === 'false' ? false : true)
     });
     
     // Update Firebase user display name and photo URL if provided
