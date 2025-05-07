@@ -58,10 +58,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Try to login/register on the backend
             try {
               const loginData = {
-                email: user.email,
+                email: user.email || '',
                 password: '', // Password is handled by Firebase
-                displayName: user.displayName,
-                photoURL: user.photoURL,
+                displayName: user.displayName || user.email?.split('@')[0] || 'User',
+                photoURL: user.photoURL || null,
                 firebaseUid: user.uid
               };
               
@@ -103,10 +103,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Login with backend
       const loginData = {
-        email: user.email,
+        email: user.email || '',
         password: '', // Password is handled by Firebase
-        displayName: user.displayName,
-        photoURL: user.photoURL,
+        displayName: user.displayName || user.email?.split('@')[0] || 'User',
+        photoURL: user.photoURL || null,
         firebaseUid: user.uid
       };
       
@@ -138,10 +138,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Login with backend
       const loginData = {
-        email: user.email,
+        email: user.email || '',
         password: '', // Password is handled by Firebase
-        displayName: user.displayName,
-        photoURL: user.photoURL,
+        displayName: user.displayName || user.email?.split('@')[0] || 'User',
+        photoURL: user.photoURL || null,
         firebaseUid: user.uid
       };
       
@@ -183,7 +183,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: user.email || email,
         password: '', // Password is handled by Firebase
         displayName: displayName || user.displayName || username,
-        photoURL: user.photoURL,
+        photoURL: user.photoURL || null,
         firebaseUid: user.uid,
         isClient
       };
@@ -195,6 +195,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       setCurrentUser(response.user);
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      
+      // If registering as freelancer, create the freelancer profile
+      if (!isClient) {
+        // Redirect to freelancer profile completion or show a notification
+        console.log("Registered as freelancer. Create profile next.");
+      }
+      
     } catch (error) {
       console.error('Email sign up error:', error);
       throw error;
@@ -218,16 +225,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const createFreelancerProfile = async (profileData: any) => {
+  const createFreelancerProfile = async (profileData: any): Promise<void> => {
     if (!currentUser) {
       throw new Error('You must be logged in to create a freelancer profile');
     }
     
     try {
       setIsLoading(true);
+      
+      // Add the userId to the profile data
+      const enhancedProfileData = {
+        ...profileData,
+        userId: currentUser.id
+      };
+      
       const response = await apiRequest('/api/auth/freelancer-profile', {
         method: 'POST',
-        body: JSON.stringify(profileData)
+        body: JSON.stringify(enhancedProfileData)
       });
       
       // Refresh user data
@@ -238,8 +252,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ...currentUser,
         isClient: false
       });
-      
-      return response;
     } catch (error) {
       console.error('Create freelancer profile error:', error);
       throw error;
