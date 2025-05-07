@@ -132,9 +132,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       setIsLoading(true);
-      const result = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Attempt Firebase login with better error handling
+      let result;
+      try {
+        result = await signInWithEmailAndPassword(auth, email, password);
+      } catch (firebaseError: any) {
+        // Format Firebase errors for better user experience
+        if (firebaseError.code === 'auth/user-not-found') {
+          throw new Error('No account found with this email. Please register first.');
+        } else if (firebaseError.code === 'auth/wrong-password') {
+          throw new Error('Incorrect password. Please try again or reset your password.');
+        } else if (firebaseError.code === 'auth/invalid-login-credentials') {
+          throw new Error('Invalid login credentials. Please check your email and password.');
+        } else {
+          // Re-throw the original error with a clearer message if possible
+          throw new Error(firebaseError.message || 'Authentication failed');
+        }
+      }
+      
       const user = result.user;
-      const idToken = await user.getIdToken();
       
       // Login with backend
       const loginData = {
@@ -145,13 +162,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         firebaseUid: user.uid
       };
       
-      const response = await apiRequest('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify(loginData)
-      });
-      
-      setCurrentUser(response.user);
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      try {
+        const response = await apiRequest('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify(loginData)
+        });
+        
+        setCurrentUser(response.user);
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      } catch (backendError: any) {
+        // If there's a username conflict during automatic account creation
+        if (backendError.message && backendError.message.includes('Username already taken')) {
+          throw new Error('Account creation error. Please try registering with a different username.');
+        }
+        throw backendError;
+      }
     } catch (error) {
       console.error('Email sign in error:', error);
       throw error;

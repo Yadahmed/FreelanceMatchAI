@@ -38,7 +38,10 @@ import {
 
 const router = Router();
 
-// Apply authentication middleware to all routes
+// Add public routes (no auth required) first
+router.get('/auth/check-username', checkUsername); // No auth required, used during registration
+
+// Apply authentication middleware to all other routes
 router.use(authenticateUser);
 
 // Auth routes
