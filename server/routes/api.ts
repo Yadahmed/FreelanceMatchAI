@@ -41,14 +41,41 @@ const router = Router();
 // Add public routes (no auth required) first
 router.get('/auth/check-username', checkUsername); // No auth required, used during registration
 
-// Add a debug endpoint to fix role issues
-router.get('/debug/fix-role/:id', async (req, res) => {
+// Admin API endpoints for debugging
+// In a production app, these would be protected by admin authentication
+
+// Get all users endpoint
+router.get('/admin/users', async (req, res) => {
+  try {
+    // Import the storage and db directly
+    const { storage } = require('../storage');
+    const { db } = require('../db');
+    const { users } = require('@shared/schema');
+    
+    // Get all users directly from the database
+    const allUsers = await db.select().from(users);
+    
+    return res.json({
+      message: 'All users retrieved',
+      users: allUsers
+    });
+  } catch (error) {
+    console.error('Error getting users:', error);
+    return res.status(500).json({ message: 'Server error getting users' });
+  }
+});
+
+// Endpoint to fix roles for a specific user
+router.get('/admin/fix-role/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const userId = parseInt(id, 10);
     
     // Import the storage from the parent file
     const { storage } = require('../storage');
+    const { db } = require('../db');
+    const { users, freelancers } = require('@shared/schema');
+    const { eq } = require('drizzle-orm');
     
     // Get the current user
     const user = await storage.getUser(userId);
@@ -59,31 +86,31 @@ router.get('/debug/fix-role/:id', async (req, res) => {
     // Get freelancer to check if this user has a freelancer profile
     const freelancer = await storage.getFreelancerByUserId(userId);
     
-    console.log('Debug - Current user state:', { 
+    console.log('Admin - Current user state:', { 
       userId, 
       isClient: user.isClient,
       hasFreelancerProfile: !!freelancer 
     });
     
-    // If user has a freelancer profile but isClient is true, fix it
-    if (freelancer && user.isClient) {
-      console.log('Debug - Fixing user role. Changing isClient from true to false');
-      const updatedUser = await storage.updateUser(userId, { isClient: false });
-      return res.status(200).json({ 
-        message: 'User role fixed',
-        before: { isClient: true },
-        after: { isClient: updatedUser.isClient }
-      });
-    }
+    // Always force update to ensure the flag is set correctly
+    console.log('Admin - Forcing user role update. Setting isClient=false');
+    
+    // Use direct DB query for maximum reliability
+    const [updatedUser] = await db
+      .update(users)
+      .set({ isClient: false })
+      .where(eq(users.id, userId))
+      .returning();
     
     return res.status(200).json({ 
-      message: 'User role check completed',
-      user: { id: user.id, username: user.username, isClient: user.isClient },
+      message: 'User role fixed',
+      before: { isClient: user.isClient },
+      after: { isClient: updatedUser.isClient },
       hasFreelancerProfile: !!freelancer
     });
   } catch (error) {
     console.error('Role fix error:', error);
-    return res.status(500).json({ message: 'Error fixing role' });
+    return res.status(500).json({ message: 'Error fixing role', error: String(error) });
   }
 });
 
