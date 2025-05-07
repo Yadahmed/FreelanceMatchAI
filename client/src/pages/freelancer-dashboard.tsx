@@ -48,6 +48,7 @@ export default function FreelancerDashboard() {
   const hasError = dashboardError || jobRequestsError || notificationsError;
 
   // Placeholder data for development
+  // Default values with type safety
   const statsData = {
     earnings: {
       total: dashboardData?.earnings?.total || 0,
@@ -60,8 +61,9 @@ export default function FreelancerDashboard() {
     matchScore: dashboardData?.matchScore || 85
   };
 
-  const recentJobRequests = jobRequests?.slice(0, 3) || [];
-  const recentNotifications = notifications?.slice(0, 5) || [];
+  // Parse any responses to ensure type safety
+  const recentJobRequests = Array.isArray(jobRequests) ? jobRequests.slice(0, 3) : [];
+  const recentNotifications = Array.isArray(notifications) ? notifications.slice(0, 5) : [];
   
   if (authLoading) {
     return <div className="flex items-center justify-center h-screen">Loading authentication data...</div>;
@@ -185,7 +187,7 @@ export default function FreelancerDashboard() {
                           <p className="text-sm font-medium leading-none">{job.title || 'Untitled Job'}</p>
                           <Badge variant={
                             job.status === 'pending' ? 'outline' : 
-                            job.status === 'accepted' ? 'success' : 
+                            job.status === 'accepted' ? 'secondary' : 
                             job.status === 'declined' ? 'destructive' : 'default'
                           }>
                             {job.status}
@@ -288,7 +290,7 @@ export default function FreelancerDashboard() {
                           </div>
                           <Badge variant={
                             job.status === 'pending' ? 'outline' : 
-                            job.status === 'accepted' ? 'success' : 
+                            job.status === 'accepted' ? 'secondary' : 
                             job.status === 'declined' ? 'destructive' : 'default'
                           } className="md:self-start">
                             {job.status}
@@ -320,7 +322,7 @@ export default function FreelancerDashboard() {
                                 // Handle job acceptance
                                 apiRequest(`/api/freelancer/job-requests/${job.id}`, {
                                   method: 'PATCH',
-                                  body: { status: 'accepted' }
+                                  body: JSON.stringify({ status: 'accepted' })
                                 });
                               }}
                             >
@@ -333,7 +335,7 @@ export default function FreelancerDashboard() {
                                 // Handle job decline
                                 apiRequest(`/api/freelancer/job-requests/${job.id}`, {
                                   method: 'PATCH',
-                                  body: { status: 'declined' }
+                                  body: JSON.stringify({ status: 'declined' })
                                 });
                               }}
                             >

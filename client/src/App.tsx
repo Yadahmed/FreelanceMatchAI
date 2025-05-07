@@ -29,7 +29,7 @@ function Router() {
       
       {/* Core freelancer routes */}
       <Route path="/freelancer-profile" component={FreelancerProfile} />
-      <Route path="/freelancer-dashboard" component={Home} />
+      <Route path="/freelancer-dashboard" component={FreelancerDashboard} />
       
       {/* Core client routes */}
       <Route path="/client-dashboard" component={Home} />
