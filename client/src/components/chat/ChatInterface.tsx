@@ -1,110 +1,226 @@
-import { useState, useEffect, useRef } from "react";
-import { useChat } from "@/hooks/use-chat";
-import ChatMessage from "./ChatMessage";
-import ChatInput from "./ChatInput";
-import FreelancerCard from "@/components/freelancer/FreelancerCard";
-import { MessageType } from "@/types";
+import { useState, useRef, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 
-export default function ChatInterface() {
-  const { messages, sendMessage, isProcessing } = useChat();
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-  
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Loader2, Send, User, Bot } from 'lucide-react';
+import { FreelancerCard } from '@/components/freelancer/FreelancerCard';
+
+// Types for chat messages
+interface Message {
+  id: string;
+  content: string;
+  isUserMessage: boolean;
+  timestamp: Date;
+  freelancerResults?: any[];
+}
+
+export function ChatInterface() {
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '0',
+      content: 'Hello! I\'m your FreelanceMatchAI assistant. Tell me what type of freelancer you\'re looking for, and I\'ll help match you with the best candidates for your project.',
+      isUserMessage: false,
+      timestamp: new Date(),
+    },
+  ]);
+  const [inputValue, setInputValue] = useState('');
+  const [chatId, setChatId] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { isAuthenticated, currentUser } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   // Scroll to bottom when messages change
   useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = (messageText: string) => {
-    if (messageText.trim() !== "") {
-      sendMessage(messageText);
+  // Focus on input when component mounts
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim()) return;
+    
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to use the chat feature.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Generate a temporary ID for the message
+    const tempId = Date.now().toString();
+    
+    // Add user message to chat
+    const userMessage: Message = {
+      id: tempId,
+      content: inputValue,
+      isUserMessage: true,
+      timestamp: new Date(),
+    };
+    
+    setMessages((prev) => [...prev, userMessage]);
+    setInputValue('');
+    setIsLoading(true);
+    
+    try {
+      // Send message to server
+      const payload = {
+        message: inputValue,
+        chatId: chatId,
+      };
+      
+      const response = await apiRequest('/api/chat/message', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      
+      // Update chat ID if it's a new chat
+      if (!chatId && response.chatId) {
+        setChatId(response.chatId);
+      }
+      
+      // Add bot response to chat
+      const botMessage: Message = {
+        id: response.id || (Date.now() + 1).toString(),
+        content: response.content,
+        isUserMessage: false,
+        timestamp: new Date(response.timestamp || Date.now()),
+        freelancerResults: response.freelancerResults,
+      };
+      
+      setMessages((prev) => [...prev, botMessage]);
+      
+      // Invalidate queries if needed
+      if (response.freelancerResults) {
+        queryClient.invalidateQueries({ queryKey: ['/api/freelancers'] });
+      }
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      
+      // Add error message to chat
+      const errorMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        content: 'Sorry, there was an error processing your request. Please try again later.',
+        isUserMessage: false,
+        timestamp: new Date(),
+      };
+      
+      setMessages((prev) => [...prev, errorMessage]);
+      
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to send message',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <div className="bg-white rounded-[12px] shadow-lg overflow-hidden">
-        {/* Chat Header */}
-        <div className="bg-primary px-4 py-3 flex items-center">
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-            </svg>
-          </div>
-          <div className="ml-3">
-            <h2 className="text-white font-semibold text-lg">MatchMaker AI</h2>
-            <div className="flex items-center">
-              <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-              <span className="text-white/80 text-xs">Online</span>
-            </div>
-          </div>
-        </div>
-        
-        {/* Chat Messages */}
-        <div 
-          ref={chatContainerRef}
-          className="p-4 overflow-y-auto h-[500px] md:h-[600px] no-scrollbar"
-        >
+    <div className="flex flex-col h-full">
+      <Card className="flex-1 border rounded-lg overflow-hidden flex flex-col">
+        <ScrollArea className="flex-1 p-4">
           <div className="space-y-4">
-            {messages.length === 0 ? (
-              <ChatMessage
-                isUser={false}
-                content={
-                  <>
-                    <p>
-                      Hi there! I'm MatchMaker AI, your personal freelance matchmaking assistant. Tell me about the project you need help with, and I'll find the perfect freelancers for you!
-                    </p>
-                    <p className="mt-2">
-                      For example, you can say: "I need a photographer in Erbil for 3 days" or "Looking for a frontend developer with React experience for a 2-month project."
-                    </p>
-                  </>
-                }
-              />
-            ) : (
-              messages.map((message, index) => (
-                <div key={message.id || index}>
-                  <ChatMessage
-                    isUser={message.isUserMessage}
-                    content={message.content}
-                  />
-                  
-                  {/* Render freelancer results if available */}
-                  {!message.isUserMessage && message.freelancerResults && message.freelancerResults.length > 0 && (
-                    <div className="mt-4 pl-10">
-                      <p className="text-gray-800 mb-4">
-                        Here are my top {message.freelancerResults.length} recommendations:
-                      </p>
-                      <div className="space-y-4">
-                        {message.freelancerResults.map((freelancer, idx) => (
-                          <FreelancerCard 
-                            key={idx} 
-                            freelancer={freelancer} 
-                          />
-                        ))}
-                      </div>
-                      <p className="mt-4 text-gray-800">
-                        Would you like to know more about any of these freelancers? Or would you like me to find freelancers with different criteria?
-                      </p>
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.isUserMessage ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`flex gap-3 max-w-[80%] ${
+                    message.isUserMessage ? 'flex-row-reverse' : 'flex-row'
+                  }`}
+                >
+                  <Avatar className="h-8 w-8">
+                    {message.isUserMessage ? (
+                      <>
+                        <AvatarImage 
+                          src={currentUser?.photoURL || undefined} 
+                          alt={currentUser?.displayName || currentUser?.username || 'User'} 
+                        />
+                        <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                      </>
+                    ) : (
+                      <>
+                        <AvatarFallback><Bot className="h-4 w-4" /></AvatarFallback>
+                      </>
+                    )}
+                  </Avatar>
+                  <div>
+                    <div
+                      className={`rounded-lg p-3 ${
+                        message.isUserMessage
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      <p className="text-sm">{message.content}</p>
                     </div>
-                  )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(message.timestamp).toLocaleTimeString()}
+                    </p>
+                    
+                    {/* Render freelancer results if available */}
+                    {!message.isUserMessage && message.freelancerResults && message.freelancerResults.length > 0 && (
+                      <div className="mt-4 space-y-4">
+                        <h3 className="text-sm font-medium">Top Freelancers For Your Request:</h3>
+                        <div className="grid gap-4">
+                          {message.freelancerResults.map((freelancer) => (
+                            <FreelancerCard key={freelancer.id} freelancer={freelancer} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ))
-            )}
-            
-            {/* Show typing indicator when processing */}
-            {isProcessing && (
-              <ChatMessage
-                isUser={false}
-                isTyping={true}
-              />
-            )}
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+
+        <div className="p-4 border-t">
+          <div className="flex gap-2">
+            <Input
+              ref={inputRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your message..."
+              className="flex-1"
+              disabled={isLoading}
+            />
+            <Button onClick={handleSendMessage} disabled={!inputValue.trim() || isLoading}>
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
           </div>
         </div>
-        
-        {/* Chat Input */}
-        <ChatInput onSendMessage={handleSendMessage} isDisabled={isProcessing} />
-      </div>
+      </Card>
     </div>
   );
 }

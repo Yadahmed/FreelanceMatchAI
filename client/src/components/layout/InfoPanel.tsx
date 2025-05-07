@@ -1,88 +1,119 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { MessageSquare, Search, Award, ZapIcon, Clock } from 'lucide-react';
 
-export default function InfoPanel() {
+export function InfoPanel() {
   return (
-    <>
-      <h2 className="font-inter font-bold text-2xl md:text-3xl text-gray-900 leading-tight mb-4">
-        Find the <span className="text-primary">perfect freelancer</span> for your project in minutes
-      </h2>
-      <p className="text-gray-600 mb-6">
-        Our AI-powered matchmaking system connects you with talented freelancers based on your specific needs. Just describe your project, and we'll handle the rest.
-      </p>
-      
-      <Card className="mb-6">
-        <CardContent className="pt-5">
-          <h3 className="font-inter font-semibold text-lg mb-3 flex items-center">
-            <CheckCircle className="w-5 h-5 mr-2 text-secondary" />
-            How It Works
-          </h3>
-          <ol className="space-y-3">
-            <li className="flex">
-              <span className="bg-primary/10 text-primary font-semibold rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0">1</span>
-              <p className="text-sm text-gray-700">Describe your project needs in natural language</p>
-            </li>
-            <li className="flex">
-              <span className="bg-primary/10 text-primary font-semibold rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0">2</span>
-              <p className="text-sm text-gray-700">Our AI analyzes your requirements</p>
-            </li>
-            <li className="flex">
-              <span className="bg-primary/10 text-primary font-semibold rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0">3</span>
-              <p className="text-sm text-gray-700">We match you with the best freelancers</p>
-            </li>
-            <li className="flex">
-              <span className="bg-primary/10 text-primary font-semibold rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0">4</span>
-              <p className="text-sm text-gray-700">Connect and hire with confidence</p>
-            </li>
-          </ol>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">FreelanceMatchAI</h1>
+        <p className="text-lg text-muted-foreground">
+          AI-powered matchmaking for freelancers and clients
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">How It Works</CardTitle>
+          <CardDescription>
+            Our AI analyzes your requirements to find the perfect freelancer for your project
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-0">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 bg-primary/10 p-2 rounded-full">
+              <MessageSquare className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-medium">1. Describe Your Needs</h3>
+              <p className="text-sm text-muted-foreground">
+                Tell our AI what type of freelancer you're looking for and what skills you need
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 bg-primary/10 p-2 rounded-full">
+              <Search className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-medium">2. AI Matching</h3>
+              <p className="text-sm text-muted-foreground">
+                Our algorithm analyzes hundreds of freelancer profiles to find your perfect match
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 bg-primary/10 p-2 rounded-full">
+              <Award className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-medium">3. Review Top Matches</h3>
+              <p className="text-sm text-muted-foreground">
+                Choose from ranked recommendations based on skills, experience, and performance
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
-      
-      <div className="hidden md:block">
-        <h3 className="font-inter font-semibold text-lg mb-3">Our Matching Algorithm</h3>
-        <Card>
-          <CardContent className="pt-5">
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Job Performance</span>
-                  <span className="text-sm font-medium text-gray-700">50%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-primary rounded-full h-2" style={{ width: "50%" }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Skills & Experience</span>
-                  <span className="text-sm font-medium text-gray-700">20%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-secondary rounded-full h-2" style={{ width: "20%" }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Responsiveness</span>
-                  <span className="text-sm font-medium text-gray-700">15%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-accent rounded-full h-2" style={{ width: "15%" }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Fairness Boost</span>
-                  <span className="text-sm font-medium text-gray-700">15%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-amber-500 rounded-full h-2" style={{ width: "15%" }}></div>
-                </div>
-              </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Our Ranking Algorithm</CardTitle>
+          <CardDescription>
+            The FreelanceMatchAI algorithm ranks freelancers using four key metrics
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-0">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 bg-primary/10 p-2 rounded-full">
+              <Award className="h-4 w-4 text-primary" />
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </>
+            <div>
+              <h3 className="font-medium">Job Performance (50%)</h3>
+              <p className="text-sm text-muted-foreground">
+                Quality of work and overall client satisfaction from completed projects
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 bg-primary/10 p-2 rounded-full">
+              <ZapIcon className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-medium">Skills & Experience (20%)</h3>
+              <p className="text-sm text-muted-foreground">
+                Relevance of skills to your project and years of professional experience
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 bg-primary/10 p-2 rounded-full">
+              <Clock className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-medium">Responsiveness (15%)</h3>
+              <p className="text-sm text-muted-foreground">
+                Speed and reliability of communication with clients
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 bg-primary/10 p-2 rounded-full">
+              <MessageSquare className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-medium">Fairness Boost (15%)</h3>
+              <p className="text-sm text-muted-foreground">
+                Ensures visibility for new talented freelancers with fewer reviews
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
-import ChatInterface from "@/components/chat/ChatInterface";
-import InfoPanel from "@/components/layout/InfoPanel";
+import { ChatInterface } from "@/components/chat/ChatInterface";
+import { InfoPanel } from "@/components/layout/InfoPanel";
 
 export default function Home() {
   return (

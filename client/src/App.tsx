@@ -7,9 +7,9 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { app } from "./lib/firebase";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import AuthModal from "@/components/auth/AuthModal";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { AuthModal } from "@/components/auth/AuthModal";
 import { AuthProvider } from "@/hooks/use-auth";
 
 function Router() {
@@ -49,17 +49,14 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <div className="flex flex-col min-h-screen bg-background">
-          <Header 
-            onLoginClick={() => setShowAuthModal(true)} 
-            currentUser={currentUser}
-          />
+          <Header />
           <main className="flex-grow pt-16">
             <Router />
           </main>
           <Footer />
           <AuthModal 
             isOpen={showAuthModal} 
-            onClose={() => setShowAuthModal(false)} 
+            onOpenChange={(open) => setShowAuthModal(open)} 
           />
           <Toaster />
         </div>
