@@ -7,17 +7,19 @@ export default function FreelancerProfilePage() {
   const { currentUser, isLoading, isAuthenticated, isFreelancer } = useAuth();
   const [, setLocation] = useLocation();
 
-  // If user is authenticated but already a freelancer, redirect to home
+  // Only redirect if not authenticated - allow newly registered freelancers to stay
   useEffect(() => {
-    if (!isLoading && isAuthenticated && isFreelancer) {
-      setLocation('/');
-    }
-    
-    // If user is not authenticated, redirect to login
+    // If user is not authenticated at all, redirect to home
     if (!isLoading && !isAuthenticated) {
       setLocation('/');
     }
-  }, [isLoading, isAuthenticated, isFreelancer, setLocation]);
+    
+    // If user is already a freelancer with a complete profile, redirect to home
+    // This check allows newly registered freelancers to stay on this page
+    if (!isLoading && isAuthenticated && isFreelancer && currentUser?.hasCompletedProfile) {
+      setLocation('/');
+    }
+  }, [isLoading, isAuthenticated, isFreelancer, currentUser, setLocation]);
 
   if (isLoading) {
     return (

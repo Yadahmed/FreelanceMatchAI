@@ -261,9 +261,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // If registering as freelancer, redirect to profile creation page
       if (!isClient) {
-        // Redirect to freelancer profile page and throw a special error
-        // to prevent showing success messages too early
-        window.location.href = '/freelancer-profile';
+        // Use setTimeout to ensure the redirect happens after the state is updated
+        setTimeout(() => {
+          window.location.href = '/freelancer-profile';
+        }, 100);
+        
+        // Still throw the redirecting error to prevent displaying success messages
         throw new Error('redirecting');
       }
       

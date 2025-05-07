@@ -18,6 +18,14 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/freelancer-profile" component={FreelancerProfile} />
+      <Route path="/job-requests" component={Home} />
+      <Route path="/freelancer-dashboard" component={Home} />
+      <Route path="/client-dashboard" component={Home} />
+      <Route path="/bookings" component={Home} />
+      <Route path="/messages" component={Home} />
+      <Route path="/notifications" component={Home} />
+      <Route path="/settings" component={Home} />
+      <Route path="/profile" component={Home} />
       <Route component={NotFound} />
     </Switch>
   );

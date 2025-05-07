@@ -95,12 +95,16 @@ export function AuthModal({ mode = 'login', isOpen = false, onOpenChange, trigge
 
   const onRegisterSubmit = async (values: RegisterFormValues) => {
     try {
+      // Store the isFreelancer value before registration
+      const isFreelancer = values.isFreelancer;
+      
+      // Attempt to sign up the user
       await signUpWithEmail(
         values.username,
         values.email,
         values.password,
         values.displayName || values.username,
-        !values.isFreelancer // isClient is opposite of isFreelancer
+        !isFreelancer // isClient is opposite of isFreelancer
       );
       
       // Close the modal
@@ -109,10 +113,17 @@ export function AuthModal({ mode = 'login', isOpen = false, onOpenChange, trigge
       // Show a success toast
       toast({
         title: 'Registration Successful',
-        description: values.isFreelancer ? 
-          'Let\'s set up your freelancer profile!' : 
+        description: isFreelancer ? 
+          'Redirecting to set up your freelancer profile...' : 
           'Welcome to FreelanceMatchAI!',
       });
+      
+      // If it's a freelancer, redirect them explicitly (as backup)
+      if (isFreelancer) {
+        setTimeout(() => {
+          window.location.href = '/freelancer-profile';
+        }, 1000);
+      }
     } catch (error: any) {
       // Only show error toast for actual errors, not for redirects
       if (error.message && error.message !== 'redirecting') {
@@ -122,6 +133,12 @@ export function AuthModal({ mode = 'login', isOpen = false, onOpenChange, trigge
             'This email is already registered. Try logging in instead.' : 
             (error.message || 'An error occurred during registration'),
           variant: 'destructive',
+        });
+      } else if (error.message === 'redirecting' && values.isFreelancer) {
+        // For freelancers, show a specific message
+        toast({
+          title: 'Registration Successful', 
+          description: 'Redirecting to freelancer profile setup...',
         });
       }
     }
