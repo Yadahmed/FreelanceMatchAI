@@ -173,7 +173,7 @@ export function AuthModal({ mode = 'login', isOpen = false, onOpenChange, trigge
       <DialogTrigger asChild>
         {triggerButton || <Button variant="outline">Sign In</Button>}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px]" aria-label="Authentication">
         <Tabs
           defaultValue={activeTab}
           value={activeTab}

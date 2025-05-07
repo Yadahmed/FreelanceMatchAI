@@ -15,9 +15,11 @@ export default function FreelancerProfilePage() {
     }
     
     // If user is already a freelancer with a complete profile, redirect to home
-    // This check allows newly registered freelancers to stay on this page
-    if (!isLoading && isAuthenticated && isFreelancer && currentUser?.hasCompletedProfile) {
-      setLocation('/');
+    // For now, just check if user is a freelancer - we'll keep them on this page during registration
+    if (!isLoading && isAuthenticated && isFreelancer) {
+      // In the future you could add a hasCompletedProfile flag to redirect existing freelancers
+      // For now, we'll keep all freelancers on this page to complete their profile
+      // setLocation('/');
     }
   }, [isLoading, isAuthenticated, isFreelancer, currentUser, setLocation]);
 
