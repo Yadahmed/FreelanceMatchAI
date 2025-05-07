@@ -350,7 +350,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const createFreelancerProfile = async (profileData: any): Promise<void> => {
-    if (!currentUser) {
+    if (!currentUser || !firebaseUser) {
       throw new Error('You must be logged in to create a freelancer profile');
     }
     
@@ -363,10 +363,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         userId: currentUser.id
       };
       
-      // Create the freelancer profile
+      // Get a fresh token - critical for auth to work
+      const token = await firebaseUser.getIdToken(true); // Force refresh token
+      console.log('[createFreelancerProfile] Got fresh token for auth');
+      
+      // Create the freelancer profile with the auth token
       const response = await apiRequest('/api/auth/freelancer-profile', {
         method: 'POST',
-        body: JSON.stringify(enhancedProfileData)
+        body: JSON.stringify(enhancedProfileData),
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       
       console.log('Freelancer profile created:', response);
