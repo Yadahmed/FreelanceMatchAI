@@ -14,12 +14,27 @@ import { aiChatRequestSchema, jobAnalysisRequestSchema } from '@shared/ai-schema
 export async function processAIMessage(req: Request, res: Response) {
   try {
     if (!req.user) {
+      console.log('[processAIMessage] No authenticated user found');
       return res.status(401).json({ message: 'Authentication required' });
     }
 
+    console.log('[processAIMessage] User authenticated:', req.user.id);
+
     // Validate request body
-    const { message } = aiChatRequestSchema.parse(req.body);
+    const validatedData = aiChatRequestSchema.safeParse(req.body);
+    
+    if (!validatedData.success) {
+      console.log('[processAIMessage] Invalid request data:', validatedData.error);
+      return res.status(400).json({ 
+        message: 'Invalid request data', 
+        errors: validatedData.error.errors 
+      });
+    }
+    
+    const { message } = validatedData.data;
     const userId = req.user.id;
+    
+    console.log('[processAIMessage] Processing message for user:', userId, 'Message length:', message.length);
 
     // First try DeepSeek service
     const isDeepSeekAvailable = await deepseekService.checkAvailability();
@@ -173,6 +188,12 @@ export async function processJobRequest(req: Request, res: Response) {
  */
 export async function checkAIStatus(req: Request, res: Response) {
   try {
+    // Ensure authentication
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    console.log('[checkAIStatus] User authenticated:', req.user.id);
+    
     // Check all available AI services
     console.log('Checking AI services availability...');
     
