@@ -1,26 +1,27 @@
 import axios from 'axios';
-import { env } from 'process';
+import { storage } from '../storage';
+import { db } from '../db';
+import { aiChatMessages, aiJobAnalyses } from '@shared/ai-schemas';
+import { FreelancerMatch, AIMatchResult } from '@shared/ai-schemas';
+import { v4 as uuidv4 } from 'uuid';
+import { eq } from 'drizzle-orm';
 
-// Configuration for connecting to the local DeepSeek R1 server
 interface DeepSeekConfig {
   apiUrl: string;
   apiKey?: string; // Optional as local deployments might not require an API key
 }
 
-// Define the structure for chat messages
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
 
-// Structure for chat history
 export interface ChatHistory {
   userId: number;
   messages: ChatMessage[];
   metadata?: Record<string, any>; // Additional data like job preferences, etc.
 }
 
-// Response from the AI model
 export interface AIResponse {
   content: string;
   metadata?: any; // Any additional data returned by the model
@@ -32,169 +33,500 @@ export interface AIResponse {
 export class AIService {
   private config: DeepSeekConfig;
   private chatHistories: Map<number, ChatHistory> = new Map();
-
+  
   constructor(config?: Partial<DeepSeekConfig>) {
-    // Default configuration points to localhost
+    // Default configuration for local deployment
     this.config = {
-      apiUrl: config?.apiUrl || process.env.DEEPSEEK_API_URL || 'http://localhost:8000/v1',
-      apiKey: config?.apiKey || process.env.DEEPSEEK_API_KEY
+      apiUrl: process.env.DEEPSEEK_API_URL || 'http://localhost:8000/v1',
+      apiKey: process.env.DEEPSEEK_API_KEY,
+      ...config
     };
-
-    console.log('[AIService] Initialized with API URL:', this.config.apiUrl);
+    
+    console.log('AIService initialized with config:', {
+      apiUrl: this.config.apiUrl,
+      hasApiKey: !!this.config.apiKey
+    });
   }
-
+  
   /**
    * Check if the DeepSeek R1 server is available
    */
   async checkAvailability(): Promise<boolean> {
     try {
-      console.log('[AIService] Checking availability of DeepSeek R1 server...');
-      // This endpoint might need to be adjusted based on the actual DeepSeek R1 API
-      const response = await axios.get(`${this.config.apiUrl}/health`);
+      // Simple health check to see if the server is responding
+      const response = await axios.get(`${this.config.apiUrl}/health`, {
+        timeout: 5000, // 5 second timeout
+      });
+      
       return response.status === 200;
     } catch (error) {
-      console.error('[AIService] DeepSeek R1 server is not available:', error);
+      console.error('DeepSeek R1 availability check failed:', error);
       return false;
     }
   }
-
+  
   /**
    * Get or create a chat history for a user
    */
-  private getOrCreateChatHistory(userId: number): ChatHistory {
-    if (!this.chatHistories.has(userId)) {
-      this.chatHistories.set(userId, {
-        userId,
-        messages: [
-          {
-            role: 'system',
-            content: `You are FreelanceMatchAI, an AI assistant for a freelance matchmaking platform. 
-            Your goal is to help clients find the best freelancers for their projects and to assist 
-            freelancers in finding suitable job opportunities. Be helpful, concise, and focus on 
-            understanding the client's needs to make the best matches.`
-          }
-        ]
-      });
+  private async getOrCreateChatHistory(userId: number): Promise<ChatHistory> {
+    // Check in-memory cache first
+    if (this.chatHistories.has(userId)) {
+      return this.chatHistories.get(userId)!;
     }
-    return this.chatHistories.get(userId)!;
-  }
+    
+    // Try to load from database
+    try {
+      const messages = await db.select().from(aiChatMessages)
+        .where(eq(aiChatMessages.userId, userId))
+        .orderBy(aiChatMessages.timestamp);
+      
+      if (messages.length > 0) {
+        // Convert DB messages to chat history format
+        const conversationId = messages[0].conversationId;
+        const chatHistory: ChatHistory = {
+          userId,
+          messages: messages.map(msg => ({
+            role: msg.role as 'system' | 'user' | 'assistant',
+            content: msg.content
+          })),
+          metadata: messages[0].metadata as Record<string, any> || {}
+        };
+        
+        this.chatHistories.set(userId, chatHistory);
+        return chatHistory;
+      }
+    } catch (error) {
+      console.error('Error loading chat history from database:', error);
+    }
+    
+    // Create new chat history with system prompt
+    const systemPrompt = `You are FreelanceAI, an intelligent assistant for a freelance marketplace.
+Your role is to help clients find the best freelancers for their projects and to assist freelancers in finding suitable jobs.
+You should be professional, helpful, and concise in your responses.
+Always prioritize matching the right freelancer with the right job based on skills, experience, and availability.
+You can analyze job requests and provide recommendations based on the weighted scoring system:
+- Job Performance (50%): Past success on similar projects 
+- Skills & Experience (20%): Relevant skills and years of experience
+- Responsiveness & Availability (15%): How quickly they respond and their current availability
+- Fairness Boost (15%): Boosting newer freelancers with fewer reviews to give everyone a fair chance
 
+Current date: ${new Date().toISOString().split('T')[0]}`;
+
+    const newHistory: ChatHistory = {
+      userId,
+      messages: [
+        { role: 'system', content: systemPrompt }
+      ],
+      metadata: {}
+    };
+    
+    this.chatHistories.set(userId, newHistory);
+    return newHistory;
+  }
+  
   /**
    * Save chat history to persistent storage
-   * This is a placeholder - in a real implementation, this would save to a database
    */
   private async saveChatHistory(userId: number, history: ChatHistory): Promise<void> {
-    // In a real implementation, this would save to a database
-    // For now, just update our in-memory map
-    this.chatHistories.set(userId, history);
-    console.log(`[AIService] Saved chat history for user ${userId}, message count: ${history.messages.length}`);
+    try {
+      // Generate a conversation ID if none exists
+      const conversationId = history.metadata?.conversationId || uuidv4();
+      
+      // Save the system message if this is a new conversation
+      if (!history.metadata?.conversationId) {
+        // Update metadata with conversation ID
+        history.metadata = {
+          ...history.metadata,
+          conversationId
+        };
+        
+        // Save system message
+        await db.insert(aiChatMessages).values({
+          userId,
+          role: history.messages[0].role,
+          content: history.messages[0].content,
+          conversationId,
+          metadata: history.metadata || {}
+        });
+      }
+      
+      // Save the latest message (assuming it's at the end of the messages array)
+      const latestMessage = history.messages[history.messages.length - 1];
+      
+      await db.insert(aiChatMessages).values({
+        userId,
+        role: latestMessage.role,
+        content: latestMessage.content,
+        conversationId,
+        metadata: history.metadata || {}
+      });
+      
+      // Update cache
+      this.chatHistories.set(userId, history);
+      
+    } catch (error) {
+      console.error('Error saving chat history:', error);
+    }
   }
-
+  
   /**
    * Send a message to the DeepSeek R1 model
    */
   async sendMessage(userId: number, message: string): Promise<AIResponse> {
+    // Get chat history for this user
+    const history = await this.getOrCreateChatHistory(userId);
+    
+    // Add user message to history
+    history.messages.push({
+      role: 'user',
+      content: message
+    });
+    
+    // Save user message to database
+    await this.saveChatHistory(userId, history);
+    
     try {
-      // Get chat history for this user
-      const chatHistory = this.getOrCreateChatHistory(userId);
-      
-      // Add user message to history
-      chatHistory.messages.push({
-        role: 'user',
-        content: message
-      });
-
-      console.log(`[AIService] Sending message to DeepSeek R1 for user ${userId}`);
-      
-      // Structure the request according to DeepSeek R1's API
-      const requestData = {
-        model: "deepseek-r1", // Replace with the specific model name if different
-        messages: chatHistory.messages,
+      // Prepare the request to DeepSeek R1
+      const apiRequest = {
+        model: "deepseek-chat",
+        messages: history.messages,
         temperature: 0.7,
         max_tokens: 1000,
       };
-
+      
+      // Make API request
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
       
-      // Add API key if available
+      // Add API key if configured
       if (this.config.apiKey) {
         headers['Authorization'] = `Bearer ${this.config.apiKey}`;
       }
-
-      // Make the request to the DeepSeek R1 API
+      
       const response = await axios.post(
-        `${this.config.apiUrl}/chat/completions`, 
-        requestData,
+        `${this.config.apiUrl}/chat/completions`,
+        apiRequest,
         { headers }
       );
-
+      
       // Extract the assistant's response
-      const aiResponse = response.data.choices[0].message.content;
-
-      // Add AI response to chat history
-      chatHistory.messages.push({
+      const assistantMessage = response.data.choices[0].message;
+      
+      // Add assistant's response to history
+      history.messages.push({
         role: 'assistant',
-        content: aiResponse
+        content: assistantMessage.content
       });
-
-      // Save updated chat history
-      await this.saveChatHistory(userId, chatHistory);
-
+      
+      // Save assistant message to database
+      await this.saveChatHistory(userId, history);
+      
       return {
-        content: aiResponse
+        content: assistantMessage.content,
+        metadata: {}
       };
     } catch (error: any) {
-      console.error('[AIService] Error sending message to DeepSeek R1:', error);
+      console.error('Error sending message to DeepSeek R1:', error);
       
-      // Provide meaningful error message
-      let errorMessage = 'Failed to communicate with AI service.';
-      
+      // For non-availability errors, provide more context
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        errorMessage = `AI service error: ${error.response.status} - ${JSON.stringify(error.response.data)}`;
-        console.error('[AIService] Response error data:', error.response.data);
+        throw new Error(`DeepSeek R1 API error: ${error.response.status} - ${error.response.data?.error?.message || error.message}`);
       } else if (error.request) {
-        // The request was made but no response was received
-        errorMessage = 'AI service unavailable - no response received';
+        throw new Error('DeepSeek R1 not responding. Check if the server is running.');
       }
       
-      throw new Error(errorMessage);
+      throw error;
     }
   }
-
+  
   /**
    * Process a job request and find matching freelancers
    * This will use the AI to analyze the request and apply the weighted scoring algorithm
    */
-  async processJobRequest(userId: number, jobDescription: string, skills: string[]): Promise<any> {
-    try {
-      const systemPrompt = `
-        Analyze the following job request and extract key requirements:
-        - Required skills
-        - Project timeline
-        - Budget constraints
-        - Communication expectations
-        - Special requirements
-
-        Return the analysis in JSON format.
-      `;
-
-      // For now, just return a placeholder
-      // In the real implementation, this would use DeepSeek R1 to analyze the job request
-      // and then apply the weighted scoring algorithm to find matching freelancers
+  async processJobRequest(userId: number, jobDescription: string, skills: string[]): Promise<AIMatchResult> {
+    // Get all freelancers from storage
+    const allFreelancers = await storage.getAllFreelancers();
+    
+    // First, analyze the job request using DeepSeek R1
+    const jobAnalysis = await this.analyzeJobRequest(userId, jobDescription, skills);
+    
+    // Then, score each freelancer using our weighted algorithm
+    const matches: FreelancerMatch[] = allFreelancers.map(freelancer => {
+      // Job Performance (50%)
+      const jobPerformanceScore = Math.min(freelancer.jobPerformance / 10, 10);
+      
+      // Skills & Experience (20%)
+      const skillsScore = this.calculateSkillsScore(freelancer.skills, skills);
+      
+      // Responsiveness (15%)
+      const responsivenessScore = Math.min(freelancer.responsiveness / 10, 10);
+      
+      // Fairness boost (15%) - boost newer freelancers
+      const fairnessScore = this.calculateFairnessScore(freelancer.completedJobs);
+      
+      // Calculate weighted score
+      const totalScore = (
+        jobPerformanceScore * 0.5 +
+        skillsScore * 0.2 +
+        responsivenessScore * 0.15 +
+        fairnessScore * 0.15
+      );
+      
+      // Generate match reasons
+      const matchReasons = [];
+      if (jobPerformanceScore > 7) matchReasons.push('Excellent job performance history');
+      if (skillsScore > 7) matchReasons.push('Strong skill match for this project');
+      if (responsivenessScore > 7) matchReasons.push('Highly responsive to client requests');
+      if (fairnessScore > 7) matchReasons.push('Promising talent worth considering');
+      
       return {
-        analysis: "This is a placeholder for the DeepSeek R1 job analysis",
-        matches: []
+        freelancerId: freelancer.id,
+        score: Number(totalScore.toFixed(2)),
+        matchReasons,
+        jobPerformanceScore: Number(jobPerformanceScore.toFixed(2)),
+        skillsScore: Number(skillsScore.toFixed(2)),
+        responsivenessScore: Number(responsivenessScore.toFixed(2)),
+        fairnessScore: Number(fairnessScore.toFixed(2))
       };
+    });
+    
+    // Sort by score (descending)
+    matches.sort((a, b) => b.score - a.score);
+    
+    // Take top matches
+    const topMatches = matches.slice(0, 3);
+    
+    // Generate suggested follow-up questions
+    const suggestedQuestions = await this.generateSuggestedQuestions(jobDescription, skills);
+    
+    // Create the result
+    const result: AIMatchResult = {
+      jobAnalysis,
+      matches: topMatches,
+      suggestedQuestions
+    };
+    
+    // Save the analysis to the database
+    try {
+      await db.insert(aiJobAnalyses).values({
+        userId,
+        analysis: jobAnalysis,
+        matches: topMatches,
+        suggestedQuestions
+      });
     } catch (error) {
-      console.error('[AIService] Error processing job request:', error);
-      throw error;
+      console.error('Error saving job analysis:', error);
     }
+    
+    return result;
+  }
+  
+  /**
+   * Analyze a job request to understand requirements and priorities
+   */
+  private async analyzeJobRequest(userId: number, jobDescription: string, skills: string[]): Promise<Record<string, any>> {
+    try {
+      // Prepare the system message specifically for job analysis
+      const systemMessage = `You are a job analysis AI that helps understand and categorize job requirements. 
+      Analyze the following job description and extract key information such as required skills, 
+      estimated complexity, project duration, and any special requirements.
+      Provide a structured analysis that can be used to match with freelancers.`;
+      
+      // Create messages for the API
+      const messages: ChatMessage[] = [
+        { role: 'system', content: systemMessage },
+        { role: 'user', content: `Please analyze this job request: ${jobDescription}\nMentioned skills: ${skills.join(', ')}` }
+      ];
+      
+      // Make API request
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (this.config.apiKey) {
+        headers['Authorization'] = `Bearer ${this.config.apiKey}`;
+      }
+      
+      const response = await axios.post(
+        `${this.config.apiUrl}/chat/completions`,
+        {
+          model: "deepseek-chat",
+          messages,
+          temperature: 0.3, // Lower temperature for more deterministic analysis
+          max_tokens: 1000,
+        },
+        { headers }
+      );
+      
+      // Extract the analysis
+      const analysisText = response.data.choices[0].message.content;
+      
+      // Convert the analysis text into a structured object
+      // For this example, we'll use a simple parsing approach
+      // In a real implementation, we would use a more sophisticated approach
+      const analysisObject: Record<string, any> = {
+        raw: analysisText,
+        extractedSkills: skills,
+        complexity: this.extractComplexity(analysisText),
+        estimatedDuration: this.extractDuration(analysisText),
+        budget: this.extractBudget(analysisText)
+      };
+      
+      return analysisObject;
+    } catch (error) {
+      console.error('Error analyzing job request:', error);
+      
+      // Return a basic analysis if AI processing fails
+      return {
+        raw: "Failed to analyze with AI",
+        extractedSkills: skills,
+        complexity: "medium",
+        estimatedDuration: "unknown",
+        budget: "unknown"
+      };
+    }
+  }
+  
+  /**
+   * Generate suggested follow-up questions for a job request
+   */
+  private async generateSuggestedQuestions(jobDescription: string, skills: string[]): Promise<string[]> {
+    try {
+      // Prepare the system message specifically for question generation
+      const systemMessage = `You are an assistant helping clients clarify their job requests. 
+      Based on the following job description, generate 3 follow-up questions that would help clarify requirements, 
+      timeline, budget, or other important factors. Format each question on a new line.`;
+      
+      // Create messages for the API
+      const messages: ChatMessage[] = [
+        { role: 'system', content: systemMessage },
+        { role: 'user', content: `Job description: ${jobDescription}\nMentioned skills: ${skills.join(', ')}` }
+      ];
+      
+      // Make API request
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (this.config.apiKey) {
+        headers['Authorization'] = `Bearer ${this.config.apiKey}`;
+      }
+      
+      const response = await axios.post(
+        `${this.config.apiUrl}/chat/completions`,
+        {
+          model: "deepseek-chat",
+          messages,
+          temperature: 0.7,
+          max_tokens: 500,
+        },
+        { headers }
+      );
+      
+      // Extract the questions
+      const questionsText = response.data.choices[0].message.content;
+      
+      // Split into separate questions and clean them up
+      const questions = questionsText
+        .split('\n')
+        .filter(line => line.trim().length > 0 && line.includes('?'))
+        .map(line => line.replace(/^\d+\.\s*/, '').trim())
+        .slice(0, 3);
+      
+      return questions;
+    } catch (error) {
+      console.error('Error generating suggested questions:', error);
+      
+      // Return default questions if AI processing fails
+      return [
+        "What is your expected timeline for this project?",
+        "Do you have a specific budget range in mind?",
+        "What would you consider a successful outcome for this project?"
+      ];
+    }
+  }
+  
+  /**
+   * Calculate a score for skills matching
+   */
+  private calculateSkillsScore(freelancerSkills: string[], requestedSkills: string[]): number {
+    if (!requestedSkills || requestedSkills.length === 0) {
+      return 7; // Default score if no specific skills requested
+    }
+    
+    // Normalize skills for comparison
+    const normalizedFreelancerSkills = freelancerSkills.map(s => s.toLowerCase());
+    const normalizedRequestedSkills = requestedSkills.map(s => s.toLowerCase());
+    
+    // Count matches
+    let matches = 0;
+    for (const skill of normalizedRequestedSkills) {
+      if (normalizedFreelancerSkills.includes(skill)) {
+        matches++;
+      }
+    }
+    
+    // Calculate percentage match
+    const matchPercentage = (matches / normalizedRequestedSkills.length) * 100;
+    
+    // Convert to 0-10 scale
+    return Math.min(Math.round(matchPercentage / 10), 10);
+  }
+  
+  /**
+   * Calculate a fairness boost score
+   * This gives newer freelancers with fewer completed jobs a boost
+   */
+  private calculateFairnessScore(completedJobs: number): number {
+    // Inverse relationship - fewer jobs gets higher score
+    if (completedJobs <= 5) return 10;
+    if (completedJobs <= 10) return 8;
+    if (completedJobs <= 20) return 6;
+    if (completedJobs <= 50) return 4;
+    return 2; // Very experienced freelancers get less fairness boost
+  }
+  
+  /**
+   * Extract project complexity from analysis text
+   */
+  private extractComplexity(text: string): string {
+    const lowMatch = text.match(/simple|basic|straightforward|easy|low complexity/i);
+    const highMatch = text.match(/complex|advanced|sophisticated|difficult|challenging|high complexity/i);
+    
+    if (highMatch) return "high";
+    if (lowMatch) return "low";
+    return "medium";
+  }
+  
+  /**
+   * Extract estimated duration from analysis text
+   */
+  private extractDuration(text: string): string {
+    // Look for patterns like "2-3 weeks", "1 month", etc.
+    const durationMatch = text.match(/(\d+)(-\d+)?\s*(day|days|week|weeks|month|months)/i);
+    
+    if (durationMatch) {
+      return durationMatch[0];
+    }
+    
+    return "undetermined";
+  }
+  
+  /**
+   * Extract budget from analysis text
+   */
+  private extractBudget(text: string): string {
+    // Look for patterns like "$500", "$1,000-$2,000", etc.
+    const budgetMatch = text.match(/\$\d{1,3}(,\d{3})*(\s*-\s*\$\d{1,3}(,\d{3})*)*/i);
+    
+    if (budgetMatch) {
+      return budgetMatch[0];
+    }
+    
+    return "undetermined";
   }
 }
 
-// Export a singleton instance for use throughout the application
+// Create and export a singleton instance
 export const aiService = new AIService();

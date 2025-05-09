@@ -11,6 +11,11 @@ import {
   sendMessage 
 } from '../controllers/chatController';
 import {
+  processAIMessage,
+  processJobRequest,
+  checkAIStatus
+} from '../controllers/aiController';
+import {
   getDashboard,
   updateProfile,
   getJobRequests as getFreelancerJobRequests,
@@ -126,6 +131,11 @@ router.post('/auth/logout', logout);
 
 // Chat routes
 router.post('/chat/message', requireAuth, sendMessage);
+
+// AI routes
+router.get('/ai/status', checkAIStatus);
+router.post('/ai/message', requireAuth, processAIMessage);
+router.post('/ai/job-analysis', requireAuth, processJobRequest);
 
 // Freelancer routes
 router.get('/freelancer/dashboard', requireFreelancer, getDashboard);
