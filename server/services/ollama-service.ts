@@ -1,502 +1,295 @@
 import axios from 'axios';
 import { storage } from '../storage';
-import { db } from '../db';
-import { aiChatMessages, aiJobAnalyses } from '@shared/ai-schemas';
-import { FreelancerMatch, AIMatchResult } from '@shared/ai-schemas';
-import { v4 as uuidv4 } from 'uuid';
-import { eq } from 'drizzle-orm';
-
-interface OllamaConfig {
-  apiUrl: string;
-  model: string;
-}
-
-export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
-
-export interface ChatHistory {
-  userId: number;
-  messages: ChatMessage[];
-  metadata?: Record<string, any>;
-}
-
-export interface AIResponse {
-  content: string;
-  metadata?: any;
-}
+import { 
+  AIChatResponse, 
+  AIMatchResult, 
+  FreelancerMatch 
+} from '@shared/ai-schemas';
 
 /**
- * Service for interacting with Ollama AI models
+ * Service for interacting with Ollama API
  */
-export class OllamaService {
-  private config: OllamaConfig;
-  private chatHistories: Map<number, ChatHistory> = new Map();
+class OllamaService {
+  private apiUrl: string;
+  private model: string;
+  private sessionContext: Map<number, string[]> = new Map();
+  private maxContextLength: number = 10;
   
-  constructor(config?: Partial<OllamaConfig>) {
-    this.config = {
-      apiUrl: process.env.OLLAMA_API_URL || 'http://localhost:11434/api',
-      model: process.env.OLLAMA_MODEL || 'llama3',
-      ...config
-    };
+  constructor() {
+    // Default to localhost:11434 as this is the standard Ollama port
+    this.apiUrl = process.env.OLLAMA_API_URL || 'http://localhost:11434/api';
+    this.model = process.env.OLLAMA_MODEL || 'llama3'; // Default to llama3 if available
     
     console.log('OllamaService initialized with config:', {
-      apiUrl: this.config.apiUrl,
-      model: this.config.model
+      apiUrl: this.apiUrl,
+      model: this.model
     });
   }
   
   /**
-   * Check if the Ollama server is available
+   * Check if Ollama is available
    */
   async checkAvailability(): Promise<boolean> {
     try {
-      // Simple version check to see if Ollama is responding
-      const response = await axios.get(`${this.config.apiUrl.replace('/api', '')}/api/version`, {
-        timeout: 5000,
-      });
-      
+      // Check if Ollama server is responding
+      const response = await axios.get(`${this.apiUrl}/tags`);
       return response.status === 200;
-    } catch (error) {
-      console.error('Ollama availability check failed:', error);
+    } catch (error: any) {
+      console.log('Ollama availability check failed:', error?.message || 'Unknown error');
       return false;
     }
   }
   
   /**
-   * Get or create a chat history for a user
+   * Get the user's message history context
    */
-  private async getOrCreateChatHistory(userId: number): Promise<ChatHistory> {
-    // Check in-memory cache first
-    if (this.chatHistories.has(userId)) {
-      return this.chatHistories.get(userId)!;
+  private getUserContext(userId: number): string[] {
+    if (!this.sessionContext.has(userId)) {
+      this.sessionContext.set(userId, []);
     }
-    
-    // Try to load from database
-    try {
-      const messages = await db.select().from(aiChatMessages)
-        .where(eq(aiChatMessages.userId, userId))
-        .orderBy(aiChatMessages.timestamp);
-      
-      if (messages.length > 0) {
-        // Convert DB messages to chat history format
-        const conversationId = messages[0].conversationId;
-        const chatHistory: ChatHistory = {
-          userId,
-          messages: messages.map(msg => ({
-            role: msg.role as 'system' | 'user' | 'assistant',
-            content: msg.content
-          })),
-          metadata: messages[0].metadata as Record<string, any> || {}
-        };
-        
-        this.chatHistories.set(userId, chatHistory);
-        return chatHistory;
-      }
-    } catch (error) {
-      console.error('Error loading chat history from database:', error);
-    }
-    
-    // Create new chat history with system prompt
-    const systemPrompt = `You are FreelanceAI, an intelligent assistant for a freelance marketplace.
-Your role is to help clients find the best freelancers for their projects and to assist freelancers in finding suitable jobs.
-You should be professional, helpful, and concise in your responses.
-Always prioritize matching the right freelancer with the right job based on skills, experience, and availability.
-You can analyze job requests and provide recommendations based on the weighted scoring system:
-- Job Performance (50%): Past success on similar projects 
-- Skills & Experience (20%): Relevant skills and years of experience
-- Responsiveness & Availability (15%): How quickly they respond and their current availability
-- Fairness Boost (15%): Boosting newer freelancers with fewer reviews to give everyone a fair chance
-
-Current date: ${new Date().toISOString().split('T')[0]}`;
-
-    const newHistory: ChatHistory = {
-      userId,
-      messages: [
-        { role: 'system', content: systemPrompt }
-      ],
-      metadata: {}
-    };
-    
-    this.chatHistories.set(userId, newHistory);
-    return newHistory;
+    return this.sessionContext.get(userId) || [];
   }
   
   /**
-   * Save chat history to persistent storage
+   * Add a message to the user's context
    */
-  private async saveChatHistory(userId: number, history: ChatHistory): Promise<void> {
-    try {
-      // Generate a conversation ID if none exists
-      const conversationId = history.metadata?.conversationId || uuidv4();
-      
-      // Save the system message if this is a new conversation
-      if (!history.metadata?.conversationId) {
-        // Update metadata with conversation ID
-        history.metadata = {
-          ...history.metadata,
-          conversationId
-        };
-        
-        // Save system message
-        await db.insert(aiChatMessages).values({
-          userId,
-          role: history.messages[0].role,
-          content: history.messages[0].content,
-          conversationId,
-          metadata: history.metadata || {}
-        });
-      }
-      
-      // Save the latest message (assuming it's at the end of the messages array)
-      const latestMessage = history.messages[history.messages.length - 1];
-      
-      await db.insert(aiChatMessages).values({
-        userId,
-        role: latestMessage.role,
-        content: latestMessage.content,
-        conversationId,
-        metadata: history.metadata || {}
-      });
-      
-      // Update cache
-      this.chatHistories.set(userId, history);
-      
-    } catch (error) {
-      console.error('Error saving chat history:', error);
+  private addToContext(userId: number, message: string): void {
+    const context = this.getUserContext(userId);
+    context.push(message);
+    
+    // Limit context to the last N messages
+    if (context.length > this.maxContextLength) {
+      context.shift();
     }
+    
+    this.sessionContext.set(userId, context);
   }
   
   /**
-   * Send a message to Ollama
+   * Build the prompt with context for Ollama
    */
-  async sendMessage(userId: number, message: string): Promise<AIResponse> {
-    // Get chat history for this user
-    const history = await this.getOrCreateChatHistory(userId);
+  private buildPrompt(userId: number, message: string): string {
+    const context = this.getUserContext(userId);
+    let prompt = '';
     
-    // Add user message to history
-    history.messages.push({
-      role: 'user',
-      content: message
-    });
+    // Add system context first
+    prompt += 'You are FreelanceAI, an assistant for a freelance marketplace platform. ';
+    prompt += 'You help users find freelancers based on their project requirements and answer questions about the platform. ';
+    prompt += 'Be helpful, concise, and professional. ';
     
-    // Save user message to database
-    await this.saveChatHistory(userId, history);
-    
-    try {
-      // Convert chat format to Ollama format
-      const ollamaMessages = history.messages.map(msg => {
-        return {
-          role: msg.role,
-          content: msg.content
-        };
+    // Add previous conversation context if available
+    if (context.length > 0) {
+      prompt += '\n\nPrevious conversation:\n';
+      context.forEach(msg => {
+        prompt += `${msg}\n`;
       });
+      prompt += '\n';
+    }
+    
+    // Add the current message
+    prompt += `\nUser's current message: ${message}\n\nYour response:`;
+    
+    return prompt;
+  }
+  
+  /**
+   * Process a message with Ollama
+   */
+  async sendMessage(userId: number, message: string): Promise<AIChatResponse> {
+    try {
+      // Check availability before attempting to send
+      const isAvailable = await this.checkAvailability();
+      if (!isAvailable) {
+        throw new Error('Ollama service is not available');
+      }
       
-      // Prepare the request to Ollama
-      const response = await axios.post(`${this.config.apiUrl}/chat`, {
-        model: this.config.model,
-        messages: ollamaMessages,
+      // Build prompt with conversation context
+      const prompt = this.buildPrompt(userId, message);
+      
+      // Send to Ollama API
+      const response = await axios.post(`${this.apiUrl}/generate`, {
+        model: this.model,
+        prompt,
         stream: false,
         options: {
           temperature: 0.7,
+          top_p: 0.9,
+          top_k: 40
         }
       });
       
-      // Extract the assistant's response
-      const assistantMessage = response.data.message;
+      const aiResponse = response.data.response as string;
       
-      // Add assistant's response to history
-      history.messages.push({
-        role: 'assistant',
-        content: assistantMessage.content
-      });
-      
-      // Save assistant message to database
-      await this.saveChatHistory(userId, history);
+      // Add to conversation context for future messages
+      this.addToContext(userId, `User: ${message}`);
+      this.addToContext(userId, `AI: ${aiResponse}`);
       
       return {
-        content: assistantMessage.content,
-        metadata: {}
+        content: aiResponse,
+        metadata: {
+          model: this.model,
+          provider: 'ollama'
+        }
       };
     } catch (error: any) {
       console.error('Error sending message to Ollama:', error);
       
-      // For non-availability errors, provide more context
       if (error.response) {
-        throw new Error(`Ollama API error: ${error.response.status} - ${error.response.data?.error || error.message}`);
-      } else if (error.request) {
-        throw new Error('Ollama not responding. Check if the server is running.');
+        console.error('Ollama API response error:', error.response.data);
       }
       
-      throw error;
+      throw new Error(`Failed to get a response from Ollama: ${error.message}`);
     }
   }
   
   /**
    * Process a job request and find matching freelancers
    */
-  async processJobRequest(userId: number, jobDescription: string, skills: string[]): Promise<AIMatchResult> {
-    // Get all freelancers from storage
-    const allFreelancers = await storage.getAllFreelancers();
-    
-    // First, analyze the job request using Ollama
-    const jobAnalysis = await this.analyzeJobRequest(userId, jobDescription, skills);
-    
-    // Then, score each freelancer using our weighted algorithm
-    const matches: FreelancerMatch[] = allFreelancers.map(freelancer => {
-      // Job Performance (50%)
-      const jobPerformanceScore = Math.min(freelancer.jobPerformance / 10, 10);
-      
-      // Skills & Experience (20%)
-      const skillsScore = this.calculateSkillsScore(freelancer.skills, skills);
-      
-      // Responsiveness (15%)
-      const responsivenessScore = Math.min(freelancer.responsiveness / 10, 10);
-      
-      // Fairness boost (15%) - boost newer freelancers
-      const fairnessScore = this.calculateFairnessScore(freelancer.completedJobs);
-      
-      // Calculate weighted score
-      const totalScore = (
-        jobPerformanceScore * 0.5 +
-        skillsScore * 0.2 +
-        responsivenessScore * 0.15 +
-        fairnessScore * 0.15
-      );
-      
-      // Generate match reasons
-      const matchReasons = [];
-      if (jobPerformanceScore > 7) matchReasons.push('Excellent job performance history');
-      if (skillsScore > 7) matchReasons.push('Strong skill match for this project');
-      if (responsivenessScore > 7) matchReasons.push('Highly responsive to client requests');
-      if (fairnessScore > 7) matchReasons.push('Promising talent worth considering');
-      
-      return {
-        freelancerId: freelancer.id,
-        score: Number(totalScore.toFixed(2)),
-        matchReasons,
-        jobPerformanceScore: Number(jobPerformanceScore.toFixed(2)),
-        skillsScore: Number(skillsScore.toFixed(2)),
-        responsivenessScore: Number(responsivenessScore.toFixed(2)),
-        fairnessScore: Number(fairnessScore.toFixed(2))
-      };
-    });
-    
-    // Sort by score (descending)
-    matches.sort((a, b) => b.score - a.score);
-    
-    // Take top matches
-    const topMatches = matches.slice(0, 3);
-    
-    // Generate suggested follow-up questions
-    const suggestedQuestions = await this.generateSuggestedQuestions(jobDescription, skills);
-    
-    // Create the result
-    const result: AIMatchResult = {
-      jobAnalysis,
-      matches: topMatches,
-      suggestedQuestions
-    };
-    
-    // Save the analysis to the database
+  async processJobRequest(
+    userId: number, 
+    description: string, 
+    skills: string[] = []
+  ): Promise<AIMatchResult> {
     try {
-      await db.insert(aiJobAnalyses).values({
-        userId,
-        analysis: jobAnalysis,
-        matches: topMatches,
-        suggestedQuestions
-      });
-    } catch (error) {
-      console.error('Error saving job analysis:', error);
-    }
-    
-    return result;
-  }
-  
-  /**
-   * Analyze a job request to understand requirements and priorities
-   */
-  private async analyzeJobRequest(userId: number, jobDescription: string, skills: string[]): Promise<Record<string, any>> {
-    try {
-      // Prepare the system message specifically for job analysis
-      const systemMessage = `You are a job analysis AI that helps understand and categorize job requirements. 
-      Analyze the following job description and extract key information such as required skills, 
-      estimated complexity, project duration, and any special requirements.
-      Provide a structured analysis that can be used to match with freelancers.`;
-      
-      // Create messages for Ollama
-      const messages = [
-        { role: 'system', content: systemMessage },
-        { role: 'user', content: `Please analyze this job request: ${jobDescription}\nMentioned skills: ${skills.join(', ')}` }
-      ];
-      
-      // Make API request to Ollama
-      const response = await axios.post(`${this.config.apiUrl}/chat`, {
-        model: this.config.model,
-        messages,
-        stream: false,
-        options: {
-          temperature: 0.3 // Lower temperature for more deterministic analysis
-        }
-      });
-      
-      // Extract the analysis
-      const analysisText = response.data.message.content;
-      
-      // Convert the analysis text into a structured object
-      const analysisObject: Record<string, any> = {
-        raw: analysisText,
-        extractedSkills: skills,
-        complexity: this.extractComplexity(analysisText),
-        estimatedDuration: this.extractDuration(analysisText),
-        budget: this.extractBudget(analysisText)
-      };
-      
-      return analysisObject;
-    } catch (error) {
-      console.error('Error analyzing job request:', error);
-      
-      // Return a basic analysis if AI processing fails
-      return {
-        raw: "Failed to analyze with AI",
-        extractedSkills: skills,
-        complexity: "medium",
-        estimatedDuration: "unknown",
-        budget: "unknown"
-      };
-    }
-  }
-  
-  /**
-   * Generate suggested follow-up questions for a job request
-   */
-  private async generateSuggestedQuestions(jobDescription: string, skills: string[]): Promise<string[]> {
-    try {
-      // Prepare the system message specifically for question generation
-      const systemMessage = `You are an assistant helping clients clarify their job requests. 
-      Based on the following job description, generate 3 follow-up questions that would help clarify requirements, 
-      timeline, budget, or other important factors. Format each question on a new line.`;
-      
-      // Create messages for Ollama
-      const messages = [
-        { role: 'system', content: systemMessage },
-        { role: 'user', content: `Job description: ${jobDescription}\nMentioned skills: ${skills.join(', ')}` }
-      ];
-      
-      // Make API request to Ollama
-      const response = await axios.post(`${this.config.apiUrl}/chat`, {
-        model: this.config.model,
-        messages,
-        stream: false,
-        options: {
-          temperature: 0.7
-        }
-      });
-      
-      // Extract the questions
-      const questionsText = response.data.message.content;
-      
-      // Split into separate questions and clean them up
-      const questions = questionsText
-        .split('\n')
-        .filter(line => line.trim().length > 0 && line.includes('?'))
-        .map(line => line.replace(/^\d+\.\s*/, '').trim())
-        .slice(0, 3);
-      
-      return questions;
-    } catch (error) {
-      console.error('Error generating suggested questions:', error);
-      
-      // Return default questions if AI processing fails
-      return [
-        "What is your expected timeline for this project?",
-        "Do you have a specific budget range in mind?",
-        "What would you consider a successful outcome for this project?"
-      ];
-    }
-  }
-  
-  /**
-   * Calculate a score for skills matching
-   */
-  private calculateSkillsScore(freelancerSkills: string[], requestedSkills: string[]): number {
-    if (!requestedSkills || requestedSkills.length === 0) {
-      return 7; // Default score if no specific skills requested
-    }
-    
-    // Normalize skills for comparison
-    const normalizedFreelancerSkills = freelancerSkills.map(s => s.toLowerCase());
-    const normalizedRequestedSkills = requestedSkills.map(s => s.toLowerCase());
-    
-    // Count matches
-    let matches = 0;
-    for (const skill of normalizedRequestedSkills) {
-      if (normalizedFreelancerSkills.includes(skill)) {
-        matches++;
+      // Check if service is available
+      const isAvailable = await this.checkAvailability();
+      if (!isAvailable) {
+        throw new Error('Ollama service is not available');
       }
+      
+      // Get all freelancers from storage
+      const allFreelancers = await storage.getAllFreelancers();
+      
+      if (!allFreelancers || allFreelancers.length === 0) {
+        throw new Error('No freelancers available for matching');
+      }
+      
+      // Build prompt for Ollama to analyze the job request
+      let prompt = `
+      You are an AI assistant for a freelance marketplace platform. Your task is to analyze a job request and find the best matching freelancers from our database.
+      
+      Job Request Description: "${description}"
+      `;
+      
+      if (skills.length > 0) {
+        prompt += `\nRequired Skills: ${skills.join(', ')}`;
+      }
+      
+      prompt += `\n\nAvailable Freelancers:
+      ${allFreelancers.map((f) => `
+      Freelancer ID: ${f.id}
+      Profession: ${f.profession}
+      Skills: ${f.skills ? f.skills.join(', ') : 'Not specified'}
+      Experience: ${f.yearsOfExperience || 0} years
+      Hourly Rate: $${f.hourlyRate || 0}
+      Rating: ${f.rating || 0}/5
+      Location: ${f.location || 'Not specified'}
+      Bio: ${f.bio || 'Not provided'}
+      Job Performance: ${f.jobPerformance || 0}/100
+      `).join('\n')}
+      
+      Based on the job request and required skills, rank the top 3 freelancers with detailed reasoning.
+      
+      Format your response as JSON with the following structure:
+      {
+        "analysis": "Your analysis of the job request",
+        "matches": [
+          {
+            "freelancerId": 1,
+            "score": 0.95,
+            "reasoning": "Why this freelancer is a good match"
+          },
+          ...
+        ]
+      }
+      
+      Ensure your response is a valid JSON object.
+      `;
+      
+      // Send to Ollama API
+      const response = await axios.post(`${this.apiUrl}/generate`, {
+        model: this.model,
+        prompt,
+        stream: false,
+        options: {
+          temperature: 0.2, // Low temperature for more deterministic results
+          top_p: 0.9
+        }
+      });
+      
+      let aiResponse = response.data.response as string;
+      
+      // Extract JSON from the response (handling potential text before/after the JSON)
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Failed to get valid JSON response from Ollama');
+      }
+      
+      const jsonStr = jsonMatch[0];
+      const result = JSON.parse(jsonStr);
+      
+      // Transform and validate the response
+      const processedMatches: FreelancerMatch[] = [];
+      
+      // Make sure we have the expected structure
+      if (result.matches && Array.isArray(result.matches)) {
+        // Convert to our expected format and look up full freelancer details
+        for (const match of result.matches) {
+          const freelancerId = Number(match.freelancerId);
+          
+          if (isNaN(freelancerId)) continue;
+          
+          const freelancer = await storage.getFreelancer(freelancerId);
+          if (!freelancer) continue;
+          
+          // Calculate weights based on our algorithm
+          const jobPerformanceScore = 0.5;
+          const skillsScore = 0.2;
+          const responsivenessScore = 0.15;
+          const fairnessScore = 0.15;
+          
+          // Create match reasons from reasoning
+          const reasons = [match.reasoning || 'Strong match for this job request'];
+          
+          processedMatches.push({
+            freelancerId: freelancer.id,
+            score: typeof match.score === 'number' ? match.score : parseFloat(match.score),
+            matchReasons: reasons,
+            jobPerformanceScore,
+            skillsScore,
+            responsivenessScore,
+            fairnessScore
+          });
+        }
+      }
+      
+      // Sort by score (highest first)
+      processedMatches.sort((a, b) => b.score - a.score);
+      
+      return {
+        jobAnalysis: {
+          description: description,
+          skills: skills,
+          analysisText: result.analysis || 'Analysis not provided'
+        },
+        matches: processedMatches.slice(0, 3), // Limit to top 3
+        suggestedQuestions: [
+          'What skills are most important for this job?',
+          'Can you explain more about the job requirements?',
+          'What is the typical timeframe for this kind of project?'
+        ]
+      };
+      
+    } catch (error: any) {
+      console.error('Error processing job request with Ollama:', error);
+      
+      if (error.response) {
+        console.error('Ollama API response error:', error.response.data);
+      }
+      
+      throw new Error(`Failed to analyze job with Ollama: ${error.message}`);
     }
-    
-    // Calculate percentage match
-    const matchPercentage = (matches / normalizedRequestedSkills.length) * 100;
-    
-    // Convert to 0-10 scale
-    return Math.min(Math.round(matchPercentage / 10), 10);
-  }
-  
-  /**
-   * Calculate a fairness boost score
-   * This gives newer freelancers with fewer completed jobs a boost
-   */
-  private calculateFairnessScore(completedJobs: number): number {
-    // Inverse relationship - fewer jobs gets higher score
-    if (completedJobs <= 5) return 10;
-    if (completedJobs <= 10) return 8;
-    if (completedJobs <= 20) return 6;
-    if (completedJobs <= 50) return 4;
-    return 2; // Very experienced freelancers get less fairness boost
-  }
-  
-  /**
-   * Extract project complexity from analysis text
-   */
-  private extractComplexity(text: string): string {
-    const lowMatch = text.match(/simple|basic|straightforward|easy|low complexity/i);
-    const highMatch = text.match(/complex|advanced|sophisticated|difficult|challenging|high complexity/i);
-    
-    if (highMatch) return "high";
-    if (lowMatch) return "low";
-    return "medium";
-  }
-  
-  /**
-   * Extract estimated duration from analysis text
-   */
-  private extractDuration(text: string): string {
-    // Look for patterns like "2-3 weeks", "1 month", etc.
-    const durationMatch = text.match(/(\d+)(-\d+)?\s*(day|days|week|weeks|month|months)/i);
-    
-    if (durationMatch) {
-      return durationMatch[0];
-    }
-    
-    return "undetermined";
-  }
-  
-  /**
-   * Extract budget from analysis text
-   */
-  private extractBudget(text: string): string {
-    // Look for patterns like "$500", "$1,000-$2,000", etc.
-    const budgetMatch = text.match(/\$\d{1,3}(,\d{3})*(\s*-\s*\$\d{1,3}(,\d{3})*)*/i);
-    
-    if (budgetMatch) {
-      return budgetMatch[0];
-    }
-    
-    return "undetermined";
   }
 }
 
-// Create and export a singleton instance
 export const ollamaService = new OllamaService();

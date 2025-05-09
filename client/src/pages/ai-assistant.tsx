@@ -15,13 +15,18 @@ export default function AIAssistantPage() {
         <Tabs defaultValue="chat" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex justify-center mb-6">
             <TabsList>
-              <TabsTrigger value="chat">Chat with AI</TabsTrigger>
+              <TabsTrigger value="chat">DeepSeek Chat</TabsTrigger>
+              <TabsTrigger value="ollama-chat">Ollama Chat</TabsTrigger>
               <TabsTrigger value="job-analysis">Job Analysis</TabsTrigger>
             </TabsList>
           </div>
           
           <TabsContent value="chat" className="focus:outline-none">
             <AIChat />
+          </TabsContent>
+          
+          <TabsContent value="ollama-chat" className="focus:outline-none">
+            <OllamaChat />
           </TabsContent>
           
           <TabsContent value="job-analysis" className="focus:outline-none">
