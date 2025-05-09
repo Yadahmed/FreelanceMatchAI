@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { aiService } from '../services/ai-service';
-import { chatRequestSchema } from '@shared/schema';
+import { aiChatRequestSchema, jobAnalysisRequestSchema } from '@shared/ai-schemas';
 
 /**
  * Controller for handling AI-related requests
@@ -16,7 +16,7 @@ export async function processAIMessage(req: Request, res: Response) {
     }
 
     // Validate request body
-    const { message } = chatRequestSchema.parse(req.body);
+    const { message } = aiChatRequestSchema.parse(req.body);
     const userId = req.user.id;
 
     // Check if DeepSeek R1 service is available
@@ -64,11 +64,16 @@ export async function processJobRequest(req: Request, res: Response) {
     }
 
     // Validate request body
-    const { description, skills } = req.body;
+    const requestData = jobAnalysisRequestSchema.safeParse(req.body);
     
-    if (!description) {
-      return res.status(400).json({ message: 'Job description is required' });
+    if (!requestData.success) {
+      return res.status(400).json({ 
+        message: 'Invalid job request data',
+        details: requestData.error.errors
+      });
     }
+    
+    const { description, skills = [] } = requestData.data;
 
     const userId = req.user.id;
     
