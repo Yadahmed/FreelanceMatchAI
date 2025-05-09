@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
-import { Loader2, Send, AlertCircle } from 'lucide-react';
+import { Loader2, Send, AlertCircle, Sparkles } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { apiRequest } from '@/lib/queryClient';
 
 // Interface for AI status response
 interface AIStatusResponse {
@@ -33,6 +34,7 @@ export function AIChat() {
   const [messages, setMessages] = useState<AIChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isImprovingPrompt, setIsImprovingPrompt] = useState(false);
   const [isAIAvailable, setIsAIAvailable] = useState<boolean | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -255,6 +257,60 @@ export function AIChat() {
     }
   };
   
+  /**
+   * Improve the current prompt using AI assistance
+   * This helps users craft better prompts to get more relevant freelancer-related responses
+   */
+  const improvePrompt = async () => {
+    if (!inputValue.trim() || !isAIAvailable || isImprovingPrompt) return;
+    
+    setIsImprovingPrompt(true);
+    
+    try {
+      // Ask the AI to improve the prompt for better results
+      const result = await apiRequest('/api/ai/message', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          message: `Please rewrite the following prompt to be more effective for our freelance marketplace AI assistant. Make it specific, detailed, and clear: "${inputValue}"`,
+          metadata: { 
+            direct: true,
+            system: "You are a helpful AI prompt improvement assistant. Your task is to rewrite user messages to be more effective when communicating with a freelance marketplace AI. Focus on making prompts more specific, detailed, and clear. Never mention that you're rewriting the prompt - just provide the improved version."
+          }
+        })
+      });
+      
+      let improvedPrompt = '';
+      
+      if (result.content) {
+        // Normal API response
+        improvedPrompt = result.content;
+      } else if (result.response) {
+        // Legacy API response format
+        improvedPrompt = result.response;
+      }
+      
+      // Remove any quotes that might be in the response
+      const cleanPrompt = improvedPrompt.replace(/^["']|["']$/g, '');
+      setInputValue(cleanPrompt);
+      
+      // Show a toast notification that the prompt was improved
+      toast({
+        title: "Prompt Improved",
+        description: "Your prompt has been enhanced for better results.",
+      });
+      
+    } catch (error: any) {
+      console.error('Error improving prompt:', error);
+      toast({
+        title: 'Error',
+        description: "Couldn't improve your prompt. Please try again.",
+        variant: 'destructive',
+      });
+    } finally {
+      setIsImprovingPrompt(false);
+    }
+  };
+  
   if (isAIAvailable === null) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -338,22 +394,54 @@ export function AIChat() {
             onChange={e => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             className="min-h-[60px] resize-none"
-            disabled={!isAIAvailable || isLoading}
+            disabled={!isAIAvailable || isLoading || isImprovingPrompt}
           />
-          <Button
-            onClick={handleSendMessage}
-            disabled={!isAIAvailable || isLoading || !inputValue.trim()}
-            variant="default"
-            size="icon"
-            className="h-auto"
-          >
-            {isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Send className="h-5 w-5" />
-            )}
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={handleSendMessage}
+              disabled={!isAIAvailable || isLoading || isImprovingPrompt || !inputValue.trim()}
+              variant="default"
+              size="icon"
+              className="h-[30px]"
+              title="Send message"
+            >
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Send className="h-5 w-5" />
+              )}
+            </Button>
+            
+            <Button
+              onClick={improvePrompt}
+              disabled={!isAIAvailable || isLoading || isImprovingPrompt || !inputValue.trim()}
+              variant="outline"
+              size="icon"
+              className="h-[30px]"
+              title="Make this prompt better"
+            >
+              {isImprovingPrompt ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Sparkles className="h-5 w-5" />
+              )}
+            </Button>
+          </div>
         </div>
+        
+        {/* Prompt helper text */}
+        {inputValue.trim() && inputValue.length < 20 && isAIAvailable && (
+          <div className="mt-2 text-xs text-muted-foreground p-2 bg-primary/5 rounded border border-primary/10">
+            <p><strong>Tip:</strong> More specific prompts get better results. Try adding details like:</p>
+            <ul className="list-disc list-inside ml-2 mt-1">
+              <li>Type of freelancer you need (developer, designer, writer)</li>
+              <li>Required skills and experience level</li>
+              <li>Budget range and timeline</li>
+              <li>Project details and deliverables</li>
+            </ul>
+            <p className="mt-1">Or use the ✨ button to automatically improve your prompt!</p>
+          </div>
+        )}
         
         {/* Service status message */}
         {!isAIAvailable && (
