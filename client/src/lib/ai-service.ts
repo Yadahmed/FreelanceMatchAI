@@ -6,8 +6,10 @@ interface AIStatusResponse {
   available: boolean;
   services?: {
     deepseek: boolean;
+    ollama: boolean;
     original: boolean;
   };
+  primaryService?: 'deepseek' | 'ollama' | null;
 }
 
 /**
@@ -32,8 +34,10 @@ export async function checkAIStatus(getDetailed = false): Promise<boolean | AISt
         available: false,
         services: {
           deepseek: false,
+          ollama: false,
           original: false
-        }
+        },
+        primaryService: null
       };
     }
     return false;

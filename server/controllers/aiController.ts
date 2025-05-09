@@ -103,16 +103,68 @@ export async function processJobRequest(req: Request, res: Response) {
     }
     
     const { description, skills = [] } = requestData.data;
-
     const userId = req.user.id;
     
-    // Process the job request using the DeepSeek service
-    const result = await deepseekService.processJobRequest(userId, description, skills || []);
+    // First try DeepSeek service
+    const isDeepSeekAvailable = await deepseekService.checkAvailability();
     
-    return res.status(200).json(result);
+    // If DeepSeek is available, use it
+    if (isDeepSeekAvailable) {
+      try {
+        const result = await deepseekService.processJobRequest(userId, description, skills || []);
+        
+        // Add provider info to the result
+        return res.status(200).json({
+          ...result,
+          provider: 'deepseek'
+        });
+      } catch (deepseekError) {
+        console.error('DeepSeek job analysis error, trying fallback:', deepseekError);
+        // Continue to fallback if DeepSeek fails
+      }
+    }
+    
+    // Try Ollama as fallback
+    const isOllamaAvailable = await ollamaService.checkAvailability();
+    
+    if (isOllamaAvailable) {
+      try {
+        const result = await ollamaService.processJobRequest(userId, description, skills || []);
+        
+        // Add provider info to the result
+        return res.status(200).json({
+          ...result,
+          provider: 'ollama',
+          fallback: true
+        });
+      } catch (ollamaError) {
+        console.error('Ollama job analysis error:', ollamaError);
+        // Continue to error response if Ollama also fails
+      }
+    }
+    
+    // If all AI services are unavailable or failed
+    return res.status(503).json({
+      message: 'All AI services are currently unavailable',
+      error: true,
+      fallback: true,
+      jobAnalysis: {
+        description: description,
+        skills: skills,
+        analysisText: 'Job analysis unavailable. All AI services are currently offline.'
+      },
+      matches: [],
+      suggestedQuestions: [
+        'When will AI services be available again?',
+        'Can I try again later?'
+      ]
+    });
   } catch (error: any) {
     console.error('Error processing job request:', error);
-    return res.status(500).json({ message: error.message || 'Error processing job request' });
+    return res.status(500).json({ 
+      message: error.message || 'Error processing job request', 
+      error: true
+    });
   }
 }
 

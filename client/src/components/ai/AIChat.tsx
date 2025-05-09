@@ -14,8 +14,10 @@ interface AIStatusResponse {
   available: boolean;
   services?: {
     deepseek: boolean;
+    ollama: boolean;
     original: boolean;
   };
+  primaryService?: 'deepseek' | 'ollama' | null;
 }
 
 interface AIChatMessage {
@@ -36,6 +38,9 @@ export function AIChat() {
   const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
+  // State for tracking which AI service is being used
+  const [activeService, setActiveService] = useState<'deepseek' | 'ollama' | null>(null);
+  
   // Check if AI service is available on mount
   useEffect(() => {
     const checkAvailability = async () => {
@@ -45,17 +50,20 @@ export function AIChat() {
         const available = statusResponse.available;
         setIsAIAvailable(available);
         
+        // Set the active service
+        setActiveService(statusResponse.primaryService || null);
+        
         if (!available) {
           // Check which specific services are unavailable
-          const services = statusResponse.services || { deepseek: false, original: false };
+          const services = statusResponse.services || { deepseek: false, ollama: false, original: false };
           
           let unavailableMessage = "Welcome to our freelance marketplace! I'm your AI assistant, but I'm currently unavailable. ";
           
           // Provide more specific information based on which service is unavailable
-          if (!services.deepseek && !services.original) {
+          if (!services.deepseek && !services.ollama) {
             unavailableMessage += "All AI services are offline. Our team is working on it and I'll be back soon!";
-          } else if (!services.deepseek) {
-            unavailableMessage += "The DeepSeek R1 API service is unavailable, but other services might work. Please try again later.";
+          } else if (!services.deepseek && services.ollama) {
+            unavailableMessage += "The DeepSeek R1 API service is unavailable, but Ollama might work as a fallback.";
           } else {
             unavailableMessage += "Our team is working on it and I'll be back soon!";
           }
@@ -69,11 +77,23 @@ export function AIChat() {
             },
           ]);
         } else {
-          // Add welcome message
+          // Generate a welcome message based on which service is being used
+          let welcomeMessage = "Hi there! I'm FreelanceAI, your intelligent assistant";
+          
+          if (activeService === 'deepseek') {
+            welcomeMessage += " powered by DeepSeek R1 API.";
+          } else if (activeService === 'ollama') {
+            welcomeMessage += " (using Ollama as a fallback service).";
+          } else {
+            welcomeMessage += ".";
+          }
+          
+          welcomeMessage += " How can I help you today? You can ask me to find freelancers for your project or help you understand how our marketplace works.";
+          
           setMessages([
             {
               id: generateId(),
-              content: "Hi there! I'm FreelanceAI, your intelligent assistant powered by DeepSeek R1 API. How can I help you today? You can ask me to find freelancers for your project or help you understand how our marketplace works.",
+              content: welcomeMessage,
               isUser: false,
               timestamp: new Date(),
             },
@@ -82,6 +102,7 @@ export function AIChat() {
       } catch (error) {
         console.error('Error checking AI status:', error);
         setIsAIAvailable(false);
+        setActiveService(null);
         toast({
           title: 'AI Assistant Unavailable',
           description: 'The AI service is currently unavailable. Please try again later.',
@@ -116,6 +137,29 @@ export function AIChat() {
     try {
       // Send message to AI service
       const response = await sendAIMessage(userMessage.content);
+      
+      // Check if the response metadata indicates a change in provider
+      if (response.metadata?.provider) {
+        // Update the active service based on the provider used for this response
+        const newService = response.metadata.provider as 'deepseek' | 'ollama';
+        
+        if (newService !== activeService) {
+          setActiveService(newService);
+          
+          // If we've switched to Ollama as fallback, show an informative message
+          if (newService === 'ollama' && activeService === 'deepseek') {
+            setMessages(prev => [
+              ...prev, 
+              {
+                id: generateId(),
+                content: "Note: I'm now using Ollama as a fallback service because DeepSeek is currently unavailable. I'll continue to assist you with the best available service.",
+                isUser: false,
+                timestamp: new Date(),
+              }
+            ]);
+          }
+        }
+      }
       
       // Add AI response to chat
       const aiMessage: AIChatMessage = {
@@ -182,19 +226,31 @@ export function AIChat() {
           <span className="text-xs font-bold">AI</span>
         </Avatar>
         <div className="flex-1">
-          <h3 className="text-sm font-medium">FreelanceAI Assistant (DeepSeek R1)</h3>
+          <h3 className="text-sm font-medium">
+            FreelanceAI Assistant
+            {activeService === 'deepseek' && " (DeepSeek R1)"}
+            {activeService === 'ollama' && " (Ollama)"}
+          </h3>
           <div className="flex items-center">
             {isAIAvailable ? (
               <>
                 <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
                 <span className="text-xs text-muted-foreground">Online</span>
-                <span className="text-xs text-muted-foreground ml-2 bg-green-50 px-1 rounded">API Connected</span>
+                {activeService && (
+                  <span className={`text-xs text-muted-foreground ml-2 ${
+                    activeService === 'deepseek' ? 'bg-green-50' : 'bg-amber-50'
+                  } px-1 rounded`}>
+                    {activeService === 'deepseek' ? 'DeepSeek API' : 'Ollama Fallback'}
+                  </span>
+                )}
               </>
             ) : (
               <>
                 <div className="w-2 h-2 rounded-full bg-red-500 mr-2" />
                 <span className="text-xs text-muted-foreground">Offline</span>
-                <span className="text-xs text-muted-foreground ml-2 bg-red-50 px-1 rounded">API Connection Issue</span>
+                <span className="text-xs text-muted-foreground ml-2 bg-red-50 px-1 rounded">
+                  All Services Unavailable
+                </span>
               </>
             )}
           </div>
