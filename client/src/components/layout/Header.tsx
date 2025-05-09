@@ -114,6 +114,13 @@ export function Header() {
                 </DropdownMenuItem>
                 
                 <DropdownMenuItem className="cursor-pointer" asChild>
+                  <Link href="/ollama-test" className="flex items-center">
+                    <BrainCircuit className="mr-2 h-4 w-4" />
+                    <span>Ollama Test</span>
+                  </Link>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem className="cursor-pointer" asChild>
                   <Link href="/settings" className="flex items-center">
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>

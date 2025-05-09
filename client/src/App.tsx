@@ -10,6 +10,7 @@ import NotFound from "@/pages/not-found";
 import FreelancerProfile from "@/pages/freelancer-profile";
 import FreelancerDashboard from "@/pages/freelancer-dashboard";
 import AIAssistant from "@/pages/ai-assistant";
+import OllamaTestPage from "@/pages/ollama-test";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -44,6 +45,7 @@ function Router() {
       <Route path="/settings" component={Home} />
       <Route path="/profile" component={Home} />
       <Route path="/ai-assistant" component={AIAssistant} />
+      <Route path="/ollama-test" component={OllamaTestPage} />
       
       {/* Legacy redirects in case old URLs are bookmarked */}
       <Route path="/home">
