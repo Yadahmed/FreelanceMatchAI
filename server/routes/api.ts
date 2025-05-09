@@ -15,6 +15,7 @@ import {
   processJobRequest,
   checkAIStatus
 } from '../controllers/aiController';
+import ollamaRouter from './ollama';
 import {
   getDashboard,
   updateProfile,
@@ -136,6 +137,9 @@ router.post('/chat/message', requireAuth, sendMessage);
 router.get('/ai/status', checkAIStatus);
 router.post('/ai/message', requireAuth, processAIMessage);
 router.post('/ai/job-analysis', requireAuth, processJobRequest);
+
+// Ollama routes (using a separate router)
+router.use('/ollama', ollamaRouter);
 
 // Freelancer routes
 router.get('/freelancer/dashboard', requireFreelancer, getDashboard);

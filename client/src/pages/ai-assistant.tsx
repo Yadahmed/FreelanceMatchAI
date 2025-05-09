@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AIChat } from '@/components/ai/AIChat';
+import { OllamaChat } from '@/components/ai/OllamaChat';
 import { JobAnalysis } from '@/components/ai/JobAnalysis';
 
 export default function AIAssistantPage() {
