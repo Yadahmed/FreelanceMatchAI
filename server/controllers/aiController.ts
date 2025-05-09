@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { aiService } from '../services/ai-service';
 import { deepseekService } from '../services/deepseek-service';
+import { ollamaService } from '../services/ollama-service';
 import { aiChatRequestSchema, jobAnalysisRequestSchema } from '@shared/ai-schemas';
 
 /**
@@ -20,24 +21,51 @@ export async function processAIMessage(req: Request, res: Response) {
     const { message } = aiChatRequestSchema.parse(req.body);
     const userId = req.user.id;
 
-    // Check if DeepSeek service is available
-    const isAvailable = await deepseekService.checkAvailability();
+    // First try DeepSeek service
+    const isDeepSeekAvailable = await deepseekService.checkAvailability();
     
-    if (!isAvailable) {
-      // Return fallback response if AI service is not available
-      return res.status(503).json({ 
-        message: 'AI service is currently unavailable',
-        fallback: true,
-        content: 'I apologize, but our AI service is currently unavailable. Please try again later.',
-      });
+    // If DeepSeek is available, use it
+    if (isDeepSeekAvailable) {
+      try {
+        const aiResponse = await deepseekService.sendMessage(userId, message);
+        return res.status(200).json({
+          content: aiResponse.content,
+          metadata: {
+            ...aiResponse.metadata,
+            provider: 'deepseek'
+          }
+        });
+      } catch (deepseekError) {
+        console.error('DeepSeek service error, trying fallback:', deepseekError);
+        // Continue to fallback if DeepSeek fails
+      }
     }
-
-    // Process the message with DeepSeek service
-    const aiResponse = await deepseekService.sendMessage(userId, message);
     
-    return res.status(200).json({
-      content: aiResponse.content,
-      metadata: aiResponse.metadata
+    // Try Ollama as fallback
+    const isOllamaAvailable = await ollamaService.checkAvailability();
+    
+    if (isOllamaAvailable) {
+      try {
+        const ollamaResponse = await ollamaService.sendMessage(userId, message);
+        return res.status(200).json({
+          content: ollamaResponse.content,
+          metadata: {
+            ...ollamaResponse.metadata,
+            provider: 'ollama',
+            fallback: true
+          }
+        });
+      } catch (ollamaError) {
+        console.error('Ollama fallback service error:', ollamaError);
+        // Continue to error response if Ollama also fails
+      }
+    }
+    
+    // If all AI services are unavailable or failed
+    return res.status(503).json({ 
+      message: 'All AI services are currently unavailable',
+      fallback: true,
+      content: 'I apologize, but our AI services are currently unavailable. We\'ve tried both DeepSeek and Ollama services without success. Please try again later.',
     });
   } catch (error: any) {
     console.error('Error processing AI message:', error);
@@ -93,18 +121,22 @@ export async function processJobRequest(req: Request, res: Response) {
  */
 export async function checkAIStatus(req: Request, res: Response) {
   try {
-    // Check the status of the DeepSeek service
+    // Check all available AI services
     const isDeepseekAvailable = await deepseekService.checkAvailability();
-    
-    // For backward compatibility, also check the original AI service
+    const isOllamaAvailable = await ollamaService.checkAvailability();
     const isOriginalAvailable = await aiService.checkAvailability();
     
+    // Consider the AI available if either DeepSeek or Ollama is available
+    const isAnyServiceAvailable = isDeepseekAvailable || isOllamaAvailable;
+    
     return res.status(200).json({ 
-      available: isDeepseekAvailable, 
+      available: isAnyServiceAvailable, 
       services: {
         deepseek: isDeepseekAvailable,
+        ollama: isOllamaAvailable,
         original: isOriginalAvailable
-      }
+      },
+      primaryService: isDeepseekAvailable ? 'deepseek' : (isOllamaAvailable ? 'ollama' : null)
     });
   } catch (error) {
     console.error('Error checking AI status:', error);
@@ -113,8 +145,10 @@ export async function checkAIStatus(req: Request, res: Response) {
       available: false,
       services: {
         deepseek: false,
+        ollama: false,
         original: false
-      } 
+      },
+      primaryService: null
     });
   }
 }
