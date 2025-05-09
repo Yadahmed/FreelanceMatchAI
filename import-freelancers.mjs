@@ -59,15 +59,20 @@ async function importFreelancers() {
         // Now create the freelancer profile linked to this user
         const freelancerData = {
           user_id: userId,
-          display_name: freelancer.displayName,
           profession: freelancer.profession,
           skills: freelancer.skills,
-          years_of_experience: freelancer.yearsOfExperience,
-          hourly_rate: freelancer.hourlyRate,
-          rating: freelancer.rating,
+          years_of_experience: parseInt(freelancer.yearsOfExperience),
+          hourly_rate: parseInt(freelancer.hourlyRate),
+          rating: Math.round(freelancer.rating), // Convert to integer for the database
           location: freelancer.location,
           bio: freelancer.bio,
-          job_performance: freelancer.jobPerformance
+          job_performance: Math.round(freelancer.jobPerformance),
+          // Default values for required fields
+          responsiveness: 80 + Math.floor(Math.random() * 20), // Random value between 80-99
+          fairness_score: 80 + Math.floor(Math.random() * 20), // Random value between 80-99
+          skills_experience: 80 + Math.floor(Math.random() * 20), // Random value between 80-99
+          completed_jobs: Math.floor(Math.random() * 50), // Random value between 0-49
+          availability: true
         };
         
         // Check if this freelancer already exists for the user
@@ -82,8 +87,10 @@ async function importFreelancers() {
             UPDATE freelancers 
             SET profession = $1, skills = $2, 
                 years_of_experience = $3, hourly_rate = $4, rating = $5,
-                location = $6, bio = $7, job_performance = $8
-            WHERE id = $9
+                location = $6, bio = $7, job_performance = $8,
+                responsiveness = $9, fairness_score = $10, skills_experience = $11,
+                completed_jobs = $12, availability = $13
+            WHERE id = $14
           `, [
             freelancerData.profession,
             freelancerData.skills, // PostgreSQL will handle the array
@@ -93,16 +100,23 @@ async function importFreelancers() {
             freelancerData.location,
             freelancerData.bio,
             freelancerData.job_performance,
+            freelancerData.responsiveness,
+            freelancerData.fairness_score,
+            freelancerData.skills_experience,
+            freelancerData.completed_jobs,
+            freelancerData.availability,
             freelancerId
           ]);
-          console.log(`Updated existing freelancer: ${freelancerData.display_name}`);
+          console.log(`Updated existing freelancer: ${freelancer.displayName}`);
         } else {
           // Insert new freelancer
           await pool.query(`
             INSERT INTO freelancers 
             (user_id, profession, skills, years_of_experience, 
-             hourly_rate, rating, location, bio, job_performance)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+             hourly_rate, rating, location, bio, job_performance,
+             responsiveness, fairness_score, skills_experience,
+             completed_jobs, availability)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
           `, [
             freelancerData.user_id,
             freelancerData.profession,
@@ -112,9 +126,14 @@ async function importFreelancers() {
             freelancerData.rating,
             freelancerData.location,
             freelancerData.bio,
-            freelancerData.job_performance
+            freelancerData.job_performance,
+            freelancerData.responsiveness,
+            freelancerData.fairness_score,
+            freelancerData.skills_experience,
+            freelancerData.completed_jobs,
+            freelancerData.availability
           ]);
-          console.log(`Created new freelancer: ${freelancerData.display_name}`);
+          console.log(`Created new freelancer: ${freelancer.displayName}`);
         }
         
       } catch (error) {
