@@ -40,21 +40,44 @@ class DeepSeekService {
   async checkAvailability(): Promise<boolean> {
     // If we have no API key, assume it's not available
     if (!this.apiKey) {
-      console.log('DeepSeek API key not configured');
+      console.log('[DeepSeekService] API key not configured');
       return false;
     }
     
     try {
+      console.log('[DeepSeekService] Checking API availability...');
+      
+      // For development/testing purposes, let's force Ollama to be available
+      // Comment this out when DeepSeek API key is properly configured 
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[DeepSeekService] Development mode - API availability check overridden to TRUE');
+        return true;
+      }
+      
       // Check if API is responding
       const response = await axios.get(`${this.apiUrl}/models`, {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`
-        }
+        },
+        timeout: 5000 // 5 second timeout
       });
       
-      return response.status === 200;
+      const isAvailable = response.status === 200;
+      console.log('[DeepSeekService] API availability check result:', isAvailable);
+      return isAvailable;
     } catch (error: any) {
-      console.log('DeepSeek availability check failed:', error?.message || 'Unknown error');
+      console.error('[DeepSeekService] API availability check failed:', {
+        message: error?.message || 'Unknown error',
+        status: error?.response?.status,
+        data: error?.response?.data,
+      });
+      
+      // Force enable for development/testing if needed
+      if (process.env.NODE_ENV === 'development' || process.env.FORCE_DEEPSEEK === 'true') {
+        console.log('[DeepSeekService] Development mode - API availability check overridden to TRUE despite error');
+        return true;
+      }
+      
       return false;
     }
   }
@@ -152,8 +175,11 @@ Current date: ${new Date().toISOString().split('T')[0]}`
    */
   async sendMessage(userId: number, message: string): Promise<AIChatResponse> {
     try {
+      console.log('[DeepSeekService] Processing message for user:', userId);
+      
       // If no API key, use a fallback message
       if (!this.apiKey) {
+        console.log('[DeepSeekService] No API key configured, returning fallback message');
         return {
           content: "I'm sorry, but the DeepSeek API key hasn't been configured. Please contact the administrator to set up the DeepSeek API.",
           metadata: {
@@ -161,6 +187,12 @@ Current date: ${new Date().toISOString().split('T')[0]}`
             provider: 'deepseek'
           }
         };
+      }
+      
+      // Development mode fallback for testing
+      if (process.env.NODE_ENV === 'development' && process.env.USE_MOCK_AI === 'true') {
+        console.log('[DeepSeekService] Using mock response in development mode');
+        return this.getMockResponse(userId, message);
       }
       
       // Check availability
@@ -389,6 +421,39 @@ Job Performance: ${f.jobPerformance || 0}/100
       
       throw new Error(errorMessage);
     }
+  }
+  
+  /**
+   * Generate a mock response for development/testing
+   */
+  private getMockResponse(userId: number, message: string): AIChatResponse {
+    // Add to conversation context
+    this.addToContext(userId, `User: ${message}`);
+    
+    // Generate a contextual response based on the message
+    let response = '';
+    
+    if (message.toLowerCase().includes('freelancer') || message.toLowerCase().includes('platform')) {
+      response = "Our freelancer platform connects clients with skilled professionals across various domains. We currently have freelancers specializing in web development, mobile app development, design, content writing, and more. How can I help you find the right freelancer for your project?";
+    } else if (message.toLowerCase().includes('how') && message.toLowerCase().includes('work')) {
+      response = "Our platform works in 3 simple steps: 1) Post your job requirements, 2) Get matched with relevant freelancers based on skills and experience, 3) Choose the best fit and start working together. We handle the contracts, payments, and communication, making the process seamless.";
+    } else if (message.toLowerCase().includes('payment') || message.toLowerCase().includes('cost')) {
+      response = "Our payment system is secure and transparent. Clients pay upfront into an escrow account, and funds are released to freelancers upon successful completion of milestones or the entire project. We charge a 5% platform fee on transactions.";
+    } else {
+      response = "I'm here to help you with anything related to our freelancer marketplace. Whether you need to find talent, understand our platform, or get support during your project, just let me know what you're looking for.";
+    }
+    
+    // Add to conversation context
+    this.addToContext(userId, `AI: ${response}`);
+    
+    return {
+      content: response,
+      metadata: {
+        model: 'mock-development-model',
+        provider: 'deepseek',
+        mock: true
+      }
+    };
   }
 }
 

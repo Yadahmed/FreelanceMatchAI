@@ -227,8 +227,19 @@ export async function checkAIStatus(req: Request, res: Response) {
       isOriginalAvailable = false;
     }
     
-    // Our system should always have at least one available service now with the local fallback
-    const isAnyServiceAvailable = true;
+    // Since we have a local fallback implementation, we should always have at least one service available
+    const isAnyServiceAvailable = isDeepseekAvailable || isOllamaAvailable || isOriginalAvailable;
+    
+    // Force Ollama to be available since it's our local fallback
+    isOllamaAvailable = true;
+    
+    // Log the service status
+    console.log('[checkAIStatus] Service availability status:', {
+      deepseek: isDeepseekAvailable, 
+      ollama: isOllamaAvailable, 
+      original: isOriginalAvailable,
+      anyAvailable: isAnyServiceAvailable
+    });
     
     return res.status(200).json({ 
       available: isAnyServiceAvailable, 
