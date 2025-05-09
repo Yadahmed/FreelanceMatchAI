@@ -103,11 +103,26 @@ export async function checkAIStatus(getDetailed = false): Promise<boolean | AISt
  */
 export async function sendAIMessage(message: string, metadata?: Record<string, any>): Promise<AIChatResponse> {
   try {
-    const response = await apiRequest('/ai/message', {
+    // Use direct fetch instead of apiRequest to avoid cross-origin issues
+    console.log('[sendAIMessage] Sending message to AI:', message);
+    
+    const response = await fetch('/api/ai/message', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ message, metadata }),
-    }) as AIChatResponse;
-    return response;
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('[sendAIMessage] Response from AI:', data);
+    return data as AIChatResponse;
   } catch (error) {
     console.error('Error sending message to AI:', error);
     throw error;
@@ -122,13 +137,26 @@ export async function analyzeJobRequest(
   skills: string[] = []
 ): Promise<AIMatchResult> {
   try {
-    console.log('Sending job analysis request with:', { description, skills });
-    const response = await apiRequest('/ai/job-analysis', {
+    console.log('[analyzeJobRequest] Sending job analysis request with:', { description, skills });
+    
+    // Use direct fetch instead of apiRequest to avoid cross-origin issues
+    const response = await fetch('/api/ai/job-analysis', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ description, skills }),
-    }) as AIMatchResult;
-    console.log('Job analysis response:', response);
-    return response;
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('[analyzeJobRequest] Response:', data);
+    return data as AIMatchResult;
   } catch (error) {
     console.error('Error analyzing job request:', error);
     throw error;

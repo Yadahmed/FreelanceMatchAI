@@ -305,8 +305,12 @@ export function AIChat() {
     
     try {
       // Ask the AI to improve the prompt for better results
-      const result = await apiRequest('/api/ai/message', {
+      // Use direct fetch instead of apiRequest to avoid cross-origin issues
+      const response = await fetch('/api/ai/message', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ 
           message: `Please rewrite the following prompt to be more effective for our freelance marketplace AI assistant. Make it specific, detailed, and clear: "${inputValue}"`,
           metadata: { 
@@ -314,8 +318,16 @@ export function AIChat() {
             model: "claude-3-7-sonnet-20250219",
             system: "You are a helpful AI prompt improvement assistant. Your task is to rewrite user messages to be more effective when communicating with a freelance marketplace AI. Focus on making prompts more specific, detailed, and clear. Never mention that you're rewriting the prompt - just provide the improved version."
           }
-        })
+        }),
+        credentials: 'include'
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server error ${response.status}: ${errorText}`);
+      }
+      
+      const result = await response.json();
       
       let improvedPrompt = '';
       
