@@ -265,6 +265,12 @@ Current date: ${new Date().toISOString().split('T')[0]}`
     skills: string[] = []
   ): Promise<AIMatchResult> {
     try {
+      // Development mode should use real freelancers from the database
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[DeepSeekService] Using real database freelancers for job matching in development mode');
+        return this.getMockJobMatches(userId, description, skills);
+      }
+      
       // If no API key, return a default response
       if (!this.apiKey) {
         throw new Error('DeepSeek API key not configured');
@@ -466,6 +472,166 @@ Job Performance: ${f.jobPerformance || 0}/100
         mock: true
       }
     };
+  }
+  
+  /**
+   * Generate mock job request matches using real freelancers from the database
+   */
+  async getMockJobMatches(
+    userId: number,
+    description: string,
+    skills: string[] = []
+  ): Promise<AIMatchResult> {
+    try {
+      console.log('[DeepSeekService] Generating mock job matches with real database freelancers');
+      
+      // Get actual freelancers from the database
+      const allFreelancers = await storage.getAllFreelancers();
+      
+      if (!allFreelancers || allFreelancers.length === 0) {
+        throw new Error('No freelancers available in the database for matching');
+      }
+      
+      console.log(`[DeepSeekService] Found ${allFreelancers.length} freelancers in database`);
+      
+      // Create a scoring function to rank freelancers based on the job description
+      const scoreFreelancer = (freelancer: any) => {
+        let score = 0;
+        
+        // Score based on skills match (most important)
+        const freelancerSkills = Array.isArray(freelancer.skills) ? freelancer.skills : [];
+        const requestedSkills = skills.map(s => s.toLowerCase());
+        
+        // Count matching skills
+        const matchingSkills = freelancerSkills.filter((skill: string) => 
+          requestedSkills.some(reqSkill => 
+            skill.toLowerCase().includes(reqSkill) || reqSkill.includes(skill.toLowerCase())
+          )
+        );
+        
+        // Skills match provides a base score
+        score += (matchingSkills.length / Math.max(requestedSkills.length, 1)) * 30;
+        
+        // Job performance is weighted highest (50%)
+        score += (freelancer.jobPerformance / 100) * 50;
+        
+        // Skills experience (20%)
+        score += (freelancer.skillsExperience / 100) * 20;
+        
+        // Responsiveness (15%)
+        score += (freelancer.responsiveness / 100) * 15;
+        
+        // Fairness score (15%) 
+        score += (freelancer.fairnessScore / 100) * 15;
+        
+        return score;
+      };
+      
+      // Score and rank all freelancers
+      const scoredFreelancers = allFreelancers.map(freelancer => {
+        const totalScore = scoreFreelancer(freelancer);
+        return {
+          freelancer,
+          score: totalScore
+        };
+      });
+      
+      // Sort freelancers by score (highest first)
+      scoredFreelancers.sort((a, b) => b.score - a.score);
+      
+      // Take top 3 matches
+      const topMatches = scoredFreelancers.slice(0, 3);
+      
+      // Format matches for the response
+      const processedMatches: FreelancerMatch[] = await Promise.all(
+        topMatches.map(async (match) => {
+          const f = match.freelancer;
+          
+          // Get the user info for this freelancer
+          const user = await storage.getUser(f.userId);
+          const displayName = user?.displayName || 'Unknown';
+          
+          // Create match reasons based on skills and experience
+          const matchingSkills = Array.isArray(f.skills) ? f.skills : [];
+          
+          // Generate reasoning for the match
+          let matchReasons = [];
+          
+          if (f.jobPerformance > 90) {
+            matchReasons.push(`${displayName} has exceptional job performance ratings (${f.jobPerformance}%)`);
+          } else if (f.jobPerformance > 80) {
+            matchReasons.push(`${displayName} has strong job performance ratings (${f.jobPerformance}%)`);
+          }
+          
+          if (matchingSkills.length > 0) {
+            matchReasons.push(`Skills match: ${matchingSkills.slice(0, 3).join(', ')}${matchingSkills.length > 3 ? '...' : ''}`);
+          }
+          
+          if (f.yearsOfExperience && f.yearsOfExperience > 5) {
+            matchReasons.push(`${f.yearsOfExperience} years of professional experience`);
+          }
+          
+          if (f.location.includes('Iraq')) {
+            matchReasons.push(`Located in ${f.location}`);
+          }
+          
+          // Calculate component scores based on our algorithm weights
+          const jobPerformanceScore = (f.jobPerformance / 100) * 0.5;  // 50% weight
+          const skillsScore = (f.skillsExperience / 100) * 0.2;        // 20% weight
+          const responsivenessScore = (f.responsiveness / 100) * 0.15; // 15% weight
+          const fairnessScore = (f.fairnessScore / 100) * 0.15;        // 15% weight
+                    
+          return {
+            freelancerId: f.id,
+            score: Math.min(100, Math.round(match.score)),
+            matchReasons: matchReasons,
+            jobPerformanceScore,
+            skillsScore,
+            responsivenessScore,
+            fairnessScore
+          };
+        })
+      );
+      
+      // Generate analysis text based on the job description
+      let analysisText = `Based on your job description, you're looking for `;
+      
+      if (description.toLowerCase().includes('develop')) {
+        analysisText += `development expertise. `;
+      } else if (description.toLowerCase().includes('design')) {
+        analysisText += `design expertise. `;
+      } else if (description.toLowerCase().includes('write') || description.toLowerCase().includes('content')) {
+        analysisText += `content writing expertise. `;
+      } else {
+        analysisText += `professional expertise. `;
+      }
+      
+      if (skills.length > 0) {
+        analysisText += `Key skills required include ${skills.join(', ')}. `;
+      }
+      
+      analysisText += `I've found ${processedMatches.length} qualified freelancers in the platform database who match your requirements.`;
+      
+      // Create suggested questions based on the job
+      const suggestedQuestions = [
+        'What hourly rate should I expect to pay for this type of work?',
+        'How long might this project take to complete?',
+        'What information should I provide to these freelancers?'
+      ];
+      
+      return {
+        jobAnalysis: {
+          description: description,
+          skills: skills,
+          analysisText: analysisText
+        },
+        matches: processedMatches,
+        suggestedQuestions: suggestedQuestions
+      };
+    } catch (error: any) {
+      console.error('Error generating mock job matches:', error);
+      throw new Error(`Failed to generate mock matches: ${error.message}`);
+    }
   }
 }
 

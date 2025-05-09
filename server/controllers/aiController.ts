@@ -229,11 +229,10 @@ export async function processJobRequest(req: Request, res: Response) {
  */
 export async function checkAIStatus(req: Request, res: Response) {
   try {
-    // Ensure authentication
-    if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
-    console.log('[checkAIStatus] User authenticated:', req.user.id);
+    // Note: We're removing the authentication requirement for this endpoint
+    // to ensure the AI status can be checked without being logged in
+    // This allows the frontend to show appropriate UI even before login
+    console.log('[checkAIStatus] Checking AI status without authentication requirement');
     
     // Check all available AI services
     console.log('Checking AI services availability...');
