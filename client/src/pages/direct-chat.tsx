@@ -55,7 +55,17 @@ export default function DirectChatPage() {
         })
       });
       
-      setResponse(result.response || 'No response received');
+      if (result.content) {
+        // Normal API response
+        setResponse(result.content);
+      } else if (result.response) {
+        // Legacy API response format
+        setResponse(result.response);
+      } else {
+        // No recognizable response format
+        console.warn('Unrecognized API response format:', result);
+        setResponse('No response content received. See console for details.');
+      }
     } catch (error: any) {
       console.error('Error sending message:', error);
       setResponse(`Error: ${error.message || 'Failed to get response'}`);
