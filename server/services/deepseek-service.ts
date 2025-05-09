@@ -25,7 +25,7 @@ class DeepSeekService {
     // Configure DeepSeek API settings
     this.apiUrl = process.env.DEEPSEEK_API_URL || 'https://api.deepseek.com/v1';
     this.apiKey = process.env.DEEPSEEK_API_KEY || null;
-    this.model = process.env.DEEPSEEK_MODEL || 'llama-3.1-8b-instant';
+    this.model = process.env.DEEPSEEK_MODEL || '';
     
     console.log('DeepSeekService initialized with config:', {
       apiUrl: this.apiUrl,
@@ -205,12 +205,18 @@ Current date: ${new Date().toISOString().split('T')[0]}`
       const messages = this.buildMessages(userId, message);
       
       // Make the API request
-      const response = await axios.post(`${this.apiUrl}/chat/completions`, {
-        model: this.model,
+      const requestBody: any = {
         messages,
         temperature: 0.7,
         max_tokens: 1024
-      }, {
+      };
+      
+      // Only include model if specified
+      if (this.model) {
+        requestBody.model = this.model;
+      }
+      
+      const response = await axios.post(`${this.apiUrl}/chat/completions`, requestBody, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`
@@ -325,15 +331,21 @@ Job Performance: ${f.jobPerformance || 0}/100
       userMessage += `\nBased on the job request and required skills, rank the top 3 freelancers with detailed reasoning.`;
       
       // Make the API request
-      const response = await axios.post(`${this.apiUrl}/chat/completions`, {
-        model: this.model,
+      const requestBody: any = {
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage }
         ],
         temperature: 0.2,
         max_tokens: 2048
-      }, {
+      };
+      
+      // Only include model if specified
+      if (this.model) {
+        requestBody.model = this.model;
+      }
+      
+      const response = await axios.post(`${this.apiUrl}/chat/completions`, requestBody, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`
