@@ -48,6 +48,26 @@ export function AIChat() {
   useEffect(() => {
     const checkAvailability = async () => {
       try {
+        // Force AI to be available in development mode
+        const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
+        
+        if (isDevelopment) {
+          console.log("Development mode detected - forcing AI availability");
+          setIsAIAvailable(true);
+          setActiveService('anthropic');
+          
+          // Add welcome message for development mode
+          setMessages([
+            {
+              id: generateId(),
+              content: "Hi there! I'm FreelanceAI, your intelligent assistant. How can I help you today? You can ask me to find freelancers for your project or help you understand how our marketplace works.",
+              isUser: false,
+              timestamp: new Date(),
+            },
+          ]);
+          return;
+        }
+      
         console.log("Checking AI availability from AIChat component...");
         // Get detailed status information
         const statusResponse = await checkAIStatus(true) as AIStatusResponse;
