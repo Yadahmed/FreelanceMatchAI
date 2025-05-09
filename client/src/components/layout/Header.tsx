@@ -44,7 +44,7 @@ export function Header() {
           <Link href="/" className="text-sm font-medium transition-colors hover:text-primary">
             Home
           </Link>
-          <Link href="/freelancers" className="text-sm font-medium transition-colors hover:text-primary">
+          <Link href="/explore-freelancers" className="text-sm font-medium transition-colors hover:text-primary">
             Explore Freelancers
           </Link>
           <Link href="/about" className="text-sm font-medium transition-colors hover:text-primary">
