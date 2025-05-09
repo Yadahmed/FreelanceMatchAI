@@ -16,9 +16,9 @@ class OllamaService {
   private maxContextLength: number = 10;
   
   constructor() {
-    // Default to localhost:11434 as this is the standard Ollama port
+    // Default to public Ollama proxy server (if one exists)
     // Can be overridden with OLLAMA_API_URL environment variable
-    this.apiUrl = process.env.OLLAMA_API_URL || 'http://localhost:11434/api';
+    this.apiUrl = process.env.OLLAMA_API_URL || 'https://ollama-proxy.replit.app/api';
     this.model = process.env.OLLAMA_MODEL || 'deepseek-coder:6.7b'; // Use DeepSeek Coder 6.7b
     
     console.log('OllamaService initialized with config:', {
