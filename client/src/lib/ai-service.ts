@@ -18,15 +18,50 @@ interface AIStatusResponse {
  */
 export async function checkAIStatus(getDetailed = false): Promise<boolean | AIStatusResponse> {
   try {
+    console.log('Checking AI status...');
     const response = await apiRequest('/ai/status', {
       method: 'GET',
     }) as AIStatusResponse;
     
-    if (getDetailed) {
-      return response;
+    console.log('Raw AI status response:', response);
+    
+    // Ensure response has expected structure with default values for missing properties
+    const normalizedResponse: AIStatusResponse = {
+      available: Boolean(response?.available),
+      services: {
+        deepseek: Boolean(response?.services?.deepseek),
+        ollama: Boolean(response?.services?.ollama),
+        original: Boolean(response?.services?.original)
+      },
+      primaryService: response?.primaryService || null
+    };
+    
+    // Force AI to be available if at least one service is available,
+    // even if the backend says it's not
+    const services = normalizedResponse.services || { deepseek: false, ollama: false, original: false };
+    const anyServiceAvailable = services.deepseek || services.ollama || services.original;
+      
+    if (anyServiceAvailable && !normalizedResponse.available) {
+      console.log('Services available but status reports unavailable, correcting...');
+      normalizedResponse.available = true;
+      
+      // Set primary service if not set
+      if (!normalizedResponse.primaryService) {
+        if (services.deepseek) {
+          normalizedResponse.primaryService = 'deepseek';
+        } else if (services.ollama) {
+          normalizedResponse.primaryService = 'ollama';
+        }
+      }
     }
     
-    return response.available;
+    console.log('Normalized AI status:', normalizedResponse);
+    
+    if (getDetailed) {
+      return normalizedResponse;
+    }
+    
+    return normalizedResponse.available;
   } catch (error) {
     console.error('Error checking AI status:', error);
     if (getDetailed) {

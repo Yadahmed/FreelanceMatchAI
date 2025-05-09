@@ -45,17 +45,63 @@ export function AIChat() {
   useEffect(() => {
     const checkAvailability = async () => {
       try {
+        console.log("Checking AI availability from AIChat component...");
         // Get detailed status information
         const statusResponse = await checkAIStatus(true) as AIStatusResponse;
-        const available = statusResponse.available;
-        setIsAIAvailable(available);
+        console.log("AI status response in AIChat:", statusResponse);
         
-        // Set the active service
-        setActiveService(statusResponse.primaryService || null);
+        const available = statusResponse.available;
+        
+        // Force availability if any services are available
+        const services = statusResponse.services || { deepseek: false, ollama: false, original: false };
+        const forceAvailable = services.deepseek || services.ollama;
+        
+        setIsAIAvailable(available || forceAvailable);
+        
+        // Set the active service - prefer deepseek, fallback to ollama
+        if (statusResponse.services?.deepseek) {
+          setActiveService('deepseek');
+        } else if (statusResponse.services?.ollama) {
+          setActiveService('ollama');
+        } else {
+          setActiveService(statusResponse.primaryService || null);
+        }
         
         if (!available) {
           // Check which specific services are unavailable
           const services = statusResponse.services || { deepseek: false, ollama: false, original: false };
+          console.log("AI services status:", services);
+          
+          // Fix for the case where services might be available but not recognized
+          const isAnyServiceActuallyAvailable = services.deepseek || services.ollama;
+          if (isAnyServiceActuallyAvailable && !available) {
+            console.log("Services available but status reports unavailable, correcting...");
+            setIsAIAvailable(true);
+            setActiveService(services.deepseek ? 'deepseek' : 'ollama');
+            
+            // Add welcome message
+            let welcomeMessage = "Hi there! I'm FreelanceAI, your intelligent assistant";
+            if (services.deepseek) {
+              welcomeMessage += " powered by DeepSeek R1 API.";
+            } else if (services.ollama) {
+              welcomeMessage += " (using Ollama as a fallback service).";
+            } else {
+              welcomeMessage += ".";
+            }
+            
+            welcomeMessage += " How can I help you today? You can ask me to find freelancers for your project or help you understand how our marketplace works.";
+            
+            setMessages([
+              {
+                id: generateId(),
+                content: welcomeMessage,
+                isUser: false,
+                timestamp: new Date(),
+              },
+            ]);
+            
+            return;
+          }
           
           let unavailableMessage = "Welcome to our freelance marketplace! I'm your AI assistant, but I'm currently unavailable. ";
           
