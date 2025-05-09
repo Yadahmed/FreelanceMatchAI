@@ -21,15 +21,34 @@ interface FreelancerData {
   hourlyRate: number;
 }
 
-// Mock function to get freelancer data by ID - in a real app, you'd use a query
+// Function to get real freelancer data by ID
 const getFreelancerById = async (id: number): Promise<FreelancerData> => {
-  // This would fetch from the backend in a real implementation
-  return {
-    id,
-    name: `Freelancer #${id}`,
-    profession: 'Professional',
-    hourlyRate: 50,
-  };
+  try {
+    console.log(`Fetching freelancer data for ID: ${id}`);
+    // Make a direct API request to get the freelancer data
+    const response = await fetch(`/api/freelancers/${id}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch freelancer: ${response.statusText}`);
+    }
+    const data = await response.json();
+    
+    return {
+      id: data.id,
+      name: data.displayName || data.name || `Freelancer #${id}`,
+      profession: data.profession || 'Professional',
+      imageUrl: data.imageUrl,
+      hourlyRate: data.hourlyRate || 50,
+    };
+  } catch (error) {
+    console.error(`Error fetching freelancer ${id}:`, error);
+    // Return fallback data if fetch fails
+    return {
+      id,
+      name: `Freelancer #${id}`,
+      profession: 'Professional',
+      hourlyRate: 50,
+    };
+  }
 };
 
 // Define the AIStatusResponse interface

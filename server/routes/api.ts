@@ -145,6 +145,51 @@ router.use('/ollama', ollamaRouter);
 // Ollama testing routes (no auth required)
 router.use('/test-ollama', testOllamaRouter);
 
+// Public freelancer routes (no auth required for AI job matching)
+router.get('/freelancers/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: 'Invalid freelancer ID' });
+    }
+
+    // Import needed modules within the function scope
+    const { storage } = require('../storage');
+    const { db } = require('../db');
+    const { freelancers } = require('@shared/schema');
+    
+    // Get the freelancer by their ID
+    const freelancer = await storage.getFreelancerById(id);
+    
+    if (!freelancer) {
+      return res.status(404).json({ message: 'Freelancer not found' });
+    }
+    
+    // Return public-facing information
+    return res.json({
+      id: freelancer.id,
+      userId: freelancer.userId,
+      displayName: freelancer.displayName,
+      profession: freelancer.profession,
+      skills: freelancer.skills,
+      bio: freelancer.bio,
+      hourlyRate: freelancer.hourlyRate,
+      yearsOfExperience: freelancer.yearsOfExperience,
+      location: freelancer.location,
+      imageUrl: freelancer.imageUrl,
+      rating: freelancer.rating,
+      jobPerformance: freelancer.jobPerformance,
+      skillsExperience: freelancer.skillsExperience,
+      responsiveness: freelancer.responsiveness,
+      fairnessScore: freelancer.fairnessScore,
+      completedJobs: freelancer.completedJobs
+    });
+  } catch (error) {
+    console.error('Error fetching freelancer:', error);
+    return res.status(500).json({ message: 'Error fetching freelancer data' });
+  }
+});
+
 // Freelancer routes
 router.get('/freelancer/dashboard', requireFreelancer, getDashboard);
 router.patch('/freelancer/profile', requireFreelancer, updateProfile);
