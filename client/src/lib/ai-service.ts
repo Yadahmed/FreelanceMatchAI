@@ -1,5 +1,5 @@
 import { apiRequest } from './queryClient';
-import { AIMatchResult, ChatResponse } from '@shared/ai-schemas';
+import { AIMatchResult, AIChatResponse } from '@shared/ai-schemas';
 
 /**
  * Check if the AI service is available
@@ -19,9 +19,9 @@ export async function checkAIStatus(): Promise<boolean> {
 /**
  * Send a message to the AI assistant
  */
-export async function sendAIMessage(message: string, metadata?: Record<string, any>): Promise<ChatResponse> {
+export async function sendAIMessage(message: string, metadata?: Record<string, any>): Promise<AIChatResponse> {
   try {
-    const response = await apiRequest<ChatResponse>('/ai/message', {
+    const response = await apiRequest<AIChatResponse>('/ai/message', {
       method: 'POST',
       data: { message, metadata },
     });
