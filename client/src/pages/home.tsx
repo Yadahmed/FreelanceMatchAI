@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InfoPanel } from "@/components/layout/InfoPanel";
 import { AIChat } from '@/components/ai/AIChat';
 import { JobAnalysis } from '@/components/ai/JobAnalysis';
+import { DirectAIChat } from '@/components/ai/DirectAIChat';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('chat');
@@ -24,6 +25,7 @@ export default function Home() {
               <TabsList>
                 <TabsTrigger value="chat">DeepSeek R1 Chat</TabsTrigger>
                 <TabsTrigger value="job-analysis">Job Analysis</TabsTrigger>
+                <TabsTrigger value="direct-chat">Direct Chat</TabsTrigger>
               </TabsList>
             </div>
             
@@ -33,6 +35,10 @@ export default function Home() {
             
             <TabsContent value="job-analysis" className="focus:outline-none">
               <JobAnalysis />
+            </TabsContent>
+            
+            <TabsContent value="direct-chat" className="focus:outline-none">
+              <DirectAIChat />
             </TabsContent>
           </Tabs>
         </div>
