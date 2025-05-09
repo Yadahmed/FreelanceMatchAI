@@ -285,6 +285,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const user = result.user;
       
+      // Get and store token
+      const token = await user.getIdToken();
+      localStorage.setItem('auth_token', token);
+      
       // Update profile if display name provided
       if (displayName) {
         await updateProfile(user, { displayName });
@@ -349,6 +353,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       await firebaseSignOut(auth);
       await apiRequest('/api/auth/logout', { method: 'POST' });
+      
+      // Also clear auth token from localStorage
+      localStorage.removeItem('auth_token');
+      
       setCurrentUser(null);
       queryClient.invalidateQueries(); // Invalidate all queries
     } catch (error) {
@@ -375,6 +383,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Get a fresh token - critical for auth to work
       const token = await firebaseUser.getIdToken(true); // Force refresh token
+      
+      // Update token in localStorage
+      localStorage.setItem('auth_token', token);
+      
       console.log('[createFreelancerProfile] Got fresh token for auth');
       
       // Create the freelancer profile with the auth token
@@ -397,7 +409,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Force refresh user data from server
       try {
         // Get fresh user data from the server
-        const token = await firebaseUser?.getIdToken();
+        const token = await firebaseUser?.getIdToken(true); // Force refresh
+        
+        // Update token in localStorage
+        localStorage.setItem('auth_token', token);
+        
         const meResponse = await apiRequest('/api/auth/me', {
           headers: {
             'Authorization': `Bearer ${token}`
