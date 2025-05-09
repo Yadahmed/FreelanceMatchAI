@@ -86,9 +86,11 @@ export default function OllamaTestPage() {
                   value={apiUrl}
                   onChange={(e) => setApiUrl(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  For local Ollama use: http://localhost:11434/api
-                </p>
+                <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                  <p>For local Ollama: <code>http://localhost:11434/api</code></p>
+                  <p>For localtunnel: <code>https://your-tunnel-url.loca.lt/api</code></p>
+                  <p>Make sure to include <code>/api</code> at the end of the URL</p>
+                </div>
               </div>
               
               <Button 
