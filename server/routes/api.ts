@@ -145,6 +145,11 @@ router.use('/ollama', ollamaRouter);
 // Ollama testing routes (no auth required)
 router.use('/test-ollama', testOllamaRouter);
 
+// Import these at the top level
+import { storage } from '../storage';
+import { db } from '../db';
+import { freelancers } from '@shared/schema';
+
 // Public freelancer routes (no auth required for AI job matching)
 router.get('/freelancers/:id', async (req, res) => {
   try {
@@ -152,11 +157,6 @@ router.get('/freelancers/:id', async (req, res) => {
     if (isNaN(id)) {
       return res.status(400).json({ message: 'Invalid freelancer ID' });
     }
-
-    // Import needed modules within the function scope
-    const { storage } = require('../storage');
-    const { db } = require('../db');
-    const { freelancers } = require('@shared/schema');
     
     // Get the freelancer by their ID
     const freelancer = await storage.getFreelancerById(id);

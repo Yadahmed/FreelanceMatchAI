@@ -255,6 +255,173 @@ export class MemStorage implements IStorage {
       .slice(0, limit);
   }
 
+  // Job request methods - stub implementations for interface compatibility
+  async getJobRequest(id: number): Promise<JobRequest | undefined> {
+    console.warn('MemStorage: getJobRequest not fully implemented');
+    return undefined;
+  }
+  
+  async getJobRequestsByClientId(clientId: number): Promise<JobRequest[]> {
+    console.warn('MemStorage: getJobRequestsByClientId not fully implemented');
+    return [];
+  }
+  
+  async getJobRequestsByFreelancerId(freelancerId: number): Promise<JobRequest[]> {
+    console.warn('MemStorage: getJobRequestsByFreelancerId not fully implemented');
+    return [];
+  }
+  
+  async createJobRequest(jobRequest: InsertJobRequest): Promise<JobRequest> {
+    console.warn('MemStorage: createJobRequest not fully implemented');
+    return {
+      id: 0,
+      clientId: jobRequest.clientId,
+      freelancerId: jobRequest.freelancerId,
+      title: jobRequest.title,
+      description: jobRequest.description,
+      budget: jobRequest.budget,
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+  
+  async updateJobRequestStatus(id: number, status: string): Promise<JobRequest> {
+    console.warn('MemStorage: updateJobRequestStatus not fully implemented');
+    return {
+      id,
+      clientId: 0,
+      freelancerId: 0,
+      title: '',
+      description: '',
+      budget: 0,
+      status,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+  
+  // Booking methods - stub implementations for interface compatibility
+  async getBooking(id: number): Promise<Booking | undefined> {
+    console.warn('MemStorage: getBooking not fully implemented');
+    return undefined;
+  }
+  
+  async getBookingsByFreelancerId(freelancerId: number): Promise<Booking[]> {
+    console.warn('MemStorage: getBookingsByFreelancerId not fully implemented');
+    return [];
+  }
+  
+  async getBookingsByClientId(clientId: number): Promise<Booking[]> {
+    console.warn('MemStorage: getBookingsByClientId not fully implemented');
+    return [];
+  }
+  
+  async createBooking(booking: InsertBooking): Promise<Booking> {
+    console.warn('MemStorage: createBooking not fully implemented');
+    return {
+      id: 0,
+      clientId: booking.clientId,
+      freelancerId: booking.freelancerId,
+      date: booking.date,
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+      status: 'pending',
+      notes: booking.notes || '',
+      createdAt: new Date()
+    };
+  }
+  
+  async updateBookingStatus(id: number, status: string): Promise<Booking> {
+    console.warn('MemStorage: updateBookingStatus not fully implemented');
+    return {
+      id,
+      clientId: 0,
+      freelancerId: 0,
+      date: new Date(),
+      startTime: '',
+      endTime: '',
+      status,
+      notes: '',
+      createdAt: new Date()
+    };
+  }
+  
+  // User preferences methods - stub implementations for interface compatibility
+  async getUserPreferences(userId: number): Promise<UserPreferences | undefined> {
+    console.warn('MemStorage: getUserPreferences not fully implemented');
+    return undefined;
+  }
+  
+  async createOrUpdateUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences> {
+    console.warn('MemStorage: createOrUpdateUserPreferences not fully implemented');
+    return {
+      id: 0,
+      userId: preferences.userId,
+      theme: preferences.theme || 'light',
+      language: preferences.language || 'en',
+      notifications: preferences.notifications || true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+  
+  // Notification methods - stub implementations for interface compatibility
+  async getNotifications(userId: number): Promise<Notification[]> {
+    console.warn('MemStorage: getNotifications not fully implemented');
+    return [];
+  }
+  
+  async getUnreadNotifications(userId: number): Promise<Notification[]> {
+    console.warn('MemStorage: getUnreadNotifications not fully implemented');
+    return [];
+  }
+  
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    console.warn('MemStorage: createNotification not fully implemented');
+    return {
+      id: 0,
+      userId: notification.userId,
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      isRead: false,
+      createdAt: new Date()
+    };
+  }
+  
+  async markNotificationAsRead(id: number): Promise<Notification> {
+    console.warn('MemStorage: markNotificationAsRead not fully implemented');
+    return {
+      id,
+      userId: 0,
+      type: 'info',
+      title: '',
+      message: '',
+      isRead: true,
+      createdAt: new Date()
+    };
+  }
+  
+  // Review methods - stub implementations for interface compatibility
+  async getReviewsByFreelancerId(freelancerId: number): Promise<Review[]> {
+    console.warn('MemStorage: getReviewsByFreelancerId not fully implemented');
+    return [];
+  }
+  
+  async createReview(review: InsertReview): Promise<Review> {
+    console.warn('MemStorage: createReview not fully implemented');
+    return {
+      id: 0,
+      clientId: review.clientId,
+      freelancerId: review.freelancerId,
+      jobId: review.jobId || null,
+      rating: review.rating,
+      comment: review.comment,
+      createdAt: new Date()
+    };
+  }
+
   // Chat methods
   async getChat(id: number): Promise<Chat | undefined> {
     return this.chats.get(id);
@@ -479,6 +646,11 @@ export class DatabaseStorage implements IStorage {
     const [freelancer] = await db.select().from(schema.freelancers).where(eq(schema.freelancers.id, id));
     return freelancer;
   }
+  
+  // Alias for getFreelancer for API consistency
+  async getFreelancerById(id: number): Promise<Freelancer | undefined> {
+    return this.getFreelancer(id);
+  }
 
   async getFreelancerByUserId(userId: number): Promise<Freelancer | undefined> {
     const [freelancer] = await db.select().from(schema.freelancers).where(eq(schema.freelancers.userId, userId));
@@ -527,24 +699,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTopFreelancersByRanking(limit: number): Promise<Freelancer[]> {
-    // Calculate the ranking score using SQL expressions
-    const rankingScoreQuery = sql`
-      (${schema.freelancers.jobPerformance} * 0.5) +
-      (${schema.freelancers.skillsExperience} * 0.2) +
-      (${schema.freelancers.responsiveness} * 0.15) +
-      (${schema.freelancers.fairnessScore} * 0.15)
-    `;
-
-    const freelancers = await db
-      .select({
-        ...schema.freelancers,
-        ranking: rankingScoreQuery
-      })
-      .from(schema.freelancers)
-      .orderBy(desc(rankingScoreQuery))
-      .limit(limit);
-
-    return freelancers;
+    // First fetch all freelancers
+    const allFreelancers = await this.getAllFreelancers();
+    
+    // Calculate ranking score in JavaScript
+    const rankedFreelancers = allFreelancers.map(freelancer => {
+      // Calculate the same weighted formula we used in MemStorage
+      const rankingScore = 
+        (freelancer.jobPerformance * 0.5) +
+        (freelancer.skillsExperience * 0.2) +
+        (freelancer.responsiveness * 0.15) +
+        (freelancer.fairnessScore * 0.15);
+      
+      return {
+        ...freelancer,
+        rankingScore
+      };
+    });
+    
+    // Sort by the calculated ranking score and take the top 'limit'
+    return rankedFreelancers
+      .sort((a, b) => b.rankingScore - a.rankingScore)
+      .slice(0, limit)
+      .map(({ rankingScore, ...freelancer }) => freelancer); // Remove the temporary ranking score property
   }
 
   // Chat methods
