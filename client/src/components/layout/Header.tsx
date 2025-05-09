@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronDown, MessageSquare, User, Settings, LogOut } from 'lucide-react';
+import { ChevronDown, MessageSquare, User, Settings, LogOut, BrainCircuit } from 'lucide-react';
 
 export function Header() {
   const { currentUser, isAuthenticated, isClient, isFreelancer, signOut } = useAuth();
@@ -46,6 +46,10 @@ export function Header() {
           </Link>
           <Link href="/freelancers" className="text-sm font-medium transition-colors hover:text-primary">
             Explore Freelancers
+          </Link>
+          <Link href="/ai-assistant" className="text-sm font-medium transition-colors hover:text-primary flex items-center">
+            <BrainCircuit className="h-4 w-4 mr-1" />
+            AI Assistant
           </Link>
           <Link href="/about" className="text-sm font-medium transition-colors hover:text-primary">
             How It Works
@@ -101,6 +105,13 @@ export function Header() {
                     </DropdownMenuItem>
                   </>
                 )}
+                
+                <DropdownMenuItem className="cursor-pointer" asChild>
+                  <Link href="/ai-assistant" className="flex items-center">
+                    <BrainCircuit className="mr-2 h-4 w-4" />
+                    <span>AI Assistant</span>
+                  </Link>
+                </DropdownMenuItem>
                 
                 <DropdownMenuItem className="cursor-pointer" asChild>
                   <Link href="/settings" className="flex items-center">
