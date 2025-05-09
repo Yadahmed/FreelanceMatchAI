@@ -144,9 +144,9 @@ export async function processAIMessage(req: Request, res: Response) {
  */
 export async function processJobRequest(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
+    // Authentication is no longer required for this endpoint
+    // Using a default user ID of 0 for non-authenticated requests
+    const userId = req.user ? req.user.id : 0;
 
     // Validate request body
     const requestData = jobAnalysisRequestSchema.safeParse(req.body);
@@ -159,7 +159,6 @@ export async function processJobRequest(req: Request, res: Response) {
     }
     
     const { description, skills = [] } = requestData.data;
-    const userId = req.user.id;
     
     // First try DeepSeek service
     const isDeepSeekAvailable = await deepseekService.checkAvailability();
@@ -180,7 +179,27 @@ export async function processJobRequest(req: Request, res: Response) {
       }
     }
     
-    // Try Ollama as fallback
+    // Try Anthropic as first fallback
+    const isAnthropicAvailable = await anthropicService.checkAvailability();
+    
+    if (isAnthropicAvailable) {
+      try {
+        console.log('[processJobRequest] Using Anthropic as fallback');
+        const result = await anthropicService.processJobRequest(userId, description, skills || []);
+        
+        // Add provider info to the result
+        return res.status(200).json({
+          ...result,
+          provider: 'anthropic',
+          fallback: true
+        });
+      } catch (anthropicError) {
+        console.error('Anthropic job analysis error, trying next fallback:', anthropicError);
+        // Continue to next fallback if Anthropic fails
+      }
+    }
+    
+    // Try Ollama as final fallback
     const isOllamaAvailable = await ollamaService.checkAvailability();
     
     if (isOllamaAvailable) {
