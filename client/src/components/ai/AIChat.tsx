@@ -196,18 +196,28 @@ export function AIChat() {
       // Check if the response metadata indicates a change in provider
       if (response.metadata?.provider) {
         // Update the active service based on the provider used for this response
-        const newService = response.metadata.provider as 'deepseek' | 'ollama';
+        const newService = response.metadata.provider as 'deepseek' | 'anthropic' | 'ollama';
         
         if (newService !== activeService) {
           setActiveService(newService);
           
-          // If we've switched to Ollama as fallback, show an informative message
-          if (newService === 'ollama' && activeService === 'deepseek') {
+          // Show informative message based on fallback
+          if (newService === 'anthropic' && activeService === 'deepseek') {
             setMessages(prev => [
               ...prev, 
               {
                 id: generateId(),
-                content: "Note: I'm now using Ollama as a fallback service because DeepSeek is currently unavailable. I'll continue to assist you with the best available service.",
+                content: "Note: I'm now using Anthropic Claude as a fallback service because DeepSeek R1 is currently unavailable. I'll continue to assist you with the best available service.",
+                isUser: false,
+                timestamp: new Date(),
+              }
+            ]);
+          } else if (newService === 'ollama' && (activeService === 'deepseek' || activeService === 'anthropic')) {
+            setMessages(prev => [
+              ...prev, 
+              {
+                id: generateId(),
+                content: "Note: I'm now using Ollama as a fallback service because other AI services are currently unavailable. I'll continue to assist you with the best available service.",
                 isUser: false,
                 timestamp: new Date(),
               }
