@@ -274,6 +274,7 @@ export function AIChat() {
           message: `Please rewrite the following prompt to be more effective for our freelance marketplace AI assistant. Make it specific, detailed, and clear: "${inputValue}"`,
           metadata: { 
             direct: true,
+            model: "llama-3.1-8b-instant",
             system: "You are a helpful AI prompt improvement assistant. Your task is to rewrite user messages to be more effective when communicating with a freelance marketplace AI. Focus on making prompts more specific, detailed, and clear. Never mention that you're rewriting the prompt - just provide the improved version."
           }
         })
