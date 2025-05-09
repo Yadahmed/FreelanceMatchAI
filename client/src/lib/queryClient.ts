@@ -1,4 +1,8 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { getAuthHeaders } from "./auth";
+
+// Define a more specific headers type to avoid TypeScript errors
+type Headers = Record<string, string>;
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -11,7 +15,13 @@ export async function apiRequest(
   url: string,
   options: RequestInit = {}
 ): Promise<any> {
-  const defaultHeaders: HeadersInit = {};
+  const authHeaders = getAuthHeaders();
+  const defaultHeaders: Record<string, string> = {};
+  
+  // Add auth headers if available
+  if (authHeaders.Authorization) {
+    defaultHeaders.Authorization = authHeaders.Authorization;
+  }
   
   if (options.body && typeof options.body === 'string') {
     defaultHeaders['Content-Type'] = 'application/json';
@@ -34,6 +44,8 @@ export async function apiRequest(
     }
   }
   
+  console.log('[apiRequest] Making request to:', url, 'with auth token:', !!defaultHeaders.Authorization);
+  
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -53,8 +65,19 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    const authHeaders = getAuthHeaders();
+    const requestHeaders: Record<string, string> = {};
+    
+    // Add auth headers if available
+    if (authHeaders.Authorization) {
+      requestHeaders.Authorization = authHeaders.Authorization;
+    }
+    
+    console.log('[queryFn] Making request to:', queryKey[0], 'with auth token:', !!requestHeaders.Authorization);
+    
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",
+      headers: requestHeaders
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

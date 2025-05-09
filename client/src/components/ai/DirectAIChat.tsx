@@ -35,10 +35,14 @@ export function DirectAIChat() {
     try {
       console.log('Sending message directly:', message);
       
+      // Get authentication token
+      const token = localStorage.getItem('auth_token');
+      
       const res = await fetch('/api/ai/message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
         },
         body: JSON.stringify({ message }),
         credentials: 'include'
