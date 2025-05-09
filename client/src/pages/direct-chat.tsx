@@ -47,7 +47,7 @@ export default function DirectChatPage() {
     setResponse('');
     
     try {
-      const result = await apiRequest('/ai/message', {
+      const result = await apiRequest('/api/ai/message', {
         method: 'POST',
         body: JSON.stringify({ 
           message,

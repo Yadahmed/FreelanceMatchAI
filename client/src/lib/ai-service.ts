@@ -19,7 +19,8 @@ interface AIStatusResponse {
 export async function checkAIStatus(getDetailed = false): Promise<boolean | AIStatusResponse> {
   try {
     console.log('Checking AI status...');
-    const response = await apiRequest('/ai/status', {
+    // Make sure we're fetching from the correct API path with the /api prefix
+    const response = await apiRequest('/api/ai/status', {
       method: 'GET',
     }) as AIStatusResponse;
     
@@ -84,7 +85,7 @@ export async function checkAIStatus(getDetailed = false): Promise<boolean | AISt
  */
 export async function sendAIMessage(message: string, metadata?: Record<string, any>): Promise<AIChatResponse> {
   try {
-    const response = await apiRequest('/ai/message', {
+    const response = await apiRequest('/api/ai/message', {
       method: 'POST',
       body: JSON.stringify({ message, metadata }),
     }) as AIChatResponse;
@@ -103,7 +104,7 @@ export async function analyzeJobRequest(
   skills: string[] = []
 ): Promise<AIMatchResult> {
   try {
-    const response = await apiRequest('/ai/job-analysis', {
+    const response = await apiRequest('/api/ai/job-analysis', {
       method: 'POST',
       body: JSON.stringify({ description, skills }),
     }) as AIMatchResult;
