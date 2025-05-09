@@ -348,24 +348,12 @@ export function AIChat() {
         <div className="flex-1">
           <h3 className="text-sm font-medium">
             FreelanceAI Assistant
-            {activeService === 'deepseek' && " (DeepSeek R1)"}
-            {activeService === 'anthropic' && " (Anthropic Claude)"}
-            {activeService === 'ollama' && " (Ollama)"}
           </h3>
           <div className="flex items-center">
             {isAIAvailable ? (
               <>
                 <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
                 <span className="text-xs text-muted-foreground">Online</span>
-                {activeService && (
-                  <span className={`text-xs text-muted-foreground ml-2 ${
-                    activeService === 'deepseek' ? 'bg-green-50' : 
-                    activeService === 'anthropic' ? 'bg-blue-50' : 'bg-amber-50'
-                  } px-1 rounded`}>
-                    {activeService === 'deepseek' ? 'DeepSeek API' : 
-                     activeService === 'anthropic' ? 'Anthropic Claude' : 'Ollama Fallback'}
-                  </span>
-                )}
               </>
             ) : (
               <>

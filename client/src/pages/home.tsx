@@ -23,7 +23,7 @@ export default function Home() {
           <Tabs defaultValue="chat" value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="flex justify-center mb-6">
               <TabsList>
-                <TabsTrigger value="chat">DeepSeek R1 Chat</TabsTrigger>
+                <TabsTrigger value="chat">AI Chat</TabsTrigger>
                 <TabsTrigger value="job-analysis">Job Analysis</TabsTrigger>
                 <TabsTrigger value="direct-chat">Direct Chat</TabsTrigger>
               </TabsList>
