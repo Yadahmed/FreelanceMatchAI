@@ -39,7 +39,7 @@ export function OllamaChat() {
           setMessages([
             {
               id: generateId(),
-              content: "Welcome to our freelance marketplace! I'm your AI assistant powered by Ollama, but I'm currently unavailable. Please start Ollama on your computer to use this feature.",
+              content: "Welcome to our freelance marketplace! I'm your AI assistant powered by DeepSeek running on Ollama, but I'm currently unavailable. Please start Ollama on your computer and run 'ollama pull deepseek-coder:6.7b' to use this feature.",
               isUser: false,
               timestamp: new Date(),
             },
@@ -49,7 +49,7 @@ export function OllamaChat() {
           setMessages([
             {
               id: generateId(),
-              content: "Hi there! I'm FreelanceAI, your intelligent assistant powered by Ollama. How can I help you today? You can ask me to find freelancers for your project or help you understand how our marketplace works.",
+              content: "Hi there! I'm FreelanceAI, your intelligent assistant powered by DeepSeek Coder running on Ollama. How can I help you today? You can ask me to find freelancers for your project or help you understand how our marketplace works.",
               isUser: false,
               timestamp: new Date(),
             },
@@ -158,7 +158,7 @@ export function OllamaChat() {
           <span className="text-xs font-bold">AI</span>
         </Avatar>
         <div className="flex-1">
-          <h3 className="text-sm font-medium">FreelanceAI Assistant (Ollama)</h3>
+          <h3 className="text-sm font-medium">FreelanceAI Assistant (DeepSeek via Ollama)</h3>
           <div className="flex items-center">
             {isAIAvailable ? (
               <>
@@ -182,8 +182,9 @@ export function OllamaChat() {
             <Alert className="mb-4">
               <Info className="h-4 w-4" />
               <AlertDescription>
-                <strong>Ollama is not running.</strong> Please start Ollama on your computer to use this feature.
-                Visit <a href="https://ollama.ai" target="_blank" rel="noopener noreferrer" className="text-primary underline">ollama.ai</a> to download and install.
+                <strong>DeepSeek on Ollama is not running.</strong> Please start Ollama on your computer and run:
+                <code className="ml-2 p-1 bg-muted rounded text-sm block my-1">ollama pull deepseek-coder:6.7b</code>
+                Visit <a href="https://ollama.ai" target="_blank" rel="noopener noreferrer" className="text-primary underline">ollama.ai</a> to download and install Ollama.
               </AlertDescription>
             </Alert>
           )}
@@ -241,7 +242,7 @@ export function OllamaChat() {
         {!isAIAvailable && (
           <div className="flex items-center justify-center mt-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
             <AlertCircle className="h-4 w-4 mr-1" />
-            Ollama is not running. Please start Ollama on your computer to use this feature.
+            DeepSeek model not available. Run: <code className="ml-1 p-1 bg-muted rounded">ollama pull deepseek-coder:6.7b</code>
           </div>
         )}
       </div>

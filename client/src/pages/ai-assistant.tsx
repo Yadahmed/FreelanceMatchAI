@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AIChat } from '@/components/ai/AIChat';
 import { OllamaChat } from '@/components/ai/OllamaChat';
 import { JobAnalysis } from '@/components/ai/JobAnalysis';
+import { OllamaJobAnalysis } from '@/components/ai/OllamaJobAnalysis';
 
 export default function AIAssistantPage() {
   const [activeTab, setActiveTab] = useState('chat');
@@ -15,9 +16,10 @@ export default function AIAssistantPage() {
         <Tabs defaultValue="chat" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex justify-center mb-6">
             <TabsList>
-              <TabsTrigger value="chat">DeepSeek Chat</TabsTrigger>
-              <TabsTrigger value="ollama-chat">Ollama Chat</TabsTrigger>
-              <TabsTrigger value="job-analysis">Job Analysis</TabsTrigger>
+              <TabsTrigger value="chat">DeepSeek R1 API</TabsTrigger>
+              <TabsTrigger value="ollama-chat">DeepSeek on Ollama</TabsTrigger>
+              <TabsTrigger value="job-analysis">Job Analysis API</TabsTrigger>
+              <TabsTrigger value="ollama-job-analysis">Job Analysis Ollama</TabsTrigger>
             </TabsList>
           </div>
           
@@ -31,6 +33,10 @@ export default function AIAssistantPage() {
           
           <TabsContent value="job-analysis" className="focus:outline-none">
             <JobAnalysis />
+          </TabsContent>
+          
+          <TabsContent value="ollama-job-analysis" className="focus:outline-none">
+            <OllamaJobAnalysis />
           </TabsContent>
         </Tabs>
       </div>
