@@ -72,10 +72,14 @@ class OllamaService {
     const context = this.getUserContext(userId);
     let prompt = '';
     
-    // Add system context first
-    prompt += 'You are FreelanceAI, an assistant for a freelance marketplace platform. ';
-    prompt += 'You help users find freelancers based on their project requirements and answer questions about the platform. ';
-    prompt += 'Be helpful, concise, and professional. ';
+    // Add system context first - tailored for DeepSeek Coder
+    prompt += 'You are FreelanceAI, an advanced AI assistant powered by DeepSeek Coder. You help users with a freelance marketplace platform.\n\n';
+    prompt += 'Your core functions:\n';
+    prompt += '1. Help users find freelancers based on project requirements and skills needed\n';
+    prompt += '2. Explain how the platform works and its features\n';
+    prompt += '3. Suggest optimal project structures and team compositions\n';
+    prompt += '4. Provide technical guidance on project specifications\n\n';
+    prompt += 'Always be helpful, concise, and professional. Focus on code and technical expertise when relevant.';
     
     // Add previous conversation context if available
     if (context.length > 0) {
@@ -106,15 +110,16 @@ class OllamaService {
       // Build prompt with conversation context
       const prompt = this.buildPrompt(userId, message);
       
-      // Send to Ollama API
+      // Send to Ollama API - using non-streaming for consistent response handling
       const response = await axios.post(`${this.apiUrl}/generate`, {
         model: this.model,
         prompt,
-        stream: false,
+        stream: false,  // Using non-streaming for simpler implementation
         options: {
           temperature: 0.7,
           top_p: 0.9,
-          top_k: 40
+          top_k: 40,
+          num_predict: 1024  // Allow longer responses for more detailed answers
         }
       });
       
@@ -164,9 +169,9 @@ class OllamaService {
         throw new Error('No freelancers available for matching');
       }
       
-      // Build prompt for Ollama to analyze the job request
+      // Build prompt for Ollama to analyze the job request - tailored for DeepSeek Coder
       let prompt = `
-      You are an AI assistant for a freelance marketplace platform. Your task is to analyze a job request and find the best matching freelancers from our database.
+      You are an advanced AI assistant powered by DeepSeek Coder for a freelance marketplace platform. Your specialized task is to analyze technical job requests and find the most suitable freelancers from our database, with particular attention to technical skills and coding expertise.
       
       Job Request Description: "${description}"
       `;
@@ -213,7 +218,8 @@ class OllamaService {
         stream: false,
         options: {
           temperature: 0.2, // Low temperature for more deterministic results
-          top_p: 0.9
+          top_p: 0.9,
+          num_predict: 2048  // Allow longer responses for more detailed analysis
         }
       });
       
