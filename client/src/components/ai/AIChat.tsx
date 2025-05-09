@@ -15,10 +15,11 @@ interface AIStatusResponse {
   available: boolean;
   services?: {
     deepseek: boolean;
+    anthropic: boolean;
     ollama: boolean;
     original: boolean;
   };
-  primaryService?: 'deepseek' | 'ollama' | null;
+  primaryService?: 'deepseek' | 'anthropic' | 'ollama' | null;
 }
 
 interface AIChatMessage {
@@ -41,7 +42,7 @@ export function AIChat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // State for tracking which AI service is being used
-  const [activeService, setActiveService] = useState<'deepseek' | 'ollama' | null>(null);
+  const [activeService, setActiveService] = useState<'deepseek' | 'anthropic' | 'ollama' | null>(null);
   
   // Check if AI service is available on mount
   useEffect(() => {
@@ -55,14 +56,16 @@ export function AIChat() {
         const available = statusResponse.available;
         
         // Force availability if any services are available
-        const services = statusResponse.services || { deepseek: false, ollama: false, original: false };
-        const forceAvailable = services.deepseek || services.ollama;
+        const services = statusResponse.services || { deepseek: false, anthropic: false, ollama: false, original: false };
+        const forceAvailable = services.deepseek || services.anthropic || services.ollama;
         
         setIsAIAvailable(available || forceAvailable);
         
-        // Set the active service - prefer deepseek, fallback to ollama
+        // Set the active service - prefer deepseek, then anthropic, then fallback to ollama
         if (statusResponse.services?.deepseek) {
           setActiveService('deepseek');
+        } else if (statusResponse.services?.anthropic) {
+          setActiveService('anthropic');
         } else if (statusResponse.services?.ollama) {
           setActiveService('ollama');
         } else {
@@ -71,11 +74,11 @@ export function AIChat() {
         
         if (!available) {
           // Check which specific services are unavailable
-          const services = statusResponse.services || { deepseek: false, ollama: false, original: false };
+          const services = statusResponse.services || { deepseek: false, anthropic: false, ollama: false, original: false };
           console.log("AI services status:", services);
           
           // Fix for the case where services might be available but not recognized
-          const isAnyServiceActuallyAvailable = services.deepseek || services.ollama;
+          const isAnyServiceActuallyAvailable = services.deepseek || services.anthropic || services.ollama;
           if (isAnyServiceActuallyAvailable && !available) {
             console.log("Services available but status reports unavailable, correcting...");
             setIsAIAvailable(true);
@@ -85,6 +88,8 @@ export function AIChat() {
             let welcomeMessage = "Hi there! I'm FreelanceAI, your intelligent assistant";
             if (services.deepseek) {
               welcomeMessage += " powered by DeepSeek R1 API.";
+            } else if (services.anthropic) {
+              welcomeMessage += " powered by Anthropic Claude.";
             } else if (services.ollama) {
               welcomeMessage += " (using Ollama as a fallback service).";
             } else {
@@ -130,6 +135,8 @@ export function AIChat() {
           
           if (activeService === 'deepseek') {
             welcomeMessage += " powered by DeepSeek R1 API.";
+          } else if (activeService === 'anthropic') {
+            welcomeMessage += " powered by Anthropic Claude.";
           } else if (activeService === 'ollama') {
             welcomeMessage += " (using Ollama as a fallback service).";
           } else {

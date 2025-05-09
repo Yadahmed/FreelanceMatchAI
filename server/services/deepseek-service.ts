@@ -25,7 +25,7 @@ class DeepSeekService {
     // Configure DeepSeek API settings
     this.apiUrl = process.env.DEEPSEEK_API_URL || 'https://api.deepseek.com/v1';
     this.apiKey = process.env.DEEPSEEK_API_KEY || null;
-    this.model = process.env.DEEPSEEK_MODEL || 'llama-3-8b-chat';
+    this.model = process.env.DEEPSEEK_MODEL || 'deepseek-reasoner';
     
     console.log('DeepSeekService initialized with config:', {
       apiUrl: this.apiUrl,
