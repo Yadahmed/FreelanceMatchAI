@@ -151,6 +151,38 @@ import { db } from '../db';
 import { freelancers } from '@shared/schema';
 
 // Public freelancer routes (no auth required for AI job matching)
+router.get('/freelancers', async (req, res) => {
+  try {
+    // Get all freelancers
+    const allFreelancers = await storage.getAllFreelancers();
+    
+    // Return a list of public-facing information
+    const freelancersResponse = allFreelancers.map(freelancer => ({
+      id: freelancer.id,
+      userId: freelancer.userId,
+      displayName: `Freelancer ${freelancer.id}`,
+      profession: freelancer.profession,
+      skills: freelancer.skills,
+      bio: freelancer.bio,
+      hourlyRate: freelancer.hourlyRate,
+      yearsOfExperience: freelancer.yearsOfExperience,
+      location: freelancer.location,
+      imageUrl: freelancer.imageUrl,
+      rating: freelancer.rating,
+      jobPerformance: freelancer.jobPerformance,
+      skillsExperience: freelancer.skillsExperience,
+      responsiveness: freelancer.responsiveness,
+      fairnessScore: freelancer.fairnessScore,
+      completedJobs: freelancer.completedJobs
+    }));
+    
+    return res.json(freelancersResponse);
+  } catch (error) {
+    console.error('Error fetching all freelancers:', error);
+    return res.status(500).json({ message: 'Error fetching freelancer data' });
+  }
+});
+
 router.get('/freelancers/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);

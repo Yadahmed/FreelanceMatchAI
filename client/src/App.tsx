@@ -9,6 +9,8 @@ import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import FreelancerProfile from "@/pages/freelancer-profile";
 import FreelancerDashboard from "@/pages/freelancer-dashboard";
+import ExploreFreelancers from "@/pages/explore-freelancers";
+import Freelancer from "@/pages/freelancer";
 import DirectChat from "@/pages/direct-chat";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
