@@ -51,8 +51,13 @@ export async function checkAIStatus(getDetailed = false): Promise<boolean | AISt
     
     // Force AI to be available if at least one service is available,
     // even if the backend says it's not
-    const services = normalizedResponse.services || { deepseek: false, ollama: false, original: false };
-    const anyServiceAvailable = services.deepseek || services.ollama || services.original;
+    const services = normalizedResponse.services || { 
+      deepseek: false, 
+      anthropic: false,
+      ollama: false, 
+      original: false 
+    };
+    const anyServiceAvailable = services.deepseek || services.anthropic || services.ollama || services.original;
       
     if (anyServiceAvailable && !normalizedResponse.available) {
       console.log('Services available but status reports unavailable, correcting...');
@@ -82,6 +87,7 @@ export async function checkAIStatus(getDetailed = false): Promise<boolean | AISt
         available: false,
         services: {
           deepseek: false,
+          anthropic: false,
           ollama: false,
           original: false
         },
