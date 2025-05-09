@@ -133,6 +133,21 @@ class AnthropicService {
   }
   
   /**
+   * Check if a message is likely requesting freelancer information
+   */
+  private isFreelancerQuery(message: string): boolean {
+    const lowerMsg = message.toLowerCase();
+    const freelancerKeywords = [
+      'find freelancer', 'looking for', 'need someone', 'hire', 
+      'developer', 'designer', 'writer', 'expert', 'professional',
+      'specialist', 'skills', 'recommend', 'who can', 'available freelancers',
+      'based in', 'similar to', 'top rated', 'best', 'marketplace'
+    ];
+    
+    return freelancerKeywords.some(keyword => lowerMsg.includes(keyword));
+  }
+  
+  /**
    * Process a message using the Anthropic API
    */
   async sendMessage(userId: number, message: string, metadata?: any): Promise<AIChatResponse> {
@@ -159,6 +174,42 @@ class AnthropicService {
       
       // Build messages with conversation context
       const messages = this.buildMessages(userId, message);
+      let freelancerDataIncluded = false;
+      
+      // Check if this is likely a query about freelancers
+      if (this.isFreelancerQuery(message)) {
+        try {
+          // Get real freelancer data from the database
+          const allFreelancers = await storage.getAllFreelancers();
+          
+          if (allFreelancers && allFreelancers.length > 0) {
+            console.log('[AnthropicService] Adding real freelancer data to prompt');
+            freelancerDataIncluded = true;
+            
+            // Format the freelancer information
+            let freelancerInfo = '\n\nHere are some actual freelancers from our database who might be relevant to your request:\n\n';
+            
+            // Add up to 5 freelancers
+            const relevantFreelancers = allFreelancers.slice(0, 5);
+            relevantFreelancers.forEach(f => {
+              freelancerInfo += `ID: ${f.id} - ${f.profession} in ${f.location}\n`;
+              freelancerInfo += `Skills: ${f.skills.join(', ')}\n`;
+              freelancerInfo += `Experience: ${f.yearsOfExperience} years | Rating: ${f.rating}/5 | Rate: $${f.hourlyRate}/hr\n`;
+              freelancerInfo += `Bio: ${f.bio}\n\n`;
+            });
+            
+            // Add instruction to include specific freelancers in response
+            freelancerInfo += '\nPlease include these specific freelancers in your response with their ID numbers, skills, and rates. Mention at least 2-3 of them by ID that would be most relevant.';
+            
+            // Add to the last user message
+            const lastMessageIndex = messages.length - 1;
+            messages[lastMessageIndex].content += freelancerInfo;
+          }
+        } catch (error) {
+          console.error('[AnthropicService] Error fetching freelancer data:', error);
+          // Continue without freelancer data if there's an error
+        }
+      }
       
       // Use custom system prompt if provided in metadata
       const systemPrompt = metadata?.system || `You are FreelanceAI, an advanced AI assistant specifically for a freelance marketplace platform.
@@ -203,7 +254,8 @@ Current date: ${new Date().toISOString().split('T')[0]}`;
         content: aiResponse,
         metadata: {
           model: this.model,
-          provider: 'anthropic'
+          provider: 'anthropic',
+          freelancerDataIncluded
         }
       };
     } catch (error: any) {
