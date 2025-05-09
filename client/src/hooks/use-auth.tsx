@@ -44,6 +44,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Get ID token from Firebase
           const token = await user.getIdToken();
           
+          // Store the token in localStorage for use in API requests
+          localStorage.setItem('auth_token', token);
+          
           // Try to get user data from backend
           try {
             const response = await apiRequest('/api/auth/me', {
@@ -100,6 +103,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       const idToken = await user.getIdToken();
+      
+      // Store token in localStorage
+      localStorage.setItem('auth_token', idToken);
       
       // Login with backend
       const loginData = {
@@ -174,6 +180,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const user = result.user;
+      
+      // Get and store token
+      const token = await user.getIdToken();
+      localStorage.setItem('auth_token', token);
       
       // Login with backend
       const loginData = {
