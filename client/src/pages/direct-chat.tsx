@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, InfoIcon, AlertTriangleIcon } from 'lucide-react';
+import { Loader2, InfoIcon, AlertTriangleIcon, Sparkles } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { checkAIStatus } from '@/lib/ai-service';
 
@@ -18,6 +18,7 @@ export default function DirectChatPage() {
   const [response, setResponse] = useState('');
   const [aiStatus, setAiStatus] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isImprovingPrompt, setIsImprovingPrompt] = useState(false);
   const [authToken, setAuthToken] = useState<string | null>(null);
   
   useEffect(() => {
@@ -74,6 +75,48 @@ export default function DirectChatPage() {
     }
   };
 
+  /**
+   * Improve the current prompt using AI assistance
+   * This helps users craft better prompts to get more relevant responses
+   */
+  const improvePrompt = async () => {
+    if (!message.trim()) return;
+    
+    setIsImprovingPrompt(true);
+    
+    try {
+      // Ask the AI to improve the prompt for better results
+      const result = await apiRequest('/api/ai/message', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          message: `Please rewrite the following prompt to be more effective for our freelance marketplace AI assistant. Make it specific, detailed, and clear: "${message}"`,
+          metadata: { 
+            direct: true,
+            system: "You are a helpful AI prompt improvement assistant. Your task is to rewrite user messages to be more effective when communicating with a freelance marketplace AI. Focus on making prompts more specific, detailed, and clear. Never mention that you're rewriting the prompt - just provide the improved version."
+          }
+        })
+      });
+      
+      let improvedPrompt = '';
+      
+      if (result.content) {
+        // Normal API response
+        improvedPrompt = result.content;
+      } else if (result.response) {
+        // Legacy API response format
+        improvedPrompt = result.response;
+      }
+      
+      // Remove any quotes that might be in the response
+      const cleanPrompt = improvedPrompt.replace(/^["']|["']$/g, '');
+      setMessage(cleanPrompt);
+    } catch (error: any) {
+      console.error('Error improving prompt:', error);
+    } finally {
+      setIsImprovingPrompt(false);
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -93,6 +136,16 @@ export default function DirectChatPage() {
                 <CardDescription>
                   Send a message directly to the AI backend to test connectivity
                 </CardDescription>
+                <div className="mt-4 p-3 bg-muted/50 rounded-md text-sm">
+                  <h4 className="font-medium mb-2">How to write effective freelancer prompts:</h4>
+                  <ul className="space-y-1 list-disc pl-5">
+                    <li>Be specific about the type of freelancer you need (designer, developer, writer, etc.)</li>
+                    <li>Include skill requirements that are important for your project</li>
+                    <li>Mention any timeline, budget constraints, or project details</li>
+                    <li>Ask for specific freelancer qualities (communication style, work approach)</li>
+                    <li>Use the "Make This Prompt Better" button to enhance your query</li>
+                  </ul>
+                </div>
               </CardHeader>
               
               <CardContent className="space-y-4">
@@ -112,22 +165,46 @@ export default function DirectChatPage() {
                     placeholder="Enter your message"
                     rows={4}
                   />
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    <p>💡 Tip: Use specific details and clear requests to get better responses from the AI.</p>
+                  </div>
                 </div>
                 
-                <Button 
-                  onClick={sendDirectMessage}
-                  disabled={isLoading || !authToken}
-                  className="w-full"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    'Send Message'
-                  )}
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={improvePrompt}
+                    disabled={isImprovingPrompt || !message.trim() || !authToken}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    {isImprovingPrompt ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Improving...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Make This Prompt Better
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button 
+                    onClick={sendDirectMessage}
+                    disabled={isLoading || !authToken || !message.trim()}
+                    className="flex-1"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      'Send Message'
+                    )}
+                  </Button>
+                </div>
                 
                 <div>
                   <p className="text-sm font-medium mb-2">Response:</p>
