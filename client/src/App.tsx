@@ -9,8 +9,6 @@ import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import FreelancerProfile from "@/pages/freelancer-profile";
 import FreelancerDashboard from "@/pages/freelancer-dashboard";
-import AIAssistant from "@/pages/ai-assistant";
-import OllamaTestPage from "@/pages/ollama-test";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -44,8 +42,10 @@ function Router() {
       <Route path="/notifications" component={Home} />
       <Route path="/settings" component={Home} />
       <Route path="/profile" component={Home} />
-      <Route path="/ai-assistant" component={AIAssistant} />
-      <Route path="/ollama-test" component={OllamaTestPage} />
+      
+      {/* Former AI pages now redirect to home */}
+      <Route path="/ai-assistant" component={Home} />
+      <Route path="/ollama-test" component={Home} />
       
       {/* Legacy redirects in case old URLs are bookmarked */}
       <Route path="/home">
