@@ -169,7 +169,7 @@ router.get('/freelancers/:id', async (req, res) => {
     return res.json({
       id: freelancer.id,
       userId: freelancer.userId,
-      displayName: freelancer.name || `Freelancer ${freelancer.id}`,
+      displayName: `Freelancer ${freelancer.id}`,
       profession: freelancer.profession,
       skills: freelancer.skills,
       bio: freelancer.bio,

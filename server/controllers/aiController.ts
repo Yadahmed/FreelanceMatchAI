@@ -47,7 +47,7 @@ export async function processAIMessage(req: Request, res: Response) {
       // Try using anthropic first for the "improve prompt" feature
       try {
         console.log('[processAIMessage] Using Anthropic for direct request with model:', metadata.model);
-        const anthropicResponse = await anthropicService.sendMessage(userId, message, metadata);
+        const anthropicResponse = await anthropicService.sendMessage(currentUserId, message, metadata);
         return res.status(200).json({
           content: anthropicResponse.content,
           metadata: {
@@ -67,7 +67,7 @@ export async function processAIMessage(req: Request, res: Response) {
     // If DeepSeek is available, use it
     if (isDeepSeekAvailable) {
       try {
-        const aiResponse = await deepseekService.sendMessage(userId, message);
+        const aiResponse = await deepseekService.sendMessage(currentUserId, message);
         return res.status(200).json({
           content: aiResponse.content,
           metadata: {
@@ -86,7 +86,7 @@ export async function processAIMessage(req: Request, res: Response) {
     if (isAnthropicAvailable) {
       try {
         console.log('[processAIMessage] Using Anthropic as fallback');
-        const anthropicResponse = await anthropicService.sendMessage(userId, message);
+        const anthropicResponse = await anthropicService.sendMessage(currentUserId, message);
         return res.status(200).json({
           content: anthropicResponse.content,
           metadata: {
@@ -106,7 +106,7 @@ export async function processAIMessage(req: Request, res: Response) {
     
     if (isOllamaAvailable) {
       try {
-        const ollamaResponse = await ollamaService.sendMessage(userId, message);
+        const ollamaResponse = await ollamaService.sendMessage(currentUserId, message);
         return res.status(200).json({
           content: ollamaResponse.content,
           metadata: {
