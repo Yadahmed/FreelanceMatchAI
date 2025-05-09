@@ -136,7 +136,7 @@ router.post('/chat/message', requireAuth, sendMessage);
 
 // AI routes
 router.get('/ai/status', checkAIStatus); // No authentication needed to check AI status
-router.post('/ai/message', requireAuth, processAIMessage);
+router.post('/ai/message', processAIMessage); // Removed requireAuth in development mode
 router.post('/ai/job-analysis', processJobRequest); // Removed requireAuth to allow non-authenticated use
 
 // Ollama routes (using a separate router)

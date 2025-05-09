@@ -14,12 +14,17 @@ import { aiChatRequestSchema, jobAnalysisRequestSchema } from '@shared/ai-schema
  */
 export async function processAIMessage(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      console.log('[processAIMessage] No authenticated user found');
+    // Use a default user ID if no authenticated user is found
+    // This allows the AI chat to work in development mode without authentication
+    const currentUserId = req.user ? req.user.id : 0;
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    
+    if (!req.user && !isDevelopment) {
+      console.log('[processAIMessage] No authenticated user found and not in development mode');
       return res.status(401).json({ message: 'Authentication required' });
     }
 
-    console.log('[processAIMessage] User authenticated:', req.user.id);
+    console.log('[processAIMessage] User ID:', currentUserId, 'Development mode:', isDevelopment);
 
     // Validate request body
     const validatedData = aiChatRequestSchema.safeParse(req.body);
@@ -33,9 +38,8 @@ export async function processAIMessage(req: Request, res: Response) {
     }
     
     const { message } = validatedData.data;
-    const userId = req.user.id;
     
-    console.log('[processAIMessage] Processing message for user:', userId, 'Message length:', message.length);
+    console.log('[processAIMessage] Processing message for user:', currentUserId, 'Message length:', message.length);
 
     // Check if direct metadata is provided (typically for the "improve prompt" feature)
     const metadata = validatedData.data.metadata;
