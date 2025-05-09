@@ -9,6 +9,7 @@ import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import FreelancerProfile from "@/pages/freelancer-profile";
 import FreelancerDashboard from "@/pages/freelancer-dashboard";
+import DirectChat from "@/pages/direct-chat";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -43,7 +44,8 @@ function Router() {
       <Route path="/settings" component={Home} />
       <Route path="/profile" component={Home} />
       
-      {/* Former AI pages now redirect to home */}
+      {/* AI testing and diagnostic routes */}
+      <Route path="/direct-chat" component={DirectChat} />
       <Route path="/ai-assistant" component={Home} />
       <Route path="/ollama-test" component={Home} />
       

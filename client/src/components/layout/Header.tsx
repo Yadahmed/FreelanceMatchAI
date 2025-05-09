@@ -109,6 +109,13 @@ export function Header() {
                   </Link>
                 </DropdownMenuItem>
                 
+                <DropdownMenuItem className="cursor-pointer" asChild>
+                  <Link href="/direct-chat" className="flex items-center">
+                    <BrainCircuit className="mr-2 h-4 w-4" />
+                    <span>AI Diagnostic Tool</span>
+                  </Link>
+                </DropdownMenuItem>
+                
                 <DropdownMenuSeparator />
                 
                 <DropdownMenuItem 
