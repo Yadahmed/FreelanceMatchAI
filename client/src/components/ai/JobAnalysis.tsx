@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { analyzeJobRequest } from '@/lib/ai-service';
+import { analyzeJobRequest, checkAIStatus } from '@/lib/ai-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar } from '@/components/ui/avatar';
-import { Loader2, Briefcase, Zap, Clock, Award } from 'lucide-react';
+import { Loader2, Briefcase, Zap, Clock, Award, AlertCircle } from 'lucide-react';
 import { AIMatchResult, FreelancerMatch } from '@shared/ai-schemas';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface FreelancerData {
   id: number;
@@ -31,19 +32,63 @@ const getFreelancerById = async (id: number): Promise<FreelancerData> => {
   };
 };
 
+// Define the AIStatusResponse interface
+interface AIStatusResponse {
+  available: boolean;
+  services?: {
+    deepseek: boolean;
+    original: boolean;
+  };
+}
+
 export function JobAnalysis() {
   const [jobDescription, setJobDescription] = useState('');
   const [skills, setSkills] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AIMatchResult | null>(null);
   const [freelancerData, setFreelancerData] = useState<Map<number, FreelancerData>>(new Map());
+  const [isAIAvailable, setIsAIAvailable] = useState<boolean | null>(null);
   const { toast } = useToast();
+  
+  // Check if AI service is available on mount
+  useEffect(() => {
+    const checkAvailability = async () => {
+      try {
+        // Get detailed status information
+        const statusResponse = await checkAIStatus(true) as AIStatusResponse;
+        setIsAIAvailable(statusResponse.available);
+        
+        if (!statusResponse.available) {
+          toast({
+            title: 'AI Service Unavailable',
+            description: 'The DeepSeek R1 API service is currently unavailable. Analysis functions may not work properly.',
+            variant: 'destructive',
+          });
+        }
+      } catch (error) {
+        console.error('Error checking AI status:', error);
+        setIsAIAvailable(false);
+      }
+    };
+    
+    checkAvailability();
+  }, [toast]);
   
   const handleAnalyze = async () => {
     if (!jobDescription.trim()) {
       toast({
         title: 'Job description required',
         description: 'Please provide a job description to analyze.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Check if AI service is available before proceeding
+    if (isAIAvailable === false) {
+      toast({
+        title: 'AI Service Unavailable',
+        description: 'The DeepSeek R1 API service is currently unavailable. Please try again later.',
         variant: 'destructive',
       });
       return;
@@ -180,6 +225,22 @@ export function JobAnalysis() {
   
   return (
     <div className="space-y-6">
+      {isAIAvailable === false && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            The DeepSeek R1 API service is currently unavailable. Job analysis features may not work properly.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {isAIAvailable === null && (
+        <div className="flex items-center justify-center p-4 mb-4 bg-muted/50 rounded-md">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mr-2" />
+          <p className="text-sm text-muted-foreground">Checking AI service availability...</p>
+        </div>
+      )}
+      
       <Card>
         <CardHeader>
           <CardTitle>AI Job Analysis</CardTitle>
@@ -214,7 +275,7 @@ export function JobAnalysis() {
         <CardFooter>
           <Button
             onClick={handleAnalyze}
-            disabled={isLoading || !jobDescription.trim()}
+            disabled={isLoading || !jobDescription.trim() || isAIAvailable === false}
             className="w-full"
           >
             {isLoading ? (
