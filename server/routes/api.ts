@@ -135,7 +135,7 @@ router.post('/auth/logout', logout);
 router.post('/chat/message', requireAuth, sendMessage);
 
 // AI routes
-router.get('/ai/status', requireAuth, checkAIStatus);
+router.get('/ai/status', checkAIStatus); // Removed authentication to allow checking AI status without login
 router.post('/ai/message', requireAuth, processAIMessage);
 router.post('/ai/job-analysis', requireAuth, processJobRequest);
 

@@ -102,10 +102,12 @@ function App() {
             <Router />
           </main>
           <Footer />
-          <AuthModal 
-            isOpen={showAuthModal} 
-            onOpenChange={(open) => setShowAuthModal(open)} 
-          />
+          {!currentUser && (
+            <AuthModal 
+              isOpen={showAuthModal} 
+              onOpenChange={(open) => setShowAuthModal(open)} 
+            />
+          )}
           <Toaster />
         </div>
       </AuthProvider>
