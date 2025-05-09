@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { aiService } from '../services/ai-service';
+import { deepseekService } from '../services/deepseek-service';
 import { aiChatRequestSchema, jobAnalysisRequestSchema } from '@shared/ai-schemas';
 
 /**
@@ -19,8 +20,8 @@ export async function processAIMessage(req: Request, res: Response) {
     const { message } = aiChatRequestSchema.parse(req.body);
     const userId = req.user.id;
 
-    // Check if DeepSeek R1 service is available
-    const isAvailable = await aiService.checkAvailability();
+    // Check if DeepSeek service is available
+    const isAvailable = await deepseekService.checkAvailability();
     
     if (!isAvailable) {
       // Return fallback response if AI service is not available
@@ -31,8 +32,8 @@ export async function processAIMessage(req: Request, res: Response) {
       });
     }
 
-    // Process the message with DeepSeek R1
-    const aiResponse = await aiService.sendMessage(userId, message);
+    // Process the message with DeepSeek service
+    const aiResponse = await deepseekService.sendMessage(userId, message);
     
     return res.status(200).json({
       content: aiResponse.content,
@@ -77,8 +78,8 @@ export async function processJobRequest(req: Request, res: Response) {
 
     const userId = req.user.id;
     
-    // Process the job request
-    const result = await aiService.processJobRequest(userId, description, skills || []);
+    // Process the job request using the DeepSeek service
+    const result = await deepseekService.processJobRequest(userId, description, skills || []);
     
     return res.status(200).json(result);
   } catch (error: any) {
@@ -92,10 +93,28 @@ export async function processJobRequest(req: Request, res: Response) {
  */
 export async function checkAIStatus(req: Request, res: Response) {
   try {
-    const isAvailable = await aiService.checkAvailability();
-    return res.status(200).json({ available: isAvailable });
+    // Check the status of the DeepSeek service
+    const isDeepseekAvailable = await deepseekService.checkAvailability();
+    
+    // For backward compatibility, also check the original AI service
+    const isOriginalAvailable = await aiService.checkAvailability();
+    
+    return res.status(200).json({ 
+      available: isDeepseekAvailable, 
+      services: {
+        deepseek: isDeepseekAvailable,
+        original: isOriginalAvailable
+      }
+    });
   } catch (error) {
     console.error('Error checking AI status:', error);
-    return res.status(500).json({ message: 'Error checking AI status', available: false });
+    return res.status(500).json({ 
+      message: 'Error checking AI status', 
+      available: false,
+      services: {
+        deepseek: false,
+        original: false
+      } 
+    });
   }
 }

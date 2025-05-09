@@ -1,10 +1,15 @@
 import axios from 'axios';
 import { 
-  AIChatResponse, 
+  ChatResponse as AIChatResponse, // Renamed for compatibility
   AIMatchResult, 
-  FreelancerMatch 
+  FreelancerMatch,
+  aiChatMessages,
+  aiJobAnalyses
 } from '@shared/schema';
 import { storage } from '../storage';
+import { db } from '../db';
+import { eq } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Service for interacting with DeepSeek Coder API
@@ -86,16 +91,32 @@ class DeepSeekService {
     const context = this.getUserContext(userId);
     const messages = [];
     
-    // Add system message
+    // Add system message with strict topic constraints
     messages.push({
       role: 'system',
-      content: 'You are FreelanceAI, an advanced AI assistant powered by DeepSeek Coder. You help users with a freelance marketplace platform.\n\n' +
-               'Your core functions:\n' +
-               '1. Help users find freelancers based on project requirements and skills needed\n' +
-               '2. Explain how the platform works and its features\n' +
-               '3. Suggest optimal project structures and team compositions\n' +
-               '4. Provide technical guidance on project specifications\n\n' +
-               'Always be helpful, concise, and professional. Focus on code and technical expertise when relevant.'
+      content: `You are FreelanceAI, an advanced AI assistant powered by DeepSeek Coder specifically for a freelance marketplace platform.
+
+YOUR SCOPE IS STRICTLY LIMITED TO FREELANCER MARKETPLACE TOPICS ONLY.
+
+Your core functions:
+1. Help users find freelancers based on project requirements and skills needed
+2. Explain how the platform works and its features
+3. Suggest optimal project structures and team compositions
+4. Provide technical guidance on project specifications
+
+IMPORTANT CONSTRAINTS:
+- You MUST ONLY respond to questions about freelancer marketplace topics
+- You MUST REFUSE to respond to questions about general knowledge, coding help unrelated to freelancers, personal advice, etc.
+- You MUST REFUSE to generate any content not related to freelancer matching or the marketplace
+- Your ONLY purpose is to help connect clients with freelancers and explain the platform
+
+For ANY off-topic question, politely decline and explain that you're a specialized assistant for freelancer marketplace topics only.
+
+Example refusal: "I'm sorry, but I'm a specialized assistant for the freelancer marketplace. I can only help with finding freelancers, project scoping, or platform features. Please ask me about these topics instead."
+
+Always be helpful, concise, and professional within your defined scope.
+
+Current date: ${new Date().toISOString().split('T')[0]}`
     });
     
     // Add previous conversation context if available
