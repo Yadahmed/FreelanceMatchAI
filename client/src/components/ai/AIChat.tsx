@@ -274,7 +274,7 @@ export function AIChat() {
           message: `Please rewrite the following prompt to be more effective for our freelance marketplace AI assistant. Make it specific, detailed, and clear: "${inputValue}"`,
           metadata: { 
             direct: true,
-            model: "llama-3-8b-chat",
+            model: "claude-3-7-sonnet-20250219",
             system: "You are a helpful AI prompt improvement assistant. Your task is to rewrite user messages to be more effective when communicating with a freelance marketplace AI. Focus on making prompts more specific, detailed, and clear. Never mention that you're rewriting the prompt - just provide the improved version."
           }
         })
@@ -332,6 +332,7 @@ export function AIChat() {
           <h3 className="text-sm font-medium">
             FreelanceAI Assistant
             {activeService === 'deepseek' && " (DeepSeek R1)"}
+            {activeService === 'anthropic' && " (Anthropic Claude)"}
             {activeService === 'ollama' && " (Ollama)"}
           </h3>
           <div className="flex items-center">
@@ -341,9 +342,11 @@ export function AIChat() {
                 <span className="text-xs text-muted-foreground">Online</span>
                 {activeService && (
                   <span className={`text-xs text-muted-foreground ml-2 ${
-                    activeService === 'deepseek' ? 'bg-green-50' : 'bg-amber-50'
+                    activeService === 'deepseek' ? 'bg-green-50' : 
+                    activeService === 'anthropic' ? 'bg-blue-50' : 'bg-amber-50'
                   } px-1 rounded`}>
-                    {activeService === 'deepseek' ? 'DeepSeek API' : 'Ollama Fallback'}
+                    {activeService === 'deepseek' ? 'DeepSeek API' : 
+                     activeService === 'anthropic' ? 'Anthropic Claude' : 'Ollama Fallback'}
                   </span>
                 )}
               </>

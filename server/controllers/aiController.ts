@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { aiService } from '../services/ai-service';
 import { deepseekService } from '../services/deepseek-service';
 import { ollamaService } from '../services/ollama-service';
+import { anthropicService } from '../services/anthropic-service';
 import { aiChatRequestSchema, jobAnalysisRequestSchema } from '@shared/ai-schemas';
 
 /**
@@ -36,6 +37,26 @@ export async function processAIMessage(req: Request, res: Response) {
     
     console.log('[processAIMessage] Processing message for user:', userId, 'Message length:', message.length);
 
+    // Check if direct metadata is provided (typically for the "improve prompt" feature)
+    const metadata = validatedData.data.metadata;
+    if (metadata?.direct && metadata?.model) {
+      // Try using anthropic first for the "improve prompt" feature
+      try {
+        console.log('[processAIMessage] Using Anthropic for direct request with model:', metadata.model);
+        const anthropicResponse = await anthropicService.sendMessage(userId, message, metadata);
+        return res.status(200).json({
+          content: anthropicResponse.content,
+          metadata: {
+            ...anthropicResponse.metadata,
+            provider: 'anthropic'
+          }
+        });
+      } catch (anthropicError) {
+        console.error('Anthropic direct request error:', anthropicError);
+        // Continue to other services if Anthropic fails
+      }
+    }
+    
     // First try DeepSeek service
     const isDeepSeekAvailable = await deepseekService.checkAvailability();
     
@@ -56,7 +77,27 @@ export async function processAIMessage(req: Request, res: Response) {
       }
     }
     
-    // Try Ollama as fallback
+    // Try Anthropic as next fallback
+    const isAnthropicAvailable = await anthropicService.checkAvailability();
+    if (isAnthropicAvailable) {
+      try {
+        console.log('[processAIMessage] Using Anthropic as fallback');
+        const anthropicResponse = await anthropicService.sendMessage(userId, message);
+        return res.status(200).json({
+          content: anthropicResponse.content,
+          metadata: {
+            ...anthropicResponse.metadata,
+            provider: 'anthropic',
+            fallback: true
+          }
+        });
+      } catch (anthropicError) {
+        console.error('Anthropic fallback error:', anthropicError);
+        // Continue to next fallback if Anthropic also fails
+      }
+    }
+    
+    // Try Ollama as final fallback
     const isOllamaAvailable = await ollamaService.checkAvailability();
     
     if (isOllamaAvailable) {
@@ -207,6 +248,16 @@ export async function checkAIStatus(req: Request, res: Response) {
       isDeepseekAvailable = false;
     }
     
+    // Check Anthropic next
+    let isAnthropicAvailable = false;
+    try {
+      isAnthropicAvailable = await anthropicService.checkAvailability();
+      console.log('Anthropic available:', isAnthropicAvailable);
+    } catch (error) {
+      console.error('Error checking Anthropic availability:', error);
+      isAnthropicAvailable = false;
+    }
+    
     // Now check Ollama - using our local fallback, this should always be available
     let isOllamaAvailable = true; // Force true since we're using a local fallback
     try {
@@ -228,14 +279,15 @@ export async function checkAIStatus(req: Request, res: Response) {
     }
     
     // Since we have a local fallback implementation, we should always have at least one service available
-    const isAnyServiceAvailable = isDeepseekAvailable || isOllamaAvailable || isOriginalAvailable;
+    const isAnyServiceAvailable = isDeepseekAvailable || isAnthropicAvailable || isOllamaAvailable || isOriginalAvailable;
     
     // Force Ollama to be available since it's our local fallback
     isOllamaAvailable = true;
     
     // Log the service status
     console.log('[checkAIStatus] Service availability status:', {
-      deepseek: isDeepseekAvailable, 
+      deepseek: isDeepseekAvailable,
+      anthropic: isAnthropicAvailable,
       ollama: isOllamaAvailable, 
       original: isOriginalAvailable,
       anyAvailable: isAnyServiceAvailable
@@ -245,10 +297,13 @@ export async function checkAIStatus(req: Request, res: Response) {
       available: isAnyServiceAvailable, 
       services: {
         deepseek: isDeepseekAvailable,
+        anthropic: isAnthropicAvailable,
         ollama: isOllamaAvailable,
         original: isOriginalAvailable
       },
-      primaryService: isDeepseekAvailable ? 'deepseek' : (isOllamaAvailable ? 'ollama' : null)
+      primaryService: isDeepseekAvailable ? 'deepseek' : 
+                    (isAnthropicAvailable ? 'anthropic' : 
+                    (isOllamaAvailable ? 'ollama' : null))
     });
   } catch (error) {
     console.error('Error checking AI status:', error);
@@ -257,6 +312,7 @@ export async function checkAIStatus(req: Request, res: Response) {
       available: false,
       services: {
         deepseek: false,
+        anthropic: false,
         ollama: false,
         original: false
       },
