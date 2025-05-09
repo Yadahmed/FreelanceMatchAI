@@ -20,14 +20,16 @@ class OllamaService {
    */
   async checkAvailability(): Promise<boolean> {
     try {
+      console.log('Checking Ollama availability at:', `${this.config.apiUrl}/healthz`);
       // Check if the Ollama proxy is reachable
       const response = await axios.get(`${this.config.apiUrl}/healthz`, {
         timeout: 5000, // 5s timeout for quicker checks
       });
       
+      console.log('Ollama health check response:', response.status);
       return response.status === 200;
-    } catch (error) {
-      console.error('Ollama service health check failed:', error);
+    } catch (error: any) {
+      console.error('Ollama service health check failed:', error?.message || 'Unknown error');
       return false;
     }
   }
@@ -323,6 +325,6 @@ class OllamaService {
 
 // Create and export the Ollama service instance
 export const ollamaService = new OllamaService({
-  apiUrl: 'https://ollama-proxy.replit.app/api',
-  model: 'deepseek-coder:6.7b' // Using deepseek-coder model via Ollama for compatibility
+  apiUrl: 'https://ollama-api.vercel.app',
+  model: 'deepseek-coder' // Using deepseek-coder model via Ollama for compatibility
 });

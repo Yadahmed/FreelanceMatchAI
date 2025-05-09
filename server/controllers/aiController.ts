@@ -174,9 +174,13 @@ export async function processJobRequest(req: Request, res: Response) {
 export async function checkAIStatus(req: Request, res: Response) {
   try {
     // Check all available AI services
+    console.log('Checking AI services availability...');
     const isDeepseekAvailable = await deepseekService.checkAvailability();
+    console.log('DeepSeek available:', isDeepseekAvailable);
     const isOllamaAvailable = await ollamaService.checkAvailability();
+    console.log('Ollama available:', isOllamaAvailable);
     const isOriginalAvailable = await aiService.checkAvailability();
+    console.log('Original service available:', isOriginalAvailable);
     
     // Consider the AI available if either DeepSeek or Ollama is available
     const isAnyServiceAvailable = isDeepseekAvailable || isOllamaAvailable;
