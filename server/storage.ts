@@ -22,6 +22,7 @@ export interface IStorage {
   
   // Freelancer methods
   getFreelancer(id: number): Promise<Freelancer | undefined>;
+  getFreelancerById(id: number): Promise<Freelancer | undefined>; // Alias for getFreelancer for consistency
   getFreelancerByUserId(userId: number): Promise<Freelancer | undefined>;
   createFreelancer(freelancer: InsertFreelancer): Promise<Freelancer>;
   updateFreelancer(id: number, freelancer: Partial<InsertFreelancer>): Promise<Freelancer>;
@@ -154,6 +155,11 @@ export class MemStorage implements IStorage {
   // Freelancer methods
   async getFreelancer(id: number): Promise<Freelancer | undefined> {
     return this.freelancers.get(id);
+  }
+  
+  // Alias for getFreelancer for API consistency
+  async getFreelancerById(id: number): Promise<Freelancer | undefined> {
+    return this.getFreelancer(id);
   }
   
   async getFreelancerByUserId(userId: number): Promise<Freelancer | undefined> {
@@ -423,6 +429,7 @@ import { eq, desc, sql, and, like, ilike, or } from 'drizzle-orm';
 import * as schema from '@shared/schema';
 
 export class DatabaseStorage implements IStorage {
+  // IMPORTANT: When adding new methods to IStorage, make sure to implement them here
   // User methods
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(schema.users).where(eq(schema.users.id, id));
