@@ -4,19 +4,38 @@ import { AIMatchResult, AIChatResponse } from '@shared/ai-schemas';
 // Response type for AI status check
 interface AIStatusResponse {
   available: boolean;
+  services?: {
+    deepseek: boolean;
+    original: boolean;
+  };
 }
 
 /**
  * Check if the AI service is available
+ * @param getDetailed If true, returns the full status response with service details
  */
-export async function checkAIStatus(): Promise<boolean> {
+export async function checkAIStatus(getDetailed = false): Promise<boolean | AIStatusResponse> {
   try {
     const response = await apiRequest('/ai/status', {
       method: 'GET',
     }) as AIStatusResponse;
+    
+    if (getDetailed) {
+      return response;
+    }
+    
     return response.available;
   } catch (error) {
     console.error('Error checking AI status:', error);
+    if (getDetailed) {
+      return {
+        available: false,
+        services: {
+          deepseek: false,
+          original: false
+        }
+      };
+    }
     return false;
   }
 }

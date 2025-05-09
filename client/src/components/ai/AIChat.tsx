@@ -9,6 +9,15 @@ import { Card } from '@/components/ui/card';
 import { Loader2, Send, AlertCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+// Interface for AI status response
+interface AIStatusResponse {
+  available: boolean;
+  services?: {
+    deepseek: boolean;
+    original: boolean;
+  };
+}
+
 interface AIChatMessage {
   id: string;
   content: string;
@@ -31,14 +40,30 @@ export function AIChat() {
   useEffect(() => {
     const checkAvailability = async () => {
       try {
-        const available = await checkAIStatus();
+        // Get detailed status information
+        const statusResponse = await checkAIStatus(true) as AIStatusResponse;
+        const available = statusResponse.available;
         setIsAIAvailable(available);
         
         if (!available) {
+          // Check which specific services are unavailable
+          const services = statusResponse.services || { deepseek: false, original: false };
+          
+          let unavailableMessage = "Welcome to our freelance marketplace! I'm your AI assistant, but I'm currently unavailable. ";
+          
+          // Provide more specific information based on which service is unavailable
+          if (!services.deepseek && !services.original) {
+            unavailableMessage += "All AI services are offline. Our team is working on it and I'll be back soon!";
+          } else if (!services.deepseek) {
+            unavailableMessage += "The DeepSeek R1 API service is unavailable, but other services might work. Please try again later.";
+          } else {
+            unavailableMessage += "Our team is working on it and I'll be back soon!";
+          }
+          
           setMessages([
             {
               id: generateId(),
-              content: "Welcome to our freelance marketplace! I'm your AI assistant, but I'm currently unavailable. Our team is working on it and I'll be back soon!",
+              content: unavailableMessage,
               isUser: false,
               timestamp: new Date(),
             },
@@ -48,7 +73,7 @@ export function AIChat() {
           setMessages([
             {
               id: generateId(),
-              content: "Hi there! I'm FreelanceAI, your intelligent assistant. How can I help you today? You can ask me to find freelancers for your project or help you understand how our marketplace works.",
+              content: "Hi there! I'm FreelanceAI, your intelligent assistant powered by DeepSeek R1 API. How can I help you today? You can ask me to find freelancers for your project or help you understand how our marketplace works.",
               isUser: false,
               timestamp: new Date(),
             },
@@ -157,17 +182,19 @@ export function AIChat() {
           <span className="text-xs font-bold">AI</span>
         </Avatar>
         <div className="flex-1">
-          <h3 className="text-sm font-medium">FreelanceAI Assistant</h3>
+          <h3 className="text-sm font-medium">FreelanceAI Assistant (DeepSeek R1)</h3>
           <div className="flex items-center">
             {isAIAvailable ? (
               <>
                 <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
                 <span className="text-xs text-muted-foreground">Online</span>
+                <span className="text-xs text-muted-foreground ml-2 bg-green-50 px-1 rounded">API Connected</span>
               </>
             ) : (
               <>
                 <div className="w-2 h-2 rounded-full bg-red-500 mr-2" />
                 <span className="text-xs text-muted-foreground">Offline</span>
+                <span className="text-xs text-muted-foreground ml-2 bg-red-50 px-1 rounded">API Connection Issue</span>
               </>
             )}
           </div>

@@ -17,9 +17,9 @@ export default function AIAssistantPage() {
           <div className="flex justify-center mb-6">
             <TabsList>
               <TabsTrigger value="chat">DeepSeek R1 API</TabsTrigger>
-              <TabsTrigger value="ollama-chat">DeepSeek on Ollama</TabsTrigger>
-              <TabsTrigger value="job-analysis">Job Analysis API</TabsTrigger>
-              <TabsTrigger value="ollama-job-analysis">Job Analysis Ollama</TabsTrigger>
+              <TabsTrigger value="job-analysis">Job Analysis with DeepSeek</TabsTrigger>
+              <TabsTrigger value="ollama-chat">Legacy Ollama</TabsTrigger>
+              <TabsTrigger value="ollama-job-analysis">Legacy Job Analysis</TabsTrigger>
             </TabsList>
           </div>
           
