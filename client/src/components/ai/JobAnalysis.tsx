@@ -80,7 +80,7 @@ export function JobAnalysis() {
         if (!statusResponse.available) {
           toast({
             title: 'AI Service Unavailable',
-            description: 'The DeepSeek R1 API service is currently unavailable. Analysis functions may not work properly.',
+            description: 'The AI service is currently unavailable. Analysis functions may not work properly.',
             variant: 'destructive',
           });
         }
@@ -107,7 +107,7 @@ export function JobAnalysis() {
     if (isAIAvailable === false) {
       toast({
         title: 'AI Service Unavailable',
-        description: 'The DeepSeek R1 API service is currently unavailable. Please try again later.',
+        description: 'The AI service is currently unavailable. Please try again later.',
         variant: 'destructive',
       });
       return;
@@ -248,7 +248,7 @@ export function JobAnalysis() {
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4 mr-2" />
           <AlertDescription>
-            The DeepSeek R1 API service is currently unavailable. Job analysis features may not work properly.
+            The AI service is currently unavailable. Job analysis features may not work properly.
           </AlertDescription>
         </Alert>
       )}
