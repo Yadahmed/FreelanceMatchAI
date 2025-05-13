@@ -8,24 +8,27 @@ import { Briefcase, MapPin, Award, Clock, Star, User } from 'lucide-react';
 
 interface FreelancerCardProps {
   freelancer: {
-    id: number;
-    userId: number;
-    profession: string;
-    skills: string[];
-    bio: string;
-    hourlyRate: number;
-    location: string;
-    rating: number;
-    jobPerformance: number;
-    skillsExperience: number;
-    responsiveness: number;
-    fairnessScore: number;
-    yearsOfExperience: number;
-    completedJobs: number;
+    id?: number;
+    freelancerId?: number; // Added to support both data formats
+    userId?: number;
+    profession?: string;
+    skills?: string[];
+    bio?: string;
+    hourlyRate?: number;
+    location?: string;
+    rating?: number;
+    jobPerformance?: number;
+    skillsExperience?: number;
+    responsiveness?: number;
+    fairnessScore?: number;
+    yearsOfExperience?: number;
+    completedJobs?: number;
     availability?: boolean;
     imageUrl?: string;
     displayName?: string;
     username?: string;
+    // Support for nested freelancer object from AI service
+    freelancer?: any;
   };
   showDetails?: boolean;
 }
@@ -68,7 +71,7 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
   
   // Generate avatar initials
   // Set image URL with fallback
-  const imageUrl = freelancer.imageUrl || null;
+  const imageUrl = freelancer.imageUrl || '';
   
   // Generate avatar initials
   const initials = name
@@ -84,7 +87,7 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             <Avatar className="h-12 w-12 border">
-              <AvatarImage src={freelancer.imageUrl} alt={name} />
+              <AvatarImage src={imageUrl} alt={name} />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
             <div>
@@ -191,21 +194,33 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
         </div>
         
         <div className="space-x-2">
-          <Button variant="outline" asChild>
-            <Link href={`/freelancers/${freelancer.id || freelancer.freelancerId}`}>
-              View Profile
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href={`/messages/${freelancer.id || freelancer.freelancerId}`}>
-              Message
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link href={`/booking/${freelancer.id || freelancer.freelancerId}`}>
-              Book Now
-            </Link>
-          </Button>
+          {/* Get ID from either possible location */}
+          {(() => {
+            // Extract ID from either location
+            const id = freelancer.id || 
+                      freelancer.freelancerId || 
+                      (freelancer.freelancer && freelancer.freelancer.id);
+            
+            return (
+              <>
+                <Button variant="outline" asChild>
+                  <Link href={`/freelancers/${id}`}>
+                    View Profile
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link href={`/messages/${id}`}>
+                    Message
+                  </Link>
+                </Button>
+                <Button asChild>
+                  <Link href={`/booking/${id}`}>
+                    Book Now
+                  </Link>
+                </Button>
+              </>
+            );
+          })()}
         </div>
       </CardFooter>
     </Card>
