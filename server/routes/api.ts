@@ -241,6 +241,47 @@ router.get('/freelancers/:id', async (req, res) => {
   }
 });
 
+// Get reviews for a specific freelancer
+router.get('/freelancers/:id/reviews', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: 'Invalid freelancer ID' });
+    }
+    
+    // Get the freelancer by their ID
+    const freelancer = await storage.getFreelancerById(id);
+    
+    if (!freelancer) {
+      return res.status(404).json({ message: 'Freelancer not found' });
+    }
+    
+    // Get all reviews for this freelancer
+    const reviews = await storage.getReviewsByFreelancerId(id);
+    
+    // Fetch client information for each review
+    const reviewsWithClientInfo = await Promise.all(reviews.map(async (review) => {
+      const client = await storage.getUser(review.clientId);
+      return {
+        ...review,
+        client: client ? {
+          username: client.username,
+          displayName: client.displayName,
+          photoURL: client.photoURL
+        } : undefined
+      };
+    }));
+    
+    return res.json({
+      freelancerId: id,
+      reviews: reviewsWithClientInfo
+    });
+  } catch (error) {
+    console.error('Error fetching freelancer reviews:', error);
+    return res.status(500).json({ message: 'Error fetching reviews' });
+  }
+});
+
 // Freelancer routes
 router.get('/freelancer/dashboard', requireFreelancer, getDashboard);
 router.patch('/freelancer/profile', requireFreelancer, updateProfile);

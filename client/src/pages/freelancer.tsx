@@ -1,22 +1,26 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Rating } from '@/components/ui/rating';
+import { ReviewsList } from '@/components/review/ReviewsList';
+import { ReviewForm } from '@/components/review/ReviewForm';
 import { 
-  Star, 
   MapPin, 
   DollarSign, 
   Briefcase, 
   Calendar, 
   Clock, 
-  ChevronLeft,
   MessageSquare,
   Award,
-  ArrowLeft
+  ArrowLeft,
+  Star
 } from 'lucide-react';
 
 // Define the type for freelancer data
@@ -31,7 +35,7 @@ interface Freelancer {
   yearsOfExperience: number;
   location: string;
   imageUrl?: string;
-  rating: number;
+  rating: number | null;
   jobPerformance: number;
   skillsExperience: number;
   responsiveness: number;
@@ -43,6 +47,8 @@ export default function FreelancerDetail() {
   const params = useParams<{ id: string }>();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { currentUser, isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
   const freelancerId = params?.id ? parseInt(params.id, 10) : undefined;
 
   // Fetch freelancer data
@@ -219,9 +225,16 @@ export default function FreelancerDetail() {
     );
   }
 
-  // Calculate the filled stars for rating
-  const fullStars = Math.floor(freelancer.rating);
-  const hasHalfStar = freelancer.rating % 1 >= 0.5;
+  // Handle review submission
+  const handleReviewSubmitted = () => {
+    // Invalidate both freelancer and reviews queries to refresh the data
+    queryClient.invalidateQueries({ queryKey: ['/api/freelancers', freelancerId] });
+    queryClient.invalidateQueries({ queryKey: ['freelancerReviews', freelancerId] });
+    toast({
+      title: "Review submitted",
+      description: "Thank you for your feedback!",
+    });
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -243,21 +256,7 @@ export default function FreelancerDetail() {
                   <CardDescription className="text-primary font-medium text-lg">{freelancer.profession}</CardDescription>
                 </div>
                 <div className="flex items-center mt-2 md:mt-0">
-                  <div className="flex items-center mr-3">
-                    {[...Array(5)].map((_, i) => (
-                      <Star 
-                        key={i} 
-                        className={`h-5 w-5 ${
-                          i < fullStars 
-                            ? 'text-yellow-500 fill-yellow-500' 
-                            : i < fullStars + (hasHalfStar ? 1 : 0)
-                              ? 'text-yellow-500 fill-yellow-500 opacity-50' 
-                              : 'text-gray-300'
-                        }`} 
-                      />
-                    ))}
-                  </div>
-                  <span className="font-semibold">{freelancer.rating.toFixed(1)}</span>
+                  <Rating value={freelancer.rating} size="lg" />
                 </div>
               </div>
             </CardHeader>
@@ -327,6 +326,27 @@ export default function FreelancerDetail() {
                   </div>
                 </div>
               </div>
+              
+              {/* Reviews and Leave Review Tabs */}
+              <Tabs defaultValue="reviews" className="w-full mt-6">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="reviews">Reviews</TabsTrigger>
+                  {isAuthenticated && currentUser?.isClient && (
+                    <TabsTrigger value="leave-review">Leave a Review</TabsTrigger>
+                  )}
+                </TabsList>
+                <TabsContent value="reviews" className="mt-4">
+                  <ReviewsList freelancerId={freelancer.id} />
+                </TabsContent>
+                {isAuthenticated && currentUser?.isClient && (
+                  <TabsContent value="leave-review" className="mt-4">
+                    <ReviewForm 
+                      freelancerId={freelancer.id} 
+                      onReviewSubmitted={handleReviewSubmitted}
+                    />
+                  </TabsContent>
+                )}
+              </Tabs>
             </CardContent>
           </Card>
         </div>
