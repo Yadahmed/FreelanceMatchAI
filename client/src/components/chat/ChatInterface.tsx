@@ -80,20 +80,49 @@ export function ChatInterface() {
     setIsLoading(true);
     
     try {
-      // Send message to server
-      const payload = {
-        message: inputValue,
-        chatId: chatId,
-      };
+      // Decide which endpoint to use based on whether a chat was started
+      let response;
+      if (chatId) {
+        // Using existing chat
+        const payload = {
+          message: inputValue,
+          chatId: chatId,
+        };
+        
+        response = await apiRequest('/api/chat/message', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+      } else {
+        // Using AI endpoint for first message - this uses different params format
+        // Use axios directly to handle different parameter format
+        const axios = require('axios');
+        const aiResponse = await axios.post('/api/ai/message', { 
+          message: inputValue 
+        });
+        response = aiResponse.data;
+        
+        // Log the response to debug
+        console.log("AI API response:", response);
+      }
       
-      const response = await apiRequest('/api/chat/message', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-      
-      // Update chat ID if it's a new chat
+      // Update chat ID if it's a new chat and we have a chatId in response
       if (!chatId && response.chatId) {
         setChatId(response.chatId);
+      }
+      
+      // Check if there are freelancer results and log them for debugging
+      if (response.freelancerResults && response.freelancerResults.length > 0) {
+        console.log("[Debug] Response contains freelancer results:", response.freelancerResults);
+        // Inspect one result to see what props it has
+        const sampleResult = response.freelancerResults[0];
+        console.log("[Debug] Sample freelancer result keys:", Object.keys(sampleResult));
+        
+        if (sampleResult.freelancer) {
+          console.log("[Debug] Sample nested freelancer keys:", Object.keys(sampleResult.freelancer));
+        }
+      } else {
+        console.log("[Debug] No freelancer results in response");
       }
       
       // Add bot response to chat
