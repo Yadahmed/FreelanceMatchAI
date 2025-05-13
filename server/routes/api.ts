@@ -15,6 +15,7 @@ import {
   promoteToAdmin,
   revokeAdmin
 } from '../controllers/adminController';
+import { extractFreelancerName } from '../utils/freelancer';
 import { 
   sendMessage,
   sendDirectMessage
@@ -197,10 +198,13 @@ router.get('/freelancers', async (req, res) => {
       // Get the user data to access the display name
       const user = await storage.getUser(freelancer.userId);
       
+      // Use the utility function to extract the appropriate name
+      const displayName = extractFreelancerName(freelancer, user);
+      
       return {
         id: freelancer.id,
         userId: freelancer.userId,
-        displayName: user?.displayName || `Freelancer ${freelancer.id}`,
+        displayName: displayName,
         profession: freelancer.profession,
         skills: freelancer.skills,
         bio: freelancer.bio,
@@ -241,11 +245,27 @@ router.get('/freelancers/:id', async (req, res) => {
     // Get the user to access the display name
     const user = await storage.getUser(freelancer.userId);
     
+    // Extract name from bio if display name is not available
+    let displayName = user?.displayName;
+    
+    if (!displayName && freelancer.bio) {
+      // Many bios start with "[Name] is a skilled..." - try to extract the name
+      const nameMatch = freelancer.bio.match(/^([A-Za-z\s]+)\s+is\s+a\s+/);
+      if (nameMatch && nameMatch[1]) {
+        displayName = nameMatch[1].trim();
+      }
+    }
+    
+    // If still no name, use the fallback
+    if (!displayName) {
+      displayName = `Freelancer ${freelancer.id}`;
+    }
+    
     // Return public-facing information with actual display name
     return res.json({
       id: freelancer.id,
       userId: freelancer.userId,
-      displayName: user?.displayName || `Freelancer ${freelancer.id}`,
+      displayName: displayName,
       profession: freelancer.profession,
       skills: freelancer.skills,
       bio: freelancer.bio,
