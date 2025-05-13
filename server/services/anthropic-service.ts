@@ -191,15 +191,30 @@ class AnthropicService {
             
             // Add up to 5 freelancers
             const relevantFreelancers = allFreelancers.slice(0, 5);
+            
+            // Get all user IDs from these freelancers to load user data
+            const userIds = relevantFreelancers.map(f => f.userId);
+            const users = await Promise.all(userIds.map(id => storage.getUser(id)));
+            
+            // Create a map of userId to displayName
+            const userNameMap = new Map();
+            users.forEach(user => {
+              if (user) {
+                userNameMap.set(user.id, user.displayName || user.username || `Freelancer ${user.id}`);
+              }
+            });
+            
+            // Now add freelancer data including name
             relevantFreelancers.forEach(f => {
-              freelancerInfo += `ID: ${f.id} - ${f.profession} in ${f.location}\n`;
+              const freelancerName = userNameMap.get(f.userId) || `Freelancer ${f.id}`;
+              freelancerInfo += `${freelancerName} - ${f.profession} in ${f.location} (ID: ${f.id})\n`;
               freelancerInfo += `Skills: ${f.skills.join(', ')}\n`;
               freelancerInfo += `Experience: ${f.yearsOfExperience} years | Rating: ${f.rating}/5 | Rate: $${f.hourlyRate}/hr\n`;
               freelancerInfo += `Bio: ${f.bio}\n\n`;
             });
             
-            // Add instruction to include specific freelancers in response
-            freelancerInfo += '\nPlease include these specific freelancers in your response with their ID numbers, skills, and rates. Mention at least 2-3 of them by ID that would be most relevant.';
+            // Add instruction to include specific freelancers in response with names
+            freelancerInfo += '\nPlease include these specific freelancers in your response with their names, skills, and rates. Use the format "Name - Profession" instead of "ID: X". Mention at least 2-3 of them that would be most relevant for the request.';
             
             // Add to the last user message
             const lastMessageIndex = messages.length - 1;
