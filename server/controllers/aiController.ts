@@ -7,6 +7,22 @@ import { storage } from '../storage';
 import { aiChatRequestSchema, jobAnalysisRequestSchema } from '@shared/ai-schemas';
 
 /**
+ * Helper function to determine if a message is likely requesting freelancer information
+ */
+function isFreelancerQuery(message: string): boolean {
+  const lowerMsg = message.toLowerCase();
+  const freelancerKeywords = [
+    'developer', 'programmer', 'coder', 'designer', 'freelancer', 
+    'translator', 'writer', 'graphic', 'expert', 'professional',
+    'web', 'mobile', 'need', 'looking for', 'find', 'hire', 
+    'help with', 'skills', 'recommend', 'who can', 'available',
+    'based in', 'similar to', 'top rated', 'best'
+  ];
+  
+  return freelancerKeywords.some(keyword => lowerMsg.includes(keyword));
+}
+
+/**
  * Controller for handling AI-related requests
  */
 
