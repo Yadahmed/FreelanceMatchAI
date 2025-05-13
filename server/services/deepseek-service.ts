@@ -463,6 +463,30 @@ Current date: ${new Date().toISOString().split('T')[0]}`
         throw new Error('No freelancers available for matching');
       }
       
+      // Check if we should ask clarifying questions first
+      if (this.shouldAskClarifyingQuestions(description)) {
+        const clarifyingQuestions = this.generateClarifyingQuestions(description);
+        
+        // If we have clarifying questions, return them instead of job matches
+        if (clarifyingQuestions.length > 0) {
+          console.log('[DeepSeekService] Returning clarifying questions for job analysis');
+          
+          // Create a helpful analysis with questions
+          const analysisText = `I need a bit more information about your job requirements to find the best freelancers for you. Please provide details about the following:`;
+          
+          return {
+            jobAnalysis: {
+              description: description,
+              skills: skills,
+              analysisText: analysisText,
+              needsMoreInfo: true
+            },
+            matches: [], // Empty matches since we need more info first
+            suggestedQuestions: clarifyingQuestions
+          };
+        }
+      }
+      
       // Build messages for analyzing the job request
       const systemPrompt = `You are an advanced AI assistant for a freelance marketplace platform.
 Your specialized task is to analyze technical job requests and find the most suitable freelancers
@@ -786,12 +810,20 @@ Job Performance: ${f.jobPerformance || 0}/100
       
       analysisText += `I've found ${processedMatches.length} qualified freelancers in the platform database who match your requirements.`;
       
-      // Create suggested questions based on the job
-      const suggestedQuestions = [
-        'What hourly rate should I expect to pay for this type of work?',
-        'How long might this project take to complete?',
-        'What information should I provide to these freelancers?'
-      ];
+      // Create suggested questions based on the job and missing details
+      let suggestedQuestions = [];
+      
+      // If this is a vague request, add specific follow-up questions
+      if (this.shouldAskClarifyingQuestions(description)) {
+        suggestedQuestions = this.generateClarifyingQuestions(description);
+      } else {
+        // Default follow-up questions if the initial request is detailed enough
+        suggestedQuestions = [
+          'What hourly rate should I expect to pay for this type of work?',
+          'How long might this project take to complete?', 
+          'What additional information should I provide to these freelancers?'
+        ];
+      }
       
       return {
         jobAnalysis: {

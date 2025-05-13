@@ -50,6 +50,8 @@ export const aiChatRequestSchema = z.object({
 export const aiChatResponseSchema = z.object({
   content: z.string(),
   metadata: z.record(z.any()).optional(),
+  clarifyingQuestions: z.array(z.string()).optional(),
+  needsMoreInfo: z.boolean().optional(),
 });
 
 // Job request analysis schema for AI processing
@@ -73,9 +75,12 @@ export const freelancerMatchSchema = z.object({
 });
 
 export const aiMatchResultSchema = z.object({
-  jobAnalysis: z.record(z.any()),
+  jobAnalysis: z.record(z.any()).and(z.object({
+    needsMoreInfo: z.boolean().optional()
+  })),
   matches: z.array(freelancerMatchSchema),
   suggestedQuestions: z.array(z.string()).optional(),
+  needsMoreInfo: z.boolean().optional(),
 });
 
 // Export types

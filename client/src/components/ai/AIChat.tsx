@@ -27,6 +27,8 @@ interface AIChatMessage {
   content: string;
   isUser: boolean;
   timestamp: Date;
+  clarifyingQuestions?: string[];
+  needsMoreInfo?: boolean;
 }
 
 const generateId = () => Math.random().toString(36).substring(2, 11);
