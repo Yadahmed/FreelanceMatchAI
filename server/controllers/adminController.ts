@@ -68,7 +68,11 @@ export async function getAllUsers(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error('Admin get all users error:', error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ 
+      message: 'Server error getting users', 
+      error: error.message,
+      stack: error.stack
+    });
   }
 }
 

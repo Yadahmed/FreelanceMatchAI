@@ -10,6 +10,7 @@ import {
 import {
   isAdmin,
   adminSessionAuth,
+  getAllUsers,
   deleteUser,
   deleteFreelancer,
   promoteToAdmin,
@@ -64,43 +65,7 @@ router.get('/auth/check-username', checkUsername); // No auth required, used dur
 
 // Admin API endpoints with proper authentication and authorization
 // Admin routes are protected by the adminSessionAuth middleware
-router.get('/admin/users', adminSessionAuth, async (req, res) => {
-  try {
-    console.log('Admin users endpoint - Starting fetch with headers:', req.headers);
-    
-    // Let's use the execute_sql_tool function from our server/utils/sql.ts
-    const { pool } = require('../db');
-    console.log('Admin users endpoint - DB pool imported');
-    
-    // For testing, let's send a mock response to see if that works
-    const mockUsers = [
-      {
-        id: 1,
-        username: 'admin',
-        email: 'admin@kurdjobs.com',
-        displayName: 'Admin User',
-        isClient: false,
-        isAdmin: true,
-        firebaseUid: null,
-        createdAt: new Date().toISOString()
-      }
-    ];
-    
-    console.log('Admin users endpoint - Returning mock users');
-    
-    return res.json({
-      message: 'All users retrieved',
-      users: mockUsers
-    });
-  } catch (error: any) {
-    console.error('Error getting users - DETAILS:', error);
-    console.error('Error stack:', error.stack);
-    return res.status(500).json({ 
-      message: 'Server error getting users',
-      error: error.message || String(error)
-    });
-  }
-});
+router.get('/admin/users', adminSessionAuth, getAllUsers);
 
 // New admin routes using the admin controller
 router.delete('/admin/users/:id', adminSessionAuth, deleteUser);
