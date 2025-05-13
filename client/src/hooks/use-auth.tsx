@@ -6,7 +6,12 @@ import {
   signInWithPopup,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  sendEmailVerification,
+  applyActionCode,
+  verifyPasswordResetCode,
+  confirmPasswordReset,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth, googleProvider, isFirebaseConfigured } from '@/lib/firebase';
 import { User } from '@shared/schema';
@@ -20,11 +25,16 @@ interface AuthContextType {
   isClient: boolean;
   isFreelancer: boolean;
   isLoading: boolean;
+  isEmailVerified: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (username: string, email: string, password: string, displayName?: string, isClient?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
   createFreelancerProfile: (profileData: any) => Promise<void>;
+  sendVerificationEmail: () => Promise<void>;
+  verifyEmail: (actionCode: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  confirmPasswordReset: (code: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -294,6 +304,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await updateProfile(user, { displayName });
       }
       
+      // Send verification email
+      try {
+        await sendEmailVerification(user, {
+          url: `${window.location.origin}/email-verified`, // Redirect URL after verification
+          handleCodeInApp: true,
+        });
+        // Show toast or notification that verification email has been sent
+        console.log('Verification email sent to:', email);
+      } catch (verificationError) {
+        console.error('Error sending verification email:', verificationError);
+        // Continue with registration even if verification email fails
+      }
+      
       // Register with backend
       const userData = {
         username,
@@ -302,7 +325,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         displayName: displayName || user.displayName || username,
         photoURL: user.photoURL || null,
         firebaseUid: user.uid,
-        isClient
+        isClient,
+        emailVerified: user.emailVerified
       };
       
       console.log('[signUpWithEmail] Sending user data to backend with isClient =', isClient);
@@ -322,6 +346,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      
+      // Show verification message to the user
+      // This should be handled by the UI component displaying a success message
+      // and informing the user to check their email
       
       // If registering as freelancer, redirect to profile creation page
       if (!isClient) {
@@ -443,13 +471,97 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Send verification email to the currently logged in user
+  const sendVerificationEmail = async (): Promise<void> => {
+    if (!firebaseUser) {
+      throw new Error('You must be logged in to verify your email');
+    }
+    
+    try {
+      setIsLoading(true);
+      await sendEmailVerification(firebaseUser, {
+        url: `${window.location.origin}/email-verified`,
+        handleCodeInApp: true,
+      });
+    } catch (error) {
+      console.error('Error sending verification email:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Verify email with action code
+  const verifyEmail = async (actionCode: string): Promise<void> => {
+    try {
+      setIsLoading(true);
+      await applyActionCode(auth, actionCode);
+      
+      // Force refresh the token to update emailVerified status
+      if (firebaseUser) {
+        await firebaseUser.reload();
+        const token = await firebaseUser.getIdToken(true);
+        localStorage.setItem('auth_token', token);
+        
+        // Update the backend about email verification
+        await apiRequest('/api/auth/update-verification', {
+          method: 'POST',
+          body: JSON.stringify({ firebaseUid: firebaseUser.uid, emailVerified: true }),
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error verifying email:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Send password reset email
+  const resetPassword = async (email: string): Promise<void> => {
+    try {
+      setIsLoading(true);
+      await sendPasswordResetEmail(auth, email, {
+        url: `${window.location.origin}/reset-password-confirm`,
+        handleCodeInApp: true,
+      });
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Confirm password reset with the code and new password
+  const handlePasswordReset = async (code: string, newPassword: string): Promise<void> => {
+    try {
+      setIsLoading(true);
+      await verifyPasswordResetCode(auth, code); // Verify the code is valid
+      await confirmPasswordReset(auth, code, newPassword); // Reset the password
+    } catch (error) {
+      console.error('Error confirming password reset:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value: AuthContextType = {
     currentUser,
     firebaseUser,
     isAuthenticated: !!currentUser,
     isClient: !!currentUser && currentUser.isClient,
     isFreelancer: !!currentUser && !currentUser.isClient,
+    isEmailVerified: !!firebaseUser && firebaseUser.emailVerified,
     isLoading,
+    sendVerificationEmail,
+    verifyEmail,
+    resetPassword,
+    confirmPasswordReset,
     signInWithGoogle,
     signInWithEmail,
     signUpWithEmail,
