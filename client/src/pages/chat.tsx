@@ -23,7 +23,40 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   
-  // Fetch chat details including messages
+  // Fetch chat basic information
+  const {
+    data: chatInfo,
+    isLoading: isLoadingChatInfo
+  } = useQuery({
+    queryKey: [`/api/${currentUser?.isClient ? 'client' : 'freelancer'}/chats`],
+    queryFn: async () => {
+      const response = await fetch(`/api/${currentUser?.isClient ? 'client' : 'freelancer'}/chats`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch chats');
+      }
+      
+      const data = await response.json();
+      console.log('Available chats:', data.chats);
+      
+      // Find the current chat in the chats list
+      const currentChat = data.chats.find((chat: any) => chat.id === chatId);
+      console.log('Found current chat:', currentChat);
+      
+      if (currentChat && !currentChat.freelancerId && currentUser?.isClient) {
+        console.error('Warning: Chat found but missing freelancerId property:', currentChat);
+      }
+      
+      return currentChat;
+    },
+    enabled: !!chatId && !!currentUser && !!isAuthenticated
+  });
+
+  // Fetch chat messages
   const { 
     data: chatData, 
     isLoading,
@@ -66,9 +99,17 @@ export default function ChatPage() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (messageText: string) => {
-      const endpoint = currentUser?.isClient 
-        ? '/api/chat/direct-message' 
-        : '/api/chat/direct-message';
+      if (currentUser?.isClient && !chatInfo?.freelancerId) {
+        throw new Error('Freelancer ID not found. Try refreshing the page.');
+      }
+      
+      const endpoint = '/api/chat/direct-message';
+      
+      console.log('Sending message with data:', {
+        message: messageText,
+        chatId: chatId,
+        freelancerId: currentUser?.isClient ? chatInfo?.freelancerId : undefined
+      });
       
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -79,7 +120,7 @@ export default function ChatPage() {
         body: JSON.stringify({
           message: messageText,
           chatId: chatId,
-          freelancerId: currentUser?.isClient ? chatData?.freelancerId : undefined
+          freelancerId: currentUser?.isClient ? chatInfo?.freelancerId : undefined
         })
       });
       
@@ -102,11 +143,25 @@ export default function ChatPage() {
   const handleSendMessage = async () => {
     if (!message.trim() || isSending) return;
     
+    if (currentUser?.isClient && !chatInfo?.freelancerId) {
+      toast({
+        title: "Cannot send message",
+        description: "Freelancer information not available. Please refresh the page.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSending(true);
     try {
       await sendMessageMutation.mutateAsync(message);
       setMessage('');
+      toast({
+        title: "Message sent",
+        description: "Your message was sent successfully",
+      });
     } catch (error: any) {
+      console.error("Error sending message:", error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to send message',
