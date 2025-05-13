@@ -114,9 +114,10 @@ export default function FreelancerDashboard() {
       thisMonth: typedDashboardData?.earnings?.thisMonth || 0,
       change: typedDashboardData?.earnings?.change || 0
     },
-    completedJobs: typedDashboardData?.completedJobs || 0,
+    completedJobs: dashboardData?.stats?.completedJobsCount || dashboardData?.freelancer?.completedJobs || 0,
     totalHours: typedDashboardData?.totalHours || 0,
-    rating: typedDashboardData?.rating !== undefined ? typedDashboardData.rating : null,
+    rating: dashboardData?.stats?.averageRating !== undefined ? dashboardData.stats.averageRating : 
+            dashboardData?.freelancer?.rating !== undefined ? dashboardData.freelancer.rating : null,
     matchScore: typedDashboardData?.matchScore || 85
   };
 
