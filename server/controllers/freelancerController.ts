@@ -295,19 +295,8 @@ export async function updateBookingStatus(req: Request, res: Response) {
       return res.status(403).json({ message: 'Not authorized to update this booking' });
     }
     
-    // Get all bookings for this freelancer
-    const bookings = await storage.getBookingsByFreelancerId(freelancer.id);
-    
-    // Find this booking in the list and update its status
-    const updatedBooking = bookings.find(b => b.id === booking.id);
-    
-    if (!updatedBooking) {
-      return res.status(404).json({ message: 'Booking not found' });
-    }
-    
-    // Update the booking with the new status
-    // Since we don't have an update method ready, we'll need to implement this in storage
-    // For now, we'll just return the status change confirmation
+    // Use the storage method to update the booking status
+    const updatedBooking = await storage.updateBooking(parseInt(id), { status });
     
     // Create notification for client
     await storage.createNotification({
@@ -322,10 +311,7 @@ export async function updateBookingStatus(req: Request, res: Response) {
     
     return res.status(200).json({
       message: status === 'cancelled' ? 'Booking cancelled successfully' : 'Booking updated successfully',
-      booking: {
-        ...updatedBooking,
-        status: status
-      }
+      booking: updatedBooking
     });
   } catch (error: any) {
     console.error('Update booking error:', error);

@@ -55,6 +55,7 @@ export interface IStorage {
   getBookingsByClientId(clientId: number): Promise<Booking[]>;
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBookingStatus(id: number, status: string): Promise<Booking>;
+  updateBooking(id: number, bookingData: Partial<Booking>): Promise<Booking>;
   
   // User preferences methods
   getUserPreferences(userId: number): Promise<UserPreferences | undefined>;
@@ -344,6 +345,22 @@ export class MemStorage implements IStorage {
       status,
       notes: '',
       createdAt: new Date()
+    };
+  }
+  
+  async updateBooking(id: number, bookingData: Partial<Booking>): Promise<Booking> {
+    console.warn('MemStorage: updateBooking not fully implemented');
+    return {
+      id,
+      clientId: 0,
+      freelancerId: 0,
+      date: new Date(),
+      startTime: '',
+      endTime: '',
+      status: 'updated',
+      notes: '',
+      createdAt: new Date(),
+      ...bookingData
     };
   }
   
@@ -846,6 +863,32 @@ export class DatabaseStorage implements IStorage {
       .where(eq(schema.bookings.id, id))
       .returning();
     return booking;
+  }
+  
+  async updateBooking(id: number, bookingData: Partial<Booking>): Promise<Booking> {
+    // Filter out undefined values and id from the update data
+    const cleanBookingData = Object.fromEntries(
+      Object.entries(bookingData).filter(([key, value]) => 
+        value !== undefined && key !== 'id'
+      )
+    );
+    
+    if (Object.keys(cleanBookingData).length === 0) {
+      // No changes to make, return the existing booking
+      const booking = await this.getBooking(id);
+      if (!booking) {
+        throw new Error(`Booking with id ${id} not found`);
+      }
+      return booking;
+    }
+    
+    const [updatedBooking] = await db
+      .update(schema.bookings)
+      .set(cleanBookingData)
+      .where(eq(schema.bookings.id, id))
+      .returning();
+    
+    return updatedBooking;
   }
 
   // User preferences methods
