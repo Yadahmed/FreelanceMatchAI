@@ -136,6 +136,7 @@ export class MemStorage implements IStorage {
       photoURL: insertUser.photoURL || null,
       firebaseUid: insertUser.firebaseUid || null,
       isClient: insertUser.isClient !== undefined ? insertUser.isClient : true,
+      isAdmin: insertUser.isAdmin || false,
       createdAt: now,
       lastLogin: now
     };
