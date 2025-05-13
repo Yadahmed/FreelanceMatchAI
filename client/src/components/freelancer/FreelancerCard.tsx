@@ -31,8 +31,8 @@ interface FreelancerCardProps {
 }
 
 export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCardProps) {
-  // Get the display name or username
-  const name = freelancer.displayName || freelancer.username || `Freelancer ${freelancer.id}`;
+  // Always use the display name to show the real name of the freelancer
+  const name = freelancer.displayName || 'Anonymous Freelancer';
   
   // Format skills to display only first 3
   const displaySkills = freelancer.skills.slice(0, 3);
