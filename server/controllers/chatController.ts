@@ -170,12 +170,34 @@ export async function sendMessage(req: Request, res: Response) {
     // 3. Limit to top 3
     const topFreelancers = sortedFreelancers.slice(0, 3);
     
+    // 4. Transform to match the schema with freelancer object
+    const formattedFreelancers = await Promise.all(topFreelancers.map(async (freelancer) => {
+      // Look up the user to get display name
+      const user = await storage.getUser(freelancer.userId);
+      const displayName = user?.displayName || user?.username || 'Anonymous Freelancer';
+      
+      return {
+        freelancerId: freelancer.id,
+        score: freelancer.matchPercentage || 0,
+        matchReasons: ['Strong match based on your requirements'],
+        jobPerformanceScore: freelancer.jobPerformance,
+        skillsScore: freelancer.skillsExperience,
+        responsivenessScore: freelancer.responsiveness,
+        fairnessScore: freelancer.fairnessScore,
+        // Include the full freelancer object for the UI to use
+        freelancer: {
+          ...freelancer,
+          displayName
+        }
+      };
+    }));
+    
     // Create AI response message
     const aiResponseMessage = await storage.createMessage({
       chatId: currentChatId,
       content: responseText,
       isUserMessage: false,
-      freelancerResults: topFreelancers
+      freelancerResults: formattedFreelancers
     });
     
     // Update user preferences based on this interaction
