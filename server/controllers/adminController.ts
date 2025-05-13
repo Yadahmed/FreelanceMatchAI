@@ -10,11 +10,12 @@ import { storage } from '../storage';
 export async function adminSessionAuth(req: Request, res: Response, next: Function) {
   try {
     // Check for admin-session header
+    console.log('Admin auth check - Headers:', JSON.stringify(req.headers));
     const adminSession = req.headers['admin-session'] === 'true';
     
     if (adminSession) {
       // Admin session is valid
-      console.log('Admin session authenticated');
+      console.log('Admin session authenticated via header');
       next();
       return;
     }

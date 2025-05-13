@@ -90,7 +90,7 @@ router.patch('/admin/users/:id/promote', adminSessionAuth, promoteToAdmin);
 router.patch('/admin/users/:id/revoke', adminSessionAuth, revokeAdmin);
 
 // Legacy endpoint to fix roles for a specific user
-router.get('/admin/fix-role/:id', authenticateUser, isAdmin, async (req, res) => {
+router.get('/admin/fix-role/:id', adminSessionAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = parseInt(id, 10);
