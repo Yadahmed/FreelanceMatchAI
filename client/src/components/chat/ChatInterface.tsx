@@ -190,9 +190,18 @@ export function ChatInterface() {
                       <div className="mt-4 space-y-4">
                         <h3 className="text-sm font-medium">Top Freelancers For Your Request:</h3>
                         <div className="grid gap-4">
-                          {message.freelancerResults.map((freelancer) => (
-                            <FreelancerCard key={freelancer.id} freelancer={freelancer} />
-                          ))}
+                          {message.freelancerResults.map((result) => {
+                            // Check if the result has a nested freelancer object (AI service format)
+                            if (result.freelancer) {
+                              return <FreelancerCard key={result.freelancerId} freelancer={result.freelancer} />;
+                            } 
+                            // Fallback to treating the result itself as a freelancer (old format)
+                            else if (result.id) {
+                              return <FreelancerCard key={result.id} freelancer={result} />;
+                            }
+                            // Skip rendering if neither format is available
+                            return null;
+                          })}
                         </div>
                       </div>
                     )}

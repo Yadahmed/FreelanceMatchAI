@@ -796,6 +796,7 @@ Job Performance: ${f.jobPerformance || 0}/100
           const responsivenessScore = (f.responsiveness / 100) * 0.15; // 15% weight
           const fairnessScore = (f.fairnessScore / 100) * 0.15;        // 15% weight
                     
+          // Return a complete freelancer object with all information needed by the client
           return {
             freelancerId: f.id,
             score: Math.min(100, Math.round(match.score)),
@@ -803,7 +804,27 @@ Job Performance: ${f.jobPerformance || 0}/100
             jobPerformanceScore,
             skillsScore,
             responsivenessScore,
-            fairnessScore
+            fairnessScore,
+            // Include all freelancer details for rendering the FreelancerCard component
+            freelancer: {
+              id: f.id,
+              userId: f.userId,
+              profession: f.profession,
+              skills: f.skills,
+              bio: f.bio,
+              hourlyRate: f.hourlyRate,
+              yearsOfExperience: f.yearsOfExperience,
+              rating: f.rating,
+              jobPerformance: f.jobPerformance,
+              skillsExperience: f.skillsExperience,
+              responsiveness: f.responsiveness,
+              fairnessScore: f.fairnessScore,
+              completedJobs: f.completedJobs || 0,
+              location: f.location,
+              availability: f.availability || true,
+              imageUrl: f.imageUrl,
+              displayName: displayName // Use the extracted name
+            }
           };
         })
       );

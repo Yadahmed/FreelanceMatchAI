@@ -172,7 +172,12 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
               View Profile
             </Link>
           </Button>
-          <Button>
+          <Button variant="outline" asChild>
+            <Link href={`/messages/${freelancer.id}`}>
+              Message
+            </Link>
+          </Button>
+          <Button asChild>
             <Link href={`/booking/${freelancer.id}`}>
               Book Now
             </Link>

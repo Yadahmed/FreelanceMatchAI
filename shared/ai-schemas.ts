@@ -72,6 +72,26 @@ export const freelancerMatchSchema = z.object({
   skillsScore: z.number(),
   responsivenessScore: z.number(),
   fairnessScore: z.number(),
+  // Include the full freelancer object for the UI to use
+  freelancer: z.object({
+    id: z.number(),
+    userId: z.number(),
+    profession: z.string(),
+    skills: z.array(z.string()),
+    bio: z.string(),
+    hourlyRate: z.number(),
+    yearsOfExperience: z.number().nullable().optional(),
+    rating: z.number().nullable().optional(),
+    jobPerformance: z.number(),
+    skillsExperience: z.number(),
+    responsiveness: z.number(),
+    fairnessScore: z.number(),
+    completedJobs: z.number().optional(),
+    location: z.string(),
+    availability: z.boolean().optional(),
+    imageUrl: z.string().nullable().optional(),
+    displayName: z.string().optional()
+  }).optional(), // Make optional for backward compatibility
 });
 
 export const aiMatchResultSchema = z.object({
