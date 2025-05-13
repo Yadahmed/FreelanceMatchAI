@@ -10,7 +10,7 @@ import {
   sendEmailVerification,
   applyActionCode,
   verifyPasswordResetCode,
-  confirmPasswordReset,
+  confirmPasswordReset as firebaseConfirmReset,
   sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth, googleProvider, isFirebaseConfigured } from '@/lib/firebase';
@@ -34,7 +34,7 @@ interface AuthContextType {
   sendVerificationEmail: () => Promise<void>;
   verifyEmail: (actionCode: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  confirmPasswordReset: (code: string, newPassword: string) => Promise<void>;
+  handlePasswordReset: (code: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -540,8 +540,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handlePasswordReset = async (code: string, newPassword: string): Promise<void> => {
     try {
       setIsLoading(true);
-      await verifyPasswordResetCode(auth, code); // Verify the code is valid
-      await confirmPasswordReset(auth, code, newPassword); // Reset the password
+      // Verify the code is valid before resetting
+      await verifyPasswordResetCode(auth, code);
+      
+      // Reset the password using the Firebase function
+      await firebaseConfirmReset(auth, code, newPassword);
     } catch (error) {
       console.error('Error confirming password reset:', error);
       throw error;
@@ -561,7 +564,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     sendVerificationEmail,
     verifyEmail,
     resetPassword,
-    confirmPasswordReset,
+    handlePasswordReset,
     signInWithGoogle,
     signInWithEmail,
     signUpWithEmail,
