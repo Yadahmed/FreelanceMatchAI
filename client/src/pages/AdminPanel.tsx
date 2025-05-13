@@ -167,11 +167,23 @@ export function AdminPanel() {
     setConfirmDialogOpen(true);
   };
   
-  const confirmDelete = () => {
+  const confirmDeleteFreelancer = () => {
     if (selectedFreelancerId) {
       deleteFreelancerMutation.mutate(selectedFreelancerId);
     }
     setConfirmDialogOpen(false);
+  };
+  
+  const handleDeleteUser = (userId: number) => {
+    setSelectedUserId(userId);
+    setConfirmUserDeleteDialog(true);
+  };
+  
+  const confirmDeleteUser = () => {
+    if (selectedUserId) {
+      deleteUserMutation.mutate(selectedUserId);
+    }
+    setConfirmUserDeleteDialog(false);
   };
   
   // Function to handle logout
@@ -194,6 +206,72 @@ export function AdminPanel() {
       </div>
       
       <div className="grid grid-cols-1 gap-6">
+        {/* User Management */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4">User Management</h2>
+          
+          <Table>
+            <TableCaption>List of all users in the system</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Username</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Display Name</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Firebase UID</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loadingUsers ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center">Loading users...</TableCell>
+                </TableRow>
+              ) : users && users.length > 0 ? (
+                users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>{user.id}</TableCell>
+                    <TableCell>{user.username}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.displayName || 'N/A'}</TableCell>
+                    <TableCell>
+                      {user.isAdmin ? (
+                        <Badge variant="default" className="bg-purple-600">Admin</Badge>
+                      ) : user.isClient ? (
+                        <Badge variant="outline">Client</Badge>
+                      ) : (
+                        <Badge variant="secondary">Freelancer</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {user.firebaseUid ? (
+                        <span className="text-xs">{user.firebaseUid.substring(0, 10)}...</span>
+                      ) : (
+                        'No Firebase UID'
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteUser(user.id)}
+                        className="flex items-center"
+                      >
+                        <UserMinus className="mr-1 h-4 w-4" /> Delete User
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center">No users found</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        
         {/* Freelancer Management */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">Freelancer Management</h2>
@@ -251,6 +329,7 @@ export function AdminPanel() {
         </div>
       </div>
       
+      {/* Freelancer Delete Confirmation Dialog */}
       <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -261,8 +340,33 @@ export function AdminPanel() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction onClick={confirmDeleteFreelancer} className="bg-red-600 hover:bg-red-700">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* User Delete Confirmation Dialog */}
+      <AlertDialog open={confirmUserDeleteDialog} onOpenChange={setConfirmUserDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User Permanently?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <p>This will permanently delete the user account, including:</p>
+              <ul className="list-disc ml-6 mt-2">
+                <li>User database record</li>
+                <li>Any associated freelancer profile</li>
+                <li>All user data (messages, reviews, etc.)</li>
+                <li>Firebase authentication account</li>
+              </ul>
+              <p className="mt-3 font-bold text-red-600">This action cannot be undone!</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteUser} className="bg-red-600 hover:bg-red-700">
+              Permanently Delete User
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

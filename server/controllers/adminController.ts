@@ -47,10 +47,24 @@ export async function isAdmin(req: Request, res: Response, next: Function) {
 // Get all users
 export async function getAllUsers(req: Request, res: Response) {
   try {
-    // This would need implementation in storage interface
-    // For now, we'll just return a placeholder message
+    // Get all users from database
+    const users = await storage.getAllUsers();
+    
+    // Return users with sanitized information
+    const sanitizedUsers = users.map(user => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      displayName: user.displayName,
+      isClient: user.isClient,
+      isAdmin: user.isAdmin,
+      firebaseUid: user.firebaseUid,
+      createdAt: user.createdAt,
+      // Don't include sensitive fields like password hash
+    }));
+    
     return res.status(200).json({ 
-      message: 'Admin: Get all users function (to be implemented)'
+      users: sanitizedUsers
     });
   } catch (error: any) {
     console.error('Admin get all users error:', error);
