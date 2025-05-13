@@ -73,18 +73,33 @@ export default function FreelancerDashboard() {
   const isLoading = authLoading || dashboardLoading || jobRequestsLoading || notificationsLoading || chatsLoading;
   const hasError = dashboardError || jobRequestsError || notificationsError || chatsError;
 
-  // Placeholder data for development
+  // Dashboard data type definition
+  interface DashboardData {
+    earnings?: {
+      total: number;
+      thisMonth: number;
+      change: number;
+    };
+    completedJobs?: number;
+    totalHours?: number;
+    rating?: number;
+    matchScore?: number;
+  }
+  
+  // Typed dashboard data
+  const typedDashboardData = dashboardData as DashboardData || {};
+  
   // Default values with type safety
   const statsData = {
     earnings: {
-      total: dashboardData?.earnings?.total || 0,
-      thisMonth: dashboardData?.earnings?.thisMonth || 0,
-      change: dashboardData?.earnings?.change || 0
+      total: typedDashboardData?.earnings?.total || 0,
+      thisMonth: typedDashboardData?.earnings?.thisMonth || 0,
+      change: typedDashboardData?.earnings?.change || 0
     },
-    completedJobs: dashboardData?.completedJobs || 0,
-    totalHours: dashboardData?.totalHours || 0,
-    rating: dashboardData?.rating || 4.5,
-    matchScore: dashboardData?.matchScore || 85
+    completedJobs: typedDashboardData?.completedJobs || 0,
+    totalHours: typedDashboardData?.totalHours || 0,
+    rating: typedDashboardData?.rating || 4.5,
+    matchScore: typedDashboardData?.matchScore || 85
   };
 
   // Parse any responses to ensure type safety
@@ -298,7 +313,7 @@ export default function FreelancerDashboard() {
             <CardContent>
               {isLoading ? (
                 <p>Loading job requests...</p>
-              ) : jobRequests && jobRequests.length > 0 ? (
+              ) : jobRequests && Array.isArray(jobRequests) && jobRequests.length > 0 ? (
                 <div className="space-y-6">
                   {jobRequests.map((job: any) => (
                     <div key={job.id} className="flex flex-col md:flex-row gap-4 border-b pb-6">
@@ -419,7 +434,7 @@ export default function FreelancerDashboard() {
                 <div className="flex justify-center p-4">
                   <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
                 </div>
-              ) : chats && chats.length > 0 ? (
+              ) : chats && Array.isArray(chats) && chats.length > 0 ? (
                 <div className="space-y-4">
                   {chats.map((chat: any) => (
                     <div 

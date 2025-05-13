@@ -82,6 +82,10 @@ export default function FreelancerDetail() {
       }
       
       // Send a direct message to initiate the conversation
+      if (!freelancer) {
+        throw new Error('Freelancer data is not available');
+      }
+      
       const response = await fetch('/api/chat/direct-message', {
         method: 'POST',
         headers: {
