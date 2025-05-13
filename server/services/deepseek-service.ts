@@ -10,6 +10,7 @@ import { storage } from '../storage';
 import { db } from '../db';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { extractFreelancerName } from '../utils/freelancer';
 
 /**
  * Service for interacting with DeepSeek Coder API
@@ -753,7 +754,7 @@ Job Performance: ${f.jobPerformance || 0}/100
           
           // Get the user info for this freelancer
           const user = await storage.getUser(f.userId);
-          const displayName = user?.displayName || 'Unknown';
+          const displayName = extractFreelancerName(f, user);
           
           // Create match reasons based on skills and experience
           const matchingSkills = Array.isArray(f.skills) ? f.skills : [];

@@ -245,21 +245,8 @@ router.get('/freelancers/:id', async (req, res) => {
     // Get the user to access the display name
     const user = await storage.getUser(freelancer.userId);
     
-    // Extract name from bio if display name is not available
-    let displayName = user?.displayName;
-    
-    if (!displayName && freelancer.bio) {
-      // Many bios start with "[Name] is a skilled..." - try to extract the name
-      const nameMatch = freelancer.bio.match(/^([A-Za-z\s]+)\s+is\s+a\s+/);
-      if (nameMatch && nameMatch[1]) {
-        displayName = nameMatch[1].trim();
-      }
-    }
-    
-    // If still no name, use the fallback
-    if (!displayName) {
-      displayName = `Freelancer ${freelancer.id}`;
-    }
+    // Use the utility function to extract the appropriate name
+    const displayName = extractFreelancerName(freelancer, user);
     
     // Return public-facing information with actual display name
     return res.json({
