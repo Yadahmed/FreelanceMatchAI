@@ -53,7 +53,8 @@ export default function ChatPage() {
       
       return currentChat;
     },
-    enabled: !!chatId && !!currentUser && !!isAuthenticated
+    enabled: !!chatId && !!currentUser && !!isAuthenticated,
+    refetchInterval: 5000 // Refresh chat info every 5 seconds
   });
 
   // Fetch chat messages
@@ -79,7 +80,9 @@ export default function ChatPage() {
       
       return await response.json();
     },
-    enabled: !!chatId && !!currentUser && !!isAuthenticated
+    enabled: !!chatId && !!currentUser && !!isAuthenticated,
+    refetchInterval: 2500, // Auto-refresh messages every 2.5 seconds
+    refetchIntervalInBackground: true // Refresh even when tab is in background
   });
   
   // Scroll to bottom when messages change
@@ -160,6 +163,10 @@ export default function ChatPage() {
     try {
       await sendMessageMutation.mutateAsync(message);
       setMessage('');
+      
+      // Explicitly refetch messages to update UI immediately
+      refetch();
+      
       toast({
         title: "Message sent",
         description: "Your message was sent successfully",
