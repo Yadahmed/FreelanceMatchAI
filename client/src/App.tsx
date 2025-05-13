@@ -13,6 +13,7 @@ import ExploreFreelancers from "@/pages/explore-freelancers";
 import Freelancer from "@/pages/freelancer";
 import DirectChat from "@/pages/direct-chat";
 import Chat from "@/pages/chat";
+import ClientMessages from "@/pages/client-messages";
 import AdminPanel from "@/pages/AdminPanel";
 import AdminLogin from "@/pages/AdminLogin";
 import { Header } from "@/components/layout/Header";
@@ -83,10 +84,11 @@ function Router() {
         <Route path="/client-dashboard" component={Home} />
         <Route path="/client/dashboard" component={Home} />
         <Route path="/job-requests" component={Home} />
+        <Route path="/client-messages" component={ClientMessages} />
         
         {/* Common routes for both user types */}
         <Route path="/bookings" component={Home} />
-        <Route path="/messages" component={Home} />
+        <Route path="/messages" component={ClientMessages} />
         <Route path="/chat/:id" component={Chat} />
         <Route path="/notifications" component={Home} />
         <Route path="/settings" component={Home} />

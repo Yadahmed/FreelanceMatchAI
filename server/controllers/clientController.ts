@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
+import { getFreelancerNameFromBioOrDisplayName } from '../utils/freelancer';
 
 // Create a job request
 export async function createJobRequest(req: Request, res: Response) {
