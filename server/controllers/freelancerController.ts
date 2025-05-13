@@ -362,3 +362,124 @@ export async function markNotificationAsRead(req: Request, res: Response) {
     return res.status(500).json({ message: 'Server error' });
   }
 }
+
+// Get chat history for a freelancer
+export async function getChats(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    // Only freelancers can access their chats
+    if (req.user.isClient) {
+      return res.status(403).json({ message: 'Freelancer access required' });
+    }
+    
+    // Find freelancer profile to get freelancer ID
+    const freelancer = await storage.getFreelancerByUserId(req.user.id);
+    
+    if (!freelancer) {
+      return res.status(404).json({ message: 'Freelancer profile not found' });
+    }
+    
+    // Get all chats for this freelancer user
+    const chats = await storage.getChatsByUserId(req.user.id);
+    
+    // Get associated job requests for context
+    const jobRequests = await storage.getJobRequestsByFreelancerId(freelancer.id);
+    
+    // Enhance chat data with additional context
+    const enhancedChats = await Promise.all(chats.map(async (chat) => {
+      // Get the most recent message for each chat
+      const messages = await storage.getMessagesByChatId(chat.id);
+      const latestMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+      
+      // Find any job request associated with this chat
+      const relatedJobRequest = jobRequests.find(job => 
+        messages.some(msg => 
+          msg.freelancerResults && 
+          Array.isArray(msg.freelancerResults) && 
+          msg.freelancerResults.some(f => f.id === freelancer.id)
+        )
+      );
+      
+      return {
+        ...chat,
+        latestMessage,
+        relatedJobRequest: relatedJobRequest || null,
+        messageCount: messages.length
+      };
+    }));
+    
+    return res.status(200).json({
+      chats: enhancedChats
+    });
+  } catch (error: any) {
+    console.error('Get freelancer chats error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+}
+
+// Get chat messages for a specific chat
+export async function getChatMessages(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    // Only freelancers can access their chat messages
+    if (req.user.isClient) {
+      return res.status(403).json({ message: 'Freelancer access required' });
+    }
+    
+    const { chatId } = req.params;
+    
+    if (!chatId) {
+      return res.status(400).json({ message: 'Chat ID is required' });
+    }
+    
+    // Get the chat
+    const chat = await storage.getChat(parseInt(chatId));
+    
+    if (!chat) {
+      return res.status(404).json({ message: 'Chat not found' });
+    }
+    
+    // Check if this freelancer is associated with the chat
+    // For security, check if the chat belongs to this user
+    // or if the freelancer is mentioned in any message in this chat
+    
+    if (chat.userId !== req.user.id) {
+      // If chat doesn't belong to this user directly, check if this freelancer is mentioned in results
+      const freelancer = await storage.getFreelancerByUserId(req.user.id);
+      
+      if (!freelancer) {
+        return res.status(404).json({ message: 'Freelancer profile not found' });
+      }
+      
+      // Get all messages from this chat
+      const messages = await storage.getMessagesByChatId(chat.id);
+      
+      // Check if this freelancer is mentioned in any message's results
+      const isFreelancerMentioned = messages.some(message => 
+        message.freelancerResults && 
+        Array.isArray(message.freelancerResults) && 
+        message.freelancerResults.some(result => result.id === freelancer.id)
+      );
+      
+      if (!isFreelancerMentioned) {
+        return res.status(403).json({ message: 'Not authorized to access this chat' });
+      }
+    }
+    
+    // Get messages for this chat
+    const messages = await storage.getMessagesByChatId(parseInt(chatId));
+    
+    return res.status(200).json({
+      messages
+    });
+  } catch (error: any) {
+    console.error('Get freelancer chat messages error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+}

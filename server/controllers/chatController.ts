@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { chatRequestSchema } from '@shared/schema';
+import { chatRequestSchema, directMessageSchema } from '@shared/schema';
 import { storage } from '../storage';
 
 // Send a message to the AI assistant

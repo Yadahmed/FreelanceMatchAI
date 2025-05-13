@@ -183,12 +183,16 @@ export const insertUserPreferencesSchema = createInsertSchema(userPreferences).p
 export const chats = pgTable("chats", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
+  freelancerId: integer("freelancer_id").references(() => freelancers.id),
+  type: text("type").notNull().default("ai"), // "ai" or "direct"
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updated_at: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const insertChatSchema = createInsertSchema(chats).pick({
   userId: true,
+  freelancerId: true,
+  type: true,
 });
 
 // Chat messages
@@ -360,8 +364,16 @@ export const aiMatchResultSchema = z.object({
 export type RegisterRequest = z.infer<typeof registerSchema>;
 export type FreelancerProfileRequest = z.infer<typeof freelancerProfileSchema>;
 export type LoginRequest = z.infer<typeof loginSchema>;
+// Schema for direct messaging between clients and freelancers
+export const directMessageSchema = z.object({
+  message: z.string().min(1, "Message cannot be empty"),
+  freelancerId: z.number(),
+  chatId: z.number().optional(),
+});
+
 export type ChatRequest = z.infer<typeof chatRequestSchema>;
 export type ChatResponse = z.infer<typeof chatResponseSchema>;
+export type DirectMessageRequest = z.infer<typeof directMessageSchema>;
 export type JobAnalysisRequest = z.infer<typeof jobAnalysisRequestSchema>;
 export type FreelancerMatch = z.infer<typeof freelancerMatchSchema>;
 export type AIMatchResult = z.infer<typeof aiMatchResultSchema>;

@@ -24,7 +24,9 @@ import {
   updateJobRequestStatus,
   getBookings as getFreelancerBookings,
   getNotifications,
-  markNotificationAsRead
+  markNotificationAsRead,
+  getChats as getFreelancerChats,
+  getChatMessages as getFreelancerChatMessages
 } from '../controllers/freelancerController';
 import {
   createJobRequest,
@@ -230,6 +232,8 @@ router.patch('/freelancer/job-requests/:id', requireFreelancer, updateJobRequest
 router.get('/freelancer/bookings', requireFreelancer, getFreelancerBookings);
 router.get('/freelancer/notifications', requireFreelancer, getNotifications);
 router.patch('/freelancer/notifications/:id', requireFreelancer, markNotificationAsRead);
+router.get('/freelancer/chats', requireFreelancer, getFreelancerChats);
+router.get('/freelancer/chats/:chatId/messages', requireFreelancer, getFreelancerChatMessages);
 
 // Client routes
 router.post('/client/job-requests', requireClient, createJobRequest);
