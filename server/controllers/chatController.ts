@@ -207,9 +207,14 @@ export async function sendMessage(req: Request, res: Response) {
       }
     }
     
+    // Format the response to include all necessary data
     return res.status(200).json({
+      id: aiResponseMessage.id,
       chatId: currentChatId,
-      message: aiResponseMessage
+      content: aiResponseMessage.content,
+      isUserMessage: false,
+      timestamp: aiResponseMessage.timestamp,
+      freelancerResults: aiResponseMessage.freelancerResults
     });
   } catch (error: any) {
     console.error('Chat error:', error);

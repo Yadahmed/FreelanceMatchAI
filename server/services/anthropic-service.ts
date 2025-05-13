@@ -397,6 +397,10 @@ Job Performance: ${f.jobPerformance || 0}/100
           // Create match reasons from reasoning
           const reasons = [match.reasoning || 'Strong match for this job request'];
           
+          // Look up user details to get the displayName
+          const user = await storage.getUser(freelancer.userId);
+          const displayName = user?.displayName || user?.username || 'Freelancer';
+          
           processedMatches.push({
             freelancerId: freelancer.id,
             score: typeof match.score === 'number' ? match.score : parseFloat(match.score),
@@ -404,7 +408,27 @@ Job Performance: ${f.jobPerformance || 0}/100
             jobPerformanceScore,
             skillsScore,
             responsivenessScore,
-            fairnessScore
+            fairnessScore,
+            // Include the full freelancer object for the UI to use
+            freelancer: {
+              id: freelancer.id,
+              userId: freelancer.userId,
+              profession: freelancer.profession,
+              skills: freelancer.skills,
+              bio: freelancer.bio,
+              hourlyRate: freelancer.hourlyRate,
+              yearsOfExperience: freelancer.yearsOfExperience,
+              rating: freelancer.rating,
+              jobPerformance: freelancer.jobPerformance,
+              skillsExperience: freelancer.skillsExperience,
+              responsiveness: freelancer.responsiveness,
+              fairnessScore: freelancer.fairnessScore,
+              completedJobs: freelancer.completedJobs || 0,
+              location: freelancer.location,
+              availability: freelancer.availability || true,
+              imageUrl: freelancer.imageUrl,
+              displayName: displayName
+            }
           });
         }
       }
