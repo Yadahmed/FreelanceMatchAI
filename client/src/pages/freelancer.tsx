@@ -68,12 +68,54 @@ export default function FreelancerDetail() {
     setLocation('/explore-freelancers');
   };
 
-  const handleHireClick = () => {
-    toast({
-      title: "Contact initiated",
-      description: "You can now message this freelancer to discuss your project.",
-    });
-    // In a real app, we'd navigate to a chat or contact page
+  const handleHireClick = async () => {
+    try {
+      // Check if user is authenticated
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to message this freelancer.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Send a direct message to initiate the conversation
+      const response = await fetch('/api/chat/direct-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          message: `Hello, I'm interested in discussing a potential project with you.`,
+          freelancerId: freelancer.id
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to send message');
+      }
+      
+      const data = await response.json();
+      
+      toast({
+        title: "Message sent!",
+        description: "Your message has been sent to the freelancer.",
+      });
+      
+      // Navigate to a messages page in the future
+      // For now we'll just show the success toast
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Failed to send message",
+        description: error.message || "There was a problem sending your message.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (isLoading) {
