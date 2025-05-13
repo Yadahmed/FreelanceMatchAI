@@ -1,8 +1,8 @@
+import React, { useState, useEffect, Suspense } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { useState, useEffect } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { app } from "./lib/firebase";
 import Home from "@/pages/home";
@@ -89,6 +89,17 @@ function Router() {
         {/* Common routes for both user types */}
         <Route path="/bookings" component={Home} />
         <Route path="/messages" component={ClientMessages} />
+        <Route path="/messages/:id">
+          {(params) => {
+            // Create a dynamic import with correct naming (match by id)
+            const MessagePage = React.lazy(() => import('./pages/messages/[id]'));
+            return (
+              <Suspense fallback={<div className="p-4 text-center">Loading message thread...</div>}>
+                <MessagePage />
+              </Suspense>
+            );
+          }}
+        </Route>
         <Route path="/chat/:id" component={Chat} />
         <Route path="/notifications" component={Home} />
         <Route path="/settings" component={Home} />
