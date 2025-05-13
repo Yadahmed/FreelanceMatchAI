@@ -192,24 +192,29 @@ router.get('/freelancers', async (req, res) => {
     // Get all freelancers
     const allFreelancers = await storage.getAllFreelancers();
     
-    // Return a list of public-facing information
-    const freelancersResponse = allFreelancers.map(freelancer => ({
-      id: freelancer.id,
-      userId: freelancer.userId,
-      displayName: `Freelancer ${freelancer.id}`,
-      profession: freelancer.profession,
-      skills: freelancer.skills,
-      bio: freelancer.bio,
-      hourlyRate: freelancer.hourlyRate,
-      yearsOfExperience: freelancer.yearsOfExperience,
-      location: freelancer.location,
-      imageUrl: freelancer.imageUrl,
-      rating: freelancer.rating,
-      jobPerformance: freelancer.jobPerformance,
-      skillsExperience: freelancer.skillsExperience,
-      responsiveness: freelancer.responsiveness,
-      fairnessScore: freelancer.fairnessScore,
-      completedJobs: freelancer.completedJobs
+    // Return a list of public-facing information with actual display names
+    const freelancersResponse = await Promise.all(allFreelancers.map(async (freelancer) => {
+      // Get the user data to access the display name
+      const user = await storage.getUser(freelancer.userId);
+      
+      return {
+        id: freelancer.id,
+        userId: freelancer.userId,
+        displayName: user?.displayName || `Freelancer ${freelancer.id}`,
+        profession: freelancer.profession,
+        skills: freelancer.skills,
+        bio: freelancer.bio,
+        hourlyRate: freelancer.hourlyRate,
+        yearsOfExperience: freelancer.yearsOfExperience,
+        location: freelancer.location,
+        imageUrl: freelancer.imageUrl,
+        rating: freelancer.rating,
+        jobPerformance: freelancer.jobPerformance,
+        skillsExperience: freelancer.skillsExperience,
+        responsiveness: freelancer.responsiveness,
+        fairnessScore: freelancer.fairnessScore,
+        completedJobs: freelancer.completedJobs
+      };
     }));
     
     return res.json(freelancersResponse);
@@ -233,11 +238,14 @@ router.get('/freelancers/:id', async (req, res) => {
       return res.status(404).json({ message: 'Freelancer not found' });
     }
     
-    // Return public-facing information
+    // Get the user to access the display name
+    const user = await storage.getUser(freelancer.userId);
+    
+    // Return public-facing information with actual display name
     return res.json({
       id: freelancer.id,
       userId: freelancer.userId,
-      displayName: `Freelancer ${freelancer.id}`,
+      displayName: user?.displayName || `Freelancer ${freelancer.id}`,
       profession: freelancer.profession,
       skills: freelancer.skills,
       bio: freelancer.bio,
