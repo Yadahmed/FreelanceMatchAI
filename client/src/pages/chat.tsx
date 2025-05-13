@@ -99,29 +99,49 @@ export default function ChatPage() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (messageText: string) => {
+      // The logic differs based on whether the user is a client or a freelancer
       if (currentUser?.isClient && !chatInfo?.freelancerId) {
         throw new Error('Freelancer ID not found. Try refreshing the page.');
       }
       
-      const endpoint = '/api/chat/direct-message';
-      
-      console.log('Sending message with data:', {
+      // When the freelancer is sending a message, we need to get the client's ID
+      // When the client is sending a message, we need the freelancer's ID
+      let messageData: any = {
         message: messageText,
-        chatId: chatId,
-        freelancerId: currentUser?.isClient ? chatInfo?.freelancerId : undefined
-      });
+        chatId: chatId
+      };
       
+      // For clients, set the freelancerId param
+      if (currentUser?.isClient) {
+        messageData.freelancerId = chatInfo?.freelancerId;
+      } 
+      // For freelancers, we still need to provide a freelancerId (our own ID)
+      else {
+        // Get the freelancer profile ID
+        const freelancerResponse = await fetch('/api/freelancer/profile', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          }
+        });
+        
+        if (!freelancerResponse.ok) {
+          throw new Error('Failed to get freelancer profile');
+        }
+        
+        const freelancerData = await freelancerResponse.json();
+        messageData.freelancerId = freelancerData.freelancer.id;
+      }
+      
+      console.log('Sending message with data:', messageData);
+      
+      const endpoint = '/api/chat/direct-message';
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
-        body: JSON.stringify({
-          message: messageText,
-          chatId: chatId,
-          freelancerId: currentUser?.isClient ? chatInfo?.freelancerId : undefined
-        })
+        body: JSON.stringify(messageData)
       });
       
       if (!response.ok) {
@@ -143,7 +163,12 @@ export default function ChatPage() {
   const handleSendMessage = async () => {
     if (!message.trim() || isSending) return;
     
+    // Log user role information to help with debugging
+    console.log('User role:', currentUser?.isClient ? 'Client' : 'Freelancer');
+    console.log('Chat ID:', chatId);
+    
     if (currentUser?.isClient && !chatInfo?.freelancerId) {
+      console.error('Missing freelancerId in chatInfo for client:', chatInfo);
       toast({
         title: "Cannot send message",
         description: "Freelancer information not available. Please refresh the page.",

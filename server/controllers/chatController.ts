@@ -243,9 +243,26 @@ export async function sendDirectMessage(req: Request, res: Response) {
         return res.status(404).json({ message: 'Chat not found' });
       }
       
-      // Ensure chat belongs to the current user and involves the specified freelancer
-      if (chat.userId !== req.user.id || chat.freelancerId !== freelancerId) {
-        return res.status(403).json({ message: 'Not authorized to access this chat' });
+      // If the user is a client, make sure they own the chat
+      // If the user is a freelancer, make sure they are the freelancer for this chat
+      const isClient = req.user.isClient;
+      
+      if (isClient && chat.userId !== req.user.id) {
+        return res.status(403).json({ message: 'Not authorized to access this chat as client' });
+      }
+      
+      // For freelancers, check if they are associated with this chat
+      if (!isClient) {
+        // Get the freelancer ID for the current user
+        const userFreelancer = await storage.getFreelancerByUserId(req.user.id);
+        
+        if (!userFreelancer || userFreelancer.id !== chat.freelancerId) {
+          return res.status(403).json({ 
+            message: 'Not authorized to access this chat as freelancer',
+            freelancerId: userFreelancer?.id,
+            chatFreelancerId: chat.freelancerId
+          });
+        }
       }
       
       currentChatId = chat.id;
