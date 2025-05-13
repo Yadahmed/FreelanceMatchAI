@@ -60,9 +60,7 @@ interface Freelancer {
 export function AdminPanel() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedFreelancerId, setSelectedFreelancerId] = useState<number | null>(null);
-  const [deleteType, setDeleteType] = useState<'user' | 'freelancer'>('user');
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   
   // Redirect if not authenticated as admin
@@ -72,57 +70,6 @@ export function AdminPanel() {
       window.location.href = '/admin/login';
     }
   }, []);
-  
-  // Create hardcoded admin users since the API is failing
-  const mockUsers: User[] = [
-    {
-      id: 1,
-      username: 'admin',
-      email: 'admin@kurdjobs.com',
-      displayName: 'Admin User',
-      isClient: false,
-      isAdmin: true,
-      firebaseUid: null,
-      createdAt: new Date().toISOString()
-    },
-    // Add a user that matches a freelancer by ID from the database
-    {
-      id: 12,
-      username: 'test_freelancer',
-      email: 'test@kurdjobs.com',
-      displayName: 'Test Freelancer',
-      isClient: false,
-      isAdmin: false,
-      firebaseUid: null,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 16,
-      username: 'graphics_designer',
-      email: 'graphics@kurdjobs.com',
-      displayName: 'Graphics Designer',
-      isClient: false,
-      isAdmin: false,
-      firebaseUid: null,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 18,
-      username: 'fullstack_dev',
-      email: 'fullstack@kurdjobs.com',
-      displayName: 'Fullstack Developer',
-      isClient: false,
-      isAdmin: false,
-      firebaseUid: null,
-      createdAt: new Date().toISOString()
-    }
-  ];
-  
-  // Fetch users - currently failing but keeping for later
-  const { isLoading: loadingUsers } = useQuery<{ message: string, users: User[] }>({ 
-    queryKey: ['/api/admin/users'], 
-    enabled: true
-  });
   
   // Fetch freelancers
   const { data: freelancers, isLoading: loadingFreelancers } = useQuery<Freelancer[]>({
@@ -136,33 +83,6 @@ export function AdminPanel() {
       console.log('[AdminPanel] Freelancers data received:', freelancers);
     }
   }, [freelancers]);
-  
-  // Use the mock users for now
-  const users = mockUsers;
-  
-  // Delete user mutation
-  const deleteUserMutation = useMutation({
-    mutationFn: async (userId: number) => {
-      const response = await apiRequest(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
-      });
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
-      toast({
-        title: 'Success',
-        description: 'User deleted successfully',
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete user',
-        variant: 'destructive',
-      });
-    },
-  });
   
   // Delete freelancer mutation
   const deleteFreelancerMutation = useMutation({
@@ -188,70 +108,13 @@ export function AdminPanel() {
     },
   });
   
-  // Promote user to admin mutation
-  const promoteToAdminMutation = useMutation({
-    mutationFn: async (userId: number) => {
-      const response = await apiRequest(`/api/admin/users/${userId}/promote`, {
-        method: 'PATCH',
-      });
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
-      toast({
-        title: 'Success',
-        description: 'User promoted to admin successfully',
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to promote user',
-        variant: 'destructive',
-      });
-    },
-  });
-  
-  // Revoke admin mutation
-  const revokeAdminMutation = useMutation({
-    mutationFn: async (userId: number) => {
-      const response = await apiRequest(`/api/admin/users/${userId}/revoke`, {
-        method: 'PATCH',
-      });
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
-      toast({
-        title: 'Success',
-        description: 'Admin privileges revoked successfully',
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to revoke admin privileges',
-        variant: 'destructive',
-      });
-    },
-  });
-  
-  const handleDeleteUser = (userId: number) => {
-    setSelectedUserId(userId);
-    setDeleteType('user');
-    setConfirmDialogOpen(true);
-  };
-  
   const handleDeleteFreelancer = (freelancerId: number) => {
     setSelectedFreelancerId(freelancerId);
-    setDeleteType('freelancer');
     setConfirmDialogOpen(true);
   };
   
   const confirmDelete = () => {
-    if (deleteType === 'user' && selectedUserId) {
-      deleteUserMutation.mutate(selectedUserId);
-    } else if (deleteType === 'freelancer' && selectedFreelancerId) {
+    if (selectedFreelancerId) {
       deleteFreelancerMutation.mutate(selectedFreelancerId);
     }
     setConfirmDialogOpen(false);
@@ -263,18 +126,9 @@ export function AdminPanel() {
     window.location.href = '/admin/login';
   };
   
-  if (loadingUsers || loadingFreelancers) {
+  if (loadingFreelancers) {
     return <div className="container mx-auto p-4">Loading...</div>;
   }
-  
-  const getFreelancerForUser = (userId: number) => {
-    if (!freelancers) return undefined;
-    console.log('[getFreelancerForUser] Looking for freelancer with userId:', userId);
-    console.log('[getFreelancerForUser] Available freelancers:', freelancers);
-    const freelancer = freelancers.find(f => f.userId === userId);
-    console.log('[getFreelancerForUser] Found freelancer:', freelancer);
-    return freelancer;
-  };
   
   return (
     <div className="container mx-auto p-4">
@@ -286,102 +140,6 @@ export function AdminPanel() {
       </div>
       
       <div className="grid grid-cols-1 gap-6">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">User Management</h2>
-          
-          <Table>
-            <TableCaption>List of all users in the system</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Username</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Display Name</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Admin</TableHead>
-                <TableHead>Freelancer</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users?.map((user: User) => {
-                const freelancer = getFreelancerForUser(user.id);
-                return (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.id}</TableCell>
-                    <TableCell>{user.username}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.displayName || '-'}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.isClient ? 'default' : 'secondary'}>
-                        {user.isClient ? 'Client' : 'Freelancer'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.isAdmin ? 'destructive' : 'outline'}>
-                        {user.isAdmin ? 'Admin' : 'User'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {freelancer ? (
-                        <Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80" onClick={() => handleDeleteFreelancer(freelancer.id)}>
-                          ID: {freelancer.id} - {freelancer.profession}
-                        </Badge>
-                      ) : (
-                        '-'
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDeleteUser(user.id)}
-                          title="Delete User Account"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        
-                        {freelancer && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleDeleteFreelancer(freelancer.id)}
-                            title="Delete Freelancer Profile Only"
-                          >
-                            <UserMinus className="h-4 w-4" />
-                          </Button>
-                        )}
-                        
-                        {!user.isAdmin ? (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => promoteToAdminMutation.mutate(user.id)}
-                            title="Promote to Admin"
-                          >
-                            <Shield className="h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => revokeAdminMutation.mutate(user.id)}
-                            disabled={user.id === user?.id} // Prevent revoking self
-                            title="Revoke Admin Status"
-                          >
-                            <ShieldOff className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-        
         {/* Freelancer Management */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">Freelancer Management</h2>
@@ -397,6 +155,7 @@ export function AdminPanel() {
                 <TableHead>Rating</TableHead>
                 <TableHead>Hourly Rate</TableHead>
                 <TableHead>Location</TableHead>
+                <TableHead>Skills</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -410,6 +169,15 @@ export function AdminPanel() {
                   <TableCell>{freelancer.rating}/5</TableCell>
                   <TableCell>${freelancer.hourlyRate}/hr</TableCell>
                   <TableCell>{freelancer.location || 'Remote'}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {freelancer.skills.map((skill, index) => (
+                        <Badge key={index} variant="outline">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button
@@ -434,9 +202,7 @@ export function AdminPanel() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              {deleteType === 'user' 
-                ? 'This will permanently delete the user account and all associated data, including freelancer profile if exists.'
-                : 'This will delete only the freelancer profile, keeping the user account intact.'}
+              This will delete the freelancer profile from the system. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
