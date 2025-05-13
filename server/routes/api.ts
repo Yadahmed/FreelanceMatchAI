@@ -67,20 +67,32 @@ router.get('/admin/users', adminSessionAuth, async (req, res) => {
   try {
     console.log('Admin users endpoint - Starting fetch');
     
-    // Import the db and schema directly
-    const { db } = require('../db');
-    const { users } = require('@shared/schema');
+    // Use the database storage directly for consistency
+    const { storage } = require('../storage');
     
-    console.log('Admin users endpoint - Imports successful');
+    console.log('Admin users endpoint - Storage imported');
     
-    // Get all users directly from the database
-    console.log('Admin users endpoint - Executing query');
-    const allUsers = await db.select().from(users);
-    console.log('Admin users endpoint - Query completed, users found:', allUsers?.length || 0);
+    // Execute a raw SQL query to get users since we may have schema mismatch
+    const { execute_sql_tool } = require('../../server/utils/sql');
+    const usersQuery = await execute_sql_tool('SELECT * FROM users ORDER BY id');
+    
+    console.log('Admin users endpoint - Query completed, users found:', usersQuery?.length || 0);
+    
+    // Map the SQL result to match our frontend expectations
+    const formattedUsers = usersQuery.map(user => ({
+      id: user.id,
+      username: user.username,
+      email: user.email, 
+      displayName: user.display_name,
+      isClient: user.is_client,
+      isAdmin: user.is_admin,
+      firebaseUid: user.firebase_uid,
+      createdAt: user.created_at
+    }));
     
     return res.json({
       message: 'All users retrieved',
-      users: allUsers || []
+      users: formattedUsers || []
     });
   } catch (error: any) {
     console.error('Error getting users - DETAILS:', error);
