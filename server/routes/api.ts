@@ -153,10 +153,8 @@ router.use('/ollama', ollamaRouter);
 // Ollama testing routes (no auth required)
 router.use('/test-ollama', testOllamaRouter);
 
-// Import these at the top level
-import { storage } from '../storage';
-import { db } from '../db';
-import { freelancers } from '@shared/schema';
+// These imports are already at the top of the file
+// No need to import them again
 
 // Public freelancer routes (no auth required for AI job matching)
 router.get('/freelancers', async (req, res) => {
