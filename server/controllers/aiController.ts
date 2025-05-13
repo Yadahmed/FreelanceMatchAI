@@ -23,10 +23,6 @@ function isFreelancerQuery(message: string): boolean {
 }
 
 /**
- * Controller for handling AI-related requests
- */
-
-/**
  * Process a message sent to the AI assistant
  */
 export async function processAIMessage(req: Request, res: Response) {
@@ -86,12 +82,8 @@ export async function processAIMessage(req: Request, res: Response) {
       try {
         const aiResponse = await deepseekService.sendMessage(currentUserId, message);
         
-        // Check if this looks like a developer request by searching for keywords
-        if (message.toLowerCase().includes('developer') || 
-            message.toLowerCase().includes('programmer') || 
-            message.toLowerCase().includes('coder') ||
-            message.toLowerCase().includes('web') ||
-            message.toLowerCase().includes('mobile')) {
+        // Check if this looks like a freelancer request
+        if (isFreelancerQuery(message)) {
           
           // Get top freelancers to include in the response
           const matchedFreelancers = await storage.getTopFreelancersByRanking(3);
@@ -137,7 +129,7 @@ export async function processAIMessage(req: Request, res: Response) {
           });
         }
         
-        // If not a developer request, just return the standard response
+        // If not a freelancer query request, just return the standard response
         return res.status(200).json({
           content: aiResponse.content,
           metadata: {
@@ -158,12 +150,8 @@ export async function processAIMessage(req: Request, res: Response) {
         console.log('[processAIMessage] Using Anthropic as fallback');
         const anthropicResponse = await anthropicService.sendMessage(currentUserId, message);
         
-        // Check if this looks like a developer request by searching for keywords
-        if (message.toLowerCase().includes('developer') || 
-            message.toLowerCase().includes('programmer') || 
-            message.toLowerCase().includes('coder') ||
-            message.toLowerCase().includes('web') ||
-            message.toLowerCase().includes('mobile')) {
+        // Check if this looks like a freelancer request
+        if (isFreelancerQuery(message)) {
           
           // Get top freelancers to include in the response
           const matchedFreelancers = await storage.getTopFreelancersByRanking(3);
@@ -210,7 +198,7 @@ export async function processAIMessage(req: Request, res: Response) {
           });
         }
         
-        // If not a developer request, just return the standard response
+        // If not a freelancer query, just return the standard response
         return res.status(200).json({
           content: anthropicResponse.content,
           metadata: {
@@ -232,12 +220,8 @@ export async function processAIMessage(req: Request, res: Response) {
       try {
         const ollamaResponse = await ollamaService.sendMessage(currentUserId, message);
         
-        // Check if this looks like a developer request by searching for keywords
-        if (message.toLowerCase().includes('developer') || 
-            message.toLowerCase().includes('programmer') || 
-            message.toLowerCase().includes('coder') ||
-            message.toLowerCase().includes('web') ||
-            message.toLowerCase().includes('mobile')) {
+        // Check if this looks like a freelancer request
+        if (isFreelancerQuery(message)) {
           
           // Get top freelancers to include in the response
           const matchedFreelancers = await storage.getTopFreelancersByRanking(3);
@@ -284,7 +268,7 @@ export async function processAIMessage(req: Request, res: Response) {
           });
         }
         
-        // If not a developer request, just return the standard response
+        // If not a freelancer query, just return the standard response
         return res.status(200).json({
           content: ollamaResponse.content,
           metadata: {
@@ -317,6 +301,36 @@ export async function processAIMessage(req: Request, res: Response) {
       message: error.message || 'Error processing your message',
       fallback: true,
       content: 'I apologize, but I encountered an error while processing your message. Please try again.'
+    });
+  }
+}
+
+/**
+ * Check the status of AI services
+ */
+export async function checkAIStatus(req: Request, res: Response) {
+  try {
+    // Check status of each AI service
+    const deepseekAvailable = await deepseekService.checkAvailability();
+    const anthropicAvailable = await anthropicService.checkAvailability();
+    const ollamaAvailable = await ollamaService.checkAvailability();
+    
+    // If at least one service is available, the overall status is OK
+    const servicesAvailable = deepseekAvailable || anthropicAvailable || ollamaAvailable;
+    
+    return res.status(200).json({
+      status: servicesAvailable ? 'available' : 'unavailable',
+      services: {
+        deepseek: deepseekAvailable,
+        anthropic: anthropicAvailable,
+        ollama: ollamaAvailable
+      }
+    });
+  } catch (error) {
+    console.error('Error checking AI status:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to check AI service status'
     });
   }
 }
@@ -400,130 +414,27 @@ export async function processJobRequest(req: Request, res: Response) {
       }
     }
     
-    // If all AI services are unavailable or failed
+    // If all AI services are unavailable or failed, return a default response
     return res.status(503).json({
       message: 'All AI services are currently unavailable',
       error: true,
       fallback: true,
       jobAnalysis: {
         description: description,
-        skills: skills,
-        analysisText: 'Job analysis unavailable. All AI services are currently offline.'
+        skills: skills || [],
+        requirements: [],
+        suggestedSkills: [],
+        estimatedTime: 'Unknown',
+        estimatedBudget: 'Unknown'
       },
-      matches: [],
-      suggestedQuestions: [
-        'When will AI services be available again?',
-        'Can I try again later?'
-      ]
+      matches: []
     });
   } catch (error: any) {
     console.error('Error processing job request:', error);
+    
     return res.status(500).json({ 
-      message: error.message || 'Error processing job request', 
+      message: error.message || 'Error processing job request',
       error: true
-    });
-  }
-}
-
-/**
- * Check if the AI service is available
- */
-export async function checkAIStatus(req: Request, res: Response) {
-  try {
-    // Note: We're removing the authentication requirement for this endpoint
-    // to ensure the AI status can be checked without being logged in
-    // This allows the frontend to show appropriate UI even before login
-    console.log('[checkAIStatus] Checking AI status without authentication requirement');
-    
-    // Check all available AI services
-    console.log('Checking AI services availability...');
-    
-    // Check DeepSeek first
-    let isDeepseekAvailable = false;
-    try {
-      isDeepseekAvailable = await deepseekService.checkAvailability();
-      console.log('DeepSeek available:', isDeepseekAvailable);
-    } catch (error) {
-      console.error('Error checking DeepSeek availability:', error);
-      isDeepseekAvailable = false;
-    }
-    
-    // Check Anthropic next
-    let isAnthropicAvailable = false;
-    try {
-      isAnthropicAvailable = await anthropicService.checkAvailability();
-      console.log('Anthropic available:', isAnthropicAvailable);
-    } catch (error) {
-      console.error('Error checking Anthropic availability:', error);
-      isAnthropicAvailable = false;
-    }
-    
-    // Now check Ollama - using our local fallback, this should always be available
-    let isOllamaAvailable = true; // Force true since we're using a local fallback
-    try {
-      isOllamaAvailable = await ollamaService.checkAvailability();
-      console.log('Ollama available:', isOllamaAvailable);
-    } catch (error) {
-      console.error('Error checking Ollama availability:', error);
-      isOllamaAvailable = true; // Still force true despite errors
-    }
-    
-    // Check original service last
-    let isOriginalAvailable = false;
-    try {
-      isOriginalAvailable = await aiService.checkAvailability();
-      console.log('Original service available:', isOriginalAvailable);
-    } catch (error) {
-      console.error('Error checking original service availability:', error);
-      isOriginalAvailable = false;
-    }
-    
-    // In development mode, make at least one service available
-    if (process.env.NODE_ENV === 'development') {
-      // Force at least Anthropic to be available in development
-      isAnthropicAvailable = true;
-      console.log('[checkAIStatus] Development mode - forcing Anthropic availability to TRUE');
-    }
-    
-    // Force Ollama to be available since it's our local fallback 
-    isOllamaAvailable = true;
-    
-    // Since we have a local fallback implementation, we should always have at least one service available
-    const isAnyServiceAvailable = true; // Force to be true
-    
-    // Log the service status
-    console.log('[checkAIStatus] Service availability status:', {
-      deepseek: isDeepseekAvailable,
-      anthropic: isAnthropicAvailable,
-      ollama: isOllamaAvailable, 
-      original: isOriginalAvailable,
-      anyAvailable: isAnyServiceAvailable
-    });
-    
-    return res.status(200).json({ 
-      available: isAnyServiceAvailable, 
-      services: {
-        deepseek: isDeepseekAvailable,
-        anthropic: isAnthropicAvailable,
-        ollama: isOllamaAvailable,
-        original: isOriginalAvailable
-      },
-      primaryService: isDeepseekAvailable ? 'deepseek' : 
-                    (isAnthropicAvailable ? 'anthropic' : 
-                    (isOllamaAvailable ? 'ollama' : null))
-    });
-  } catch (error) {
-    console.error('Error checking AI status:', error);
-    return res.status(500).json({ 
-      message: 'Error checking AI status', 
-      available: false,
-      services: {
-        deepseek: false,
-        anthropic: false,
-        ollama: false,
-        original: false
-      },
-      primaryService: null
     });
   }
 }
