@@ -1,11 +1,12 @@
 import { Star } from "lucide-react";
 
 interface RatingProps {
-  value: number;
+  value: number | null;
   max?: number;
   size?: "sm" | "md" | "lg";
   showValue?: boolean;
   className?: string;
+  showNoRating?: boolean;
 }
 
 export function Rating({ 
@@ -13,9 +14,25 @@ export function Rating({
   max = 5, 
   size = "md", 
   showValue = true,
-  className = ""
+  className = "",
+  showNoRating = true
 }: RatingProps) {
-  const roundedValue = Math.round(value * 10) / 10;
+  // Handle null or undefined ratings
+  if (value === null || value === undefined) {
+    return showNoRating ? (
+      <div className={`flex items-center ${className}`}>
+        <span className={`text-muted-foreground italic`}>
+          No ratings yet
+        </span>
+      </div>
+    ) : null;
+  }
+
+  // Convert from stored integer format (e.g., 45 = 4.5 stars)
+  // For backward compatibility with old integer ratings
+  const actualValue = value > 5 ? value / 10 : value;
+  
+  const roundedValue = Math.round(actualValue * 10) / 10;
   const filledStars = Math.floor(roundedValue);
   const hasHalfStar = roundedValue - filledStars >= 0.5;
   

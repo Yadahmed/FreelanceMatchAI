@@ -76,7 +76,7 @@ export const freelancers = pgTable("freelancers", {
   bio: text("bio").notNull(),
   hourlyRate: integer("hourly_rate").notNull(),
   yearsOfExperience: integer("years_of_experience").default(0),
-  rating: integer("rating").notNull().default(45), // Default to 4.5 stars (stored as 45 for backward compatibility)
+  rating: integer("rating"), // Stored as integer where 45 = 4.5 stars; null means no rating yet
   jobPerformance: integer("job_performance").notNull().default(0),
   skillsExperience: integer("skills_experience").notNull().default(0),
   responsiveness: integer("responsiveness").notNull().default(0),
