@@ -7,7 +7,10 @@ type Headers = Record<string, string>;
 // Get admin session headers if admin session exists
 function getAdminHeaders(): Headers {
   const isAdminSession = localStorage.getItem('adminSession') === 'true';
-  return isAdminSession ? { 'admin-session': 'true' } : {};
+  console.log('[Admin Headers] Admin session check:', isAdminSession);
+  const headers = isAdminSession ? { 'admin-session': 'true' } : {};
+  console.log('[Admin Headers] Returning headers:', headers);
+  return headers;
 }
 
 async function throwIfResNotOk(res: Response) {

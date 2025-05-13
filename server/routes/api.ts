@@ -65,21 +65,30 @@ router.get('/auth/check-username', checkUsername); // No auth required, used dur
 // Admin routes are protected by the adminSessionAuth middleware
 router.get('/admin/users', adminSessionAuth, async (req, res) => {
   try {
-    // Import the storage and db directly
-    const { storage } = require('../storage');
+    console.log('Admin users endpoint - Starting fetch');
+    
+    // Import the db and schema directly
     const { db } = require('../db');
     const { users } = require('@shared/schema');
     
+    console.log('Admin users endpoint - Imports successful');
+    
     // Get all users directly from the database
+    console.log('Admin users endpoint - Executing query');
     const allUsers = await db.select().from(users);
+    console.log('Admin users endpoint - Query completed, users found:', allUsers?.length || 0);
     
     return res.json({
       message: 'All users retrieved',
-      users: allUsers
+      users: allUsers || []
     });
-  } catch (error) {
-    console.error('Error getting users:', error);
-    return res.status(500).json({ message: 'Server error getting users' });
+  } catch (error: any) {
+    console.error('Error getting users - DETAILS:', error);
+    console.error('Error stack:', error.stack);
+    return res.status(500).json({ 
+      message: 'Server error getting users',
+      error: error.message || String(error)
+    });
   }
 });
 
