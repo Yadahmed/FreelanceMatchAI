@@ -18,7 +18,12 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
 
       try {
         // Get all freelancers for matching
-        const freelancers = await storage.getAllFreelancers();
+        const response = await fetch('/api/freelancers');
+        if (!response.ok) {
+          throw new Error('Failed to fetch freelancers');
+        }
+        const freelancers = await response.json();
+        
         if (!freelancers || freelancers.length === 0) {
           setProcessedContent([content]);
           return;
@@ -27,12 +32,18 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
         // Sort freelancers by ID (descending) to avoid shorter IDs causing confusion
         const sortedFreelancers = [...freelancers].sort((a, b) => b.id - a.id);
         
-        // Also get all users to get names
-        const users = await storage.getAllUsers();
+        // Also get all users to get names - use admin headers
+        const usersResponse = await fetch('/api/admin/users', {
+          headers: { 'admin-session': 'true' }
+        });
+        if (!usersResponse.ok) {
+          throw new Error('Failed to fetch users');
+        }
+        const users = await usersResponse.json();
         
         // Create map of userId to user to easily lookup names
-        const userMap = new Map();
-        users.forEach(user => {
+        const userMap = new Map<number, any>();
+        users.forEach((user: any) => {
           userMap.set(user.id, user);
         });
 
