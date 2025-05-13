@@ -719,6 +719,10 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db.select().from(schema.users).where(eq(schema.users.firebaseUid, firebaseUid));
     return user;
   }
+  
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(schema.users);
+  }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(schema.users).values(insertUser).returning();
