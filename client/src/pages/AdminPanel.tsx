@@ -41,9 +41,20 @@ interface User {
 interface Freelancer {
   id: number;
   userId: number;
+  displayName: string;
   profession: string;
+  skills: string[];
+  bio: string;
   hourlyRate: number;
+  yearsOfExperience: number;
+  location: string;
+  imageUrl: string | null;
   rating: number;
+  jobPerformance: number;
+  skillsExperience: number;
+  responsiveness: number;
+  fairnessScore: number;
+  completedJobs: number;
 }
 
 export function AdminPanel() {
@@ -367,6 +378,52 @@ export function AdminPanel() {
                   </TableRow>
                 );
               })}
+            </TableBody>
+          </Table>
+        </div>
+        
+        {/* Freelancer Management */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4">Freelancer Management</h2>
+          
+          <Table>
+            <TableCaption>List of all freelancers in the system</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>User ID</TableHead>
+                <TableHead>Display Name</TableHead>
+                <TableHead>Profession</TableHead>
+                <TableHead>Rating</TableHead>
+                <TableHead>Hourly Rate</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {freelancers?.map((freelancer) => (
+                <TableRow key={freelancer.id}>
+                  <TableCell>{freelancer.id}</TableCell>
+                  <TableCell>{freelancer.userId}</TableCell>
+                  <TableCell>{freelancer.displayName}</TableCell>
+                  <TableCell>{freelancer.profession}</TableCell>
+                  <TableCell>{freelancer.rating}/5</TableCell>
+                  <TableCell>${freelancer.hourlyRate}/hr</TableCell>
+                  <TableCell>{freelancer.location || 'Remote'}</TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleDeleteFreelancer(freelancer.id)}
+                        title="Delete Freelancer Profile"
+                      >
+                        <UserMinus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>
