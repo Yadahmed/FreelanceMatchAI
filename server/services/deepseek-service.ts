@@ -179,10 +179,75 @@ Current date: ${new Date().toISOString().split('T')[0]}`
       'find freelancer', 'looking for', 'need someone', 'hire', 
       'developer', 'designer', 'writer', 'expert', 'professional',
       'specialist', 'skills', 'recommend', 'who can', 'available freelancers',
-      'based in', 'similar to', 'top rated', 'best', 'marketplace'
+      'based in', 'similar to', 'top rated', 'best', 'marketplace',
+      'i need', 'job', 'work', 'project', 'build', 'create', 'develop',
+      'help with', 'coding', 'programming', 'app', 'website'
     ];
     
     return freelancerKeywords.some(keyword => lowerMsg.includes(keyword));
+  }
+  
+  /**
+   * Determine if we should ask clarifying questions instead of directly suggesting freelancers
+   */
+  private shouldAskClarifyingQuestions(message: string): boolean {
+    const lowerMsg = message.toLowerCase();
+    
+    // Check if the message is too vague (less than 10 words)
+    const wordCount = message.trim().split(/\s+/).length;
+    if (wordCount < 10) {
+      return true;
+    }
+    
+    // Check if specific details are missing
+    const missingDetails = [
+      // Missing budget details
+      !lowerMsg.includes('budget') && !lowerMsg.includes('pay') && !lowerMsg.includes('cost') && !lowerMsg.includes('price'),
+      
+      // Missing timeline
+      !lowerMsg.includes('timeline') && !lowerMsg.includes('deadline') && !lowerMsg.includes('by') && !lowerMsg.includes('due'),
+      
+      // Missing skill specification
+      !lowerMsg.includes('skill') && !lowerMsg.includes('experience') && !lowerMsg.includes('qualified')
+    ];
+    
+    // If two or more key details are missing, ask clarifying questions
+    return missingDetails.filter(Boolean).length >= 2;
+  }
+  
+  /**
+   * Generate clarifying questions based on the user's message
+   */
+  private generateClarifyingQuestions(message: string): string[] {
+    const lowerMsg = message.toLowerCase();
+    const questions = [];
+    
+    // Budget questions
+    if (!lowerMsg.includes('budget') && !lowerMsg.includes('pay') && !lowerMsg.includes('cost')) {
+      questions.push('What is your budget for this project?');
+    }
+    
+    // Timeline questions
+    if (!lowerMsg.includes('timeline') && !lowerMsg.includes('deadline') && !lowerMsg.includes('due')) {
+      questions.push('What is your timeline or deadline for this project?');
+    }
+    
+    // Skill questions
+    if (!lowerMsg.includes('skill') && !lowerMsg.includes('experience')) {
+      questions.push('What specific skills or experience are you looking for in a freelancer?');
+    }
+    
+    // Project scope questions
+    if (!lowerMsg.includes('scope') && !lowerMsg.includes('deliverable')) {
+      questions.push('Can you describe the scope and deliverables for this project in more detail?');
+    }
+    
+    // Location or language questions
+    if (!lowerMsg.includes('location') && !lowerMsg.includes('language') && !lowerMsg.includes('remote')) {
+      questions.push('Do you have any requirements regarding freelancer location, working hours, or language?');
+    }
+    
+    return questions.slice(0, 3); // Limit to 3 questions max
   }
   
   /**
