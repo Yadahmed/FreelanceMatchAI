@@ -30,9 +30,19 @@ export default function ChatPage() {
   } = useQuery({
     queryKey: [`/api/${currentUser?.isClient ? 'client' : 'freelancer'}/chats`],
     queryFn: async () => {
+      // Import the token refresh function
+      const { refreshAuthToken } = await import('@/lib/auth');
+      
+      // Try to refresh the token first
+      const token = await refreshAuthToken();
+      
+      if (!token) {
+        throw new Error('Authentication token not available');
+      }
+      
       const response = await fetch(`/api/${currentUser?.isClient ? 'client' : 'freelancer'}/chats`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
@@ -68,9 +78,19 @@ export default function ChatPage() {
     queryFn: async () => {
       if (!chatId) throw new Error('Chat ID is required');
       
+      // Import the token refresh function
+      const { refreshAuthToken } = await import('@/lib/auth');
+      
+      // Try to refresh the token first
+      const token = await refreshAuthToken();
+      
+      if (!token) {
+        throw new Error('Authentication token not available');
+      }
+      
       const response = await fetch(`/api/${currentUser?.isClient ? 'client' : 'freelancer'}/chats/${chatId}/messages`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
@@ -107,6 +127,16 @@ export default function ChatPage() {
         throw new Error('Freelancer ID not found. Try refreshing the page.');
       }
       
+      // Import the token refresh function
+      const { refreshAuthToken } = await import('@/lib/auth');
+      
+      // Try to refresh the token first
+      const token = await refreshAuthToken();
+      
+      if (!token) {
+        throw new Error('Authentication token not available');
+      }
+      
       // We've simplified the API - we just need the chatId now
       // The server will determine user role and validate permissions
       const messageData = {
@@ -121,12 +151,16 @@ export default function ChatPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(messageData)
       });
       
       if (!response.ok) {
+        // Special handling for auth errors
+        if (response.status === 401) {
+          throw new Error('Your session has expired. Please sign in again.');
+        }
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to send message');
       }

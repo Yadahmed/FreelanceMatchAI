@@ -20,13 +20,26 @@ export default function ClientMessagesPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['/api/client/chats'],
     queryFn: async () => {
+      // Import the token refresh function
+      const { refreshAuthToken } = await import('@/lib/auth');
+      
+      // Try to refresh the token first
+      const token = await refreshAuthToken();
+      
+      if (!token) {
+        throw new Error('Authentication token not available');
+      }
+      
       const response = await fetch('/api/client/chats', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Your session has expired. Please sign in again.');
+        }
         throw new Error('Failed to fetch chats');
       }
       
