@@ -373,6 +373,11 @@ export const directMessageSchema = z.object({
   chatId: z.number(),
 });
 
+// Schema for initializing a chat with a freelancer
+export const chatInitSchema = z.object({
+  freelancerId: z.number(),
+});
+
 export type ChatRequest = z.infer<typeof chatRequestSchema>;
 export type ChatResponse = z.infer<typeof chatResponseSchema>;
 export type DirectMessageRequest = z.infer<typeof directMessageSchema>;

@@ -19,7 +19,8 @@ import {
 import { extractFreelancerName } from '../utils/freelancer';
 import { 
   sendMessage,
-  sendDirectMessage
+  sendDirectMessage,
+  initChat
 } from '../controllers/chatController';
 import {
   processAIMessage,
@@ -136,6 +137,7 @@ router.post('/auth/logout', logout);
 // Chat routes
 router.post('/chat/message', requireAuth, sendMessage);
 router.post('/chat/direct-message', requireAuth, sendDirectMessage);
+router.post('/chat/init', requireAuth, initChat);
 
 // AI routes
 router.get('/ai/status', checkAIStatus); // No authentication needed to check AI status

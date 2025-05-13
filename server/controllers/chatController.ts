@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { chatRequestSchema, directMessageSchema } from '@shared/schema';
+import { chatRequestSchema, directMessageSchema, chatInitSchema } from '@shared/schema';
 import { storage } from '../storage';
 
 // Send a message to the AI assistant
@@ -218,6 +218,54 @@ export async function sendMessage(req: Request, res: Response) {
 }
 
 // Send a direct message in a chat
+// Initialize a chat with a freelancer
+export async function initChat(req: Request, res: Response) {
+  try {
+    // Only authenticated users can create chats
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    // Parse and validate request
+    const { freelancerId } = chatInitSchema.parse(req.body);
+    
+    // Check if the freelancer exists
+    const freelancer = await storage.getFreelancerById(freelancerId);
+    if (!freelancer) {
+      return res.status(404).json({ message: 'Freelancer not found' });
+    }
+    
+    // Check if a chat already exists between this user and freelancer
+    const existingChats = await storage.getUserChats(req.user.id);
+    const existingChat = existingChats.find(chat => 
+      chat.type === 'direct' && chat.freelancerId === freelancerId
+    );
+    
+    if (existingChat) {
+      // Return the existing chat
+      return res.status(200).json({
+        chatId: existingChat.id,
+        message: 'Using existing chat'
+      });
+    }
+    
+    // Create a new chat
+    const newChat = await storage.createChat({ 
+      userId: req.user.id, 
+      type: 'direct', 
+      freelancerId: freelancerId 
+    });
+    
+    return res.status(201).json({
+      chatId: newChat.id,
+      message: 'Chat initialized successfully'
+    });
+  } catch (error: any) {
+    console.error('Chat initialization error:', error);
+    return res.status(400).json({ message: error.message });
+  }
+}
+
 export async function sendDirectMessage(req: Request, res: Response) {
   try {
     // Only authenticated users can send direct messages
