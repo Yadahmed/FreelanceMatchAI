@@ -287,6 +287,63 @@ Current date: ${new Date().toISOString().split('T')[0]}`
       
       // Check if this is likely a query about freelancers
       if (this.isFreelancerQuery(message)) {
+        // First check if we should ask clarifying questions instead of offering matches
+        if (this.shouldAskClarifyingQuestions(message)) {
+          console.log('[DeepSeekService] Asking clarifying questions before recommending freelancers');
+          
+          // Generate questions based on the message
+          const clarifyingQuestions = this.generateClarifyingQuestions(message);
+          
+          if (clarifyingQuestions.length > 0) {
+            // Modify the message instruction to ask clarifying questions
+            const lastMessageIndex = messages.length - 1;
+            const clarifyingInstruction = `\n\nBefore recommending specific freelancers, I need to ask a few clarifying questions to better understand your needs. Please respond to these questions to help me find the most suitable match for your project:\n\n${clarifyingQuestions.map((q, i) => `${i+1}. ${q}`).join('\n')}`;
+            
+            // Update the system message to instruct the AI to ask questions
+            for (let i = 0; i < messages.length; i++) {
+              if (messages[i].role === 'system') {
+                messages[i].content += `\n\nFor this user request, please ask clarifying questions to better understand their needs before recommending specific freelancers. Do not provide recommendations yet.`;
+                break;
+              }
+            }
+            
+            // Create the API request and get the response
+            const requestBody: any = {
+              messages,
+              temperature: 0.7,
+              max_tokens: 1024
+            };
+            
+            // Only include model if specified
+            if (this.model) {
+              requestBody.model = this.model;
+            }
+            
+            const response = await axios.post(`${this.apiUrl}/chat/completions`, requestBody, {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.apiKey}`
+              }
+            });
+            
+            const aiResponse = response.data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+            
+            // Add to conversation context for future messages
+            this.addToContext(userId, `User: ${message}`);
+            this.addToContext(userId, `AI: ${aiResponse}`);
+            
+            return {
+              content: aiResponse,
+              metadata: {
+                model: this.model,
+                provider: 'deepseek',
+                clarifyingQuestions: clarifyingQuestions,
+                needsMoreInfo: true
+              }
+            };
+          }
+        }
+        
         try {
           // Get real freelancer data from the database
           const allFreelancers = await storage.getAllFreelancers();
