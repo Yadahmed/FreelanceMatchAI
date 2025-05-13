@@ -35,11 +35,11 @@ export async function sendMessage(req: Request, res: Response) {
       currentChatId = newChat.id;
     }
     
-    // Store user message
+    // Store message as from the user (client)
     const userMessage = await storage.createMessage({
       chatId: currentChatId,
       content: message,
-      isUserMessage: true,
+      isUserMessage: true, // Always true for AI chat
       freelancerResults: null
     });
     
@@ -268,11 +268,12 @@ export async function sendDirectMessage(req: Request, res: Response) {
     // Use the chat ID from the request
     const currentChatId = chatId;
     
-    // Store user message
+    // Store message with correct sender type based on user role
     const userMessage = await storage.createMessage({
       chatId: currentChatId,
       content: message,
-      isUserMessage: true,
+      // If it's a client, isUserMessage=true, if it's a freelancer, isUserMessage=false
+      isUserMessage: isClient,
       freelancerResults: null
     });
     
