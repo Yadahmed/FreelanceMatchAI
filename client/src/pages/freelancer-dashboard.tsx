@@ -102,6 +102,11 @@ export default function FreelancerDashboard() {
   // Typed dashboard data
   const typedDashboardData = dashboardData as DashboardData || {};
   
+  // Debug rating information
+  console.log("Freelancer Dashboard Data:", dashboardData);
+  console.log("Freelancer Rating:", dashboardData?.freelancer?.rating);
+  console.log("Stats Rating:", dashboardData?.stats?.averageRating);
+  
   // Default values with type safety
   const statsData = {
     earnings: {
