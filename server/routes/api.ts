@@ -1,4 +1,7 @@
 import { Router } from 'express';
+import { storage } from '../storage';
+import { db } from '../db';
+import { users, freelancers } from '@shared/schema';
 import { 
   register, 
   login, 
@@ -312,5 +315,43 @@ router.get('/client/chats', requireClient, getClientChats);
 router.get('/client/chats/:chatId/messages', requireClient, getChatMessages);
 router.get('/client/preferences', requireClient, getUserPreferences);
 router.post('/client/preferences', requireClient, updateUserPreferences);
+
+// Get all freelancers (for mentions in chat)
+router.get('/freelancers', async (req, res) => {
+  try {
+    const freelancers = await storage.getAllFreelancers();
+    return res.json(freelancers);
+  } catch (error) {
+    console.error('Error fetching all freelancers:', error);
+    return res.status(500).json({ message: 'Error fetching freelancers' });
+  }
+});
+
+// Get a specific freelancer by ID
+router.get('/freelancers/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: 'Invalid freelancer ID' });
+    }
+    
+    const freelancer = await storage.getFreelancerById(id);
+    if (!freelancer) {
+      return res.status(404).json({ message: 'Freelancer not found' });
+    }
+    
+    // Get the user info for the freelancer to include name
+    const user = await storage.getUser(freelancer.userId);
+    
+    // Return the freelancer with the user's display name
+    return res.json({
+      ...freelancer,
+      displayName: user?.displayName || user?.username || `Freelancer ${id}`
+    });
+  } catch (error) {
+    console.error('Error fetching freelancer:', error);
+    return res.status(500).json({ message: 'Error fetching freelancer' });
+  }
+});
 
 export default router;
