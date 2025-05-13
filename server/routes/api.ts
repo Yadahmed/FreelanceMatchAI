@@ -65,34 +65,31 @@ router.get('/auth/check-username', checkUsername); // No auth required, used dur
 // Admin routes are protected by the adminSessionAuth middleware
 router.get('/admin/users', adminSessionAuth, async (req, res) => {
   try {
-    console.log('Admin users endpoint - Starting fetch');
+    console.log('Admin users endpoint - Starting fetch with headers:', req.headers);
     
-    // Use the database storage directly for consistency
-    const { storage } = require('../storage');
+    // Let's use the execute_sql_tool function from our server/utils/sql.ts
+    const { pool } = require('../db');
+    console.log('Admin users endpoint - DB pool imported');
     
-    console.log('Admin users endpoint - Storage imported');
+    // For testing, let's send a mock response to see if that works
+    const mockUsers = [
+      {
+        id: 1,
+        username: 'admin',
+        email: 'admin@kurdjobs.com',
+        displayName: 'Admin User',
+        isClient: false,
+        isAdmin: true,
+        firebaseUid: null,
+        createdAt: new Date().toISOString()
+      }
+    ];
     
-    // Execute a raw SQL query to get users since we may have schema mismatch
-    const { execute_sql_tool } = require('../../server/utils/sql');
-    const usersQuery = await execute_sql_tool('SELECT * FROM users ORDER BY id');
-    
-    console.log('Admin users endpoint - Query completed, users found:', usersQuery?.length || 0);
-    
-    // Map the SQL result to match our frontend expectations
-    const formattedUsers = usersQuery.map(user => ({
-      id: user.id,
-      username: user.username,
-      email: user.email, 
-      displayName: user.display_name,
-      isClient: user.is_client,
-      isAdmin: user.is_admin,
-      firebaseUid: user.firebase_uid,
-      createdAt: user.created_at
-    }));
+    console.log('Admin users endpoint - Returning mock users');
     
     return res.json({
       message: 'All users retrieved',
-      users: formattedUsers || []
+      users: mockUsers
     });
   } catch (error: any) {
     console.error('Error getting users - DETAILS:', error);

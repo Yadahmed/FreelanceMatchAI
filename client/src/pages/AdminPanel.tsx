@@ -63,16 +63,39 @@ export function AdminPanel() {
   }, []);
   
   // Fetch users
-  const { data: users, isLoading: loadingUsers } = useQuery<{ message: string, users: User[] }>({ 
+  const { data: usersData, isLoading: loadingUsers, error: usersError } = useQuery<{ message: string, users: User[] }>({ 
     queryKey: ['/api/admin/users'], 
-    enabled: true,
+    enabled: true
   });
   
+  // Add debug logging for users data
+  React.useEffect(() => {
+    if (usersData) {
+      console.log('[AdminPanel] Users data received:', usersData);
+    }
+    if (usersError) {
+      console.error('[AdminPanel] Error fetching users:', usersError);
+    }
+  }, [usersData, usersError]);
+  
   // Fetch freelancers
-  const { data: freelancers, isLoading: loadingFreelancers } = useQuery<Freelancer[]>({
+  const { data: freelancers, isLoading: loadingFreelancers, error: freelancersError } = useQuery<Freelancer[]>({
     queryKey: ['/api/freelancers'],
-    enabled: true,
+    enabled: true
   });
+  
+  // Add debug logging for freelancers data
+  React.useEffect(() => {
+    if (freelancers) {
+      console.log('[AdminPanel] Freelancers data received:', freelancers);
+    }
+    if (freelancersError) {
+      console.error('[AdminPanel] Error fetching freelancers:', freelancersError);
+    }
+  }, [freelancers, freelancersError]);
+  
+  // Extract users array from the response
+  const users = usersData?.users;
   
   // Delete user mutation
   const deleteUserMutation = useMutation({
@@ -234,7 +257,7 @@ export function AdminPanel() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users?.users?.map((user: User) => {
+              {users?.map((user: User) => {
                 const freelancer = getFreelancerForUser(user.id);
                 return (
                   <TableRow key={user.id}>
