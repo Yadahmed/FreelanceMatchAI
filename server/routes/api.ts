@@ -7,6 +7,13 @@ import {
   logout,
   checkUsername
 } from '../controllers/authController';
+import {
+  isAdmin,
+  deleteUser,
+  deleteFreelancer,
+  promoteToAdmin,
+  revokeAdmin
+} from '../controllers/adminController';
 import { 
   sendMessage,
   sendDirectMessage

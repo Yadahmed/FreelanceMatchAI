@@ -233,6 +233,67 @@ export class MemStorage implements IStorage {
     return updatedFreelancer;
   }
   
+  async deleteUser(id: number): Promise<boolean> {
+    try {
+      // Check if user exists
+      const user = await this.getUser(id);
+      if (!user) {
+        console.log(`MemStorage: No user found with id ${id}`);
+        return false;
+      }
+      
+      // If user is a freelancer, delete the freelancer profile too
+      const freelancer = await this.getFreelancerByUserId(id);
+      if (freelancer) {
+        await this.deleteFreelancer(freelancer.id);
+      }
+      
+      // Remove the user
+      this.users.delete(id);
+      console.log(`MemStorage: Deleted user ${id}`);
+      return true;
+    } catch (error) {
+      console.error(`MemStorage: Error deleting user ${id}:`, error);
+      return false;
+    }
+  }
+  
+  async deleteFreelancer(id: number): Promise<boolean> {
+    try {
+      // Check if freelancer exists
+      const freelancer = await this.getFreelancer(id);
+      if (!freelancer) {
+        console.log(`MemStorage: No freelancer found with id ${id}`);
+        return false;
+      }
+      
+      // Remove the freelancer
+      this.freelancers.delete(id);
+      console.log(`MemStorage: Deleted freelancer ${id}`);
+      return true;
+    } catch (error) {
+      console.error(`MemStorage: Error deleting freelancer ${id}:`, error);
+      return false;
+    }
+  }
+  
+  async deleteFreelancerByUserId(userId: number): Promise<boolean> {
+    try {
+      // Find the freelancer for this user
+      const freelancer = await this.getFreelancerByUserId(userId);
+      if (!freelancer) {
+        console.log(`MemStorage: No freelancer found for user ${userId}`);
+        return false;
+      }
+      
+      // Use the existing method to delete the freelancer
+      return await this.deleteFreelancer(freelancer.id);
+    } catch (error) {
+      console.error(`MemStorage: Error deleting freelancer for user ${userId}:`, error);
+      return false;
+    }
+  }
+  
   async getAllFreelancers(): Promise<Freelancer[]> {
     return Array.from(this.freelancers.values());
   }
@@ -675,6 +736,88 @@ export class DatabaseStorage implements IStorage {
     console.log(`Updated user ${id} result:`, user);
     return user;
   }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    try {
+      // Start a transaction to ensure atomicity
+      await db.transaction(async (tx) => {
+        // First check if this user has a freelancer profile
+        const [freelancer] = await tx
+          .select()
+          .from(schema.freelancers)
+          .where(eq(schema.freelancers.userId, id));
+          
+        // If they have a freelancer profile, delete that first
+        if (freelancer) {
+          // Delete related data for this freelancer
+          await tx
+            .delete(schema.reviews)
+            .where(eq(schema.reviews.freelancerId, freelancer.id));
+            
+          await tx
+            .delete(schema.bookings)
+            .where(eq(schema.bookings.freelancerId, freelancer.id));
+            
+          await tx
+            .delete(schema.jobRequests)
+            .where(eq(schema.jobRequests.freelancerId, freelancer.id));
+            
+          // Finally delete the freelancer record
+          await tx
+            .delete(schema.freelancers)
+            .where(eq(schema.freelancers.id, freelancer.id));
+        }
+        
+        // Delete notifications
+        await tx
+          .delete(schema.notifications)
+          .where(eq(schema.notifications.userId, id));
+          
+        // Delete user preferences
+        await tx
+          .delete(schema.userPreferences)
+          .where(eq(schema.userPreferences.userId, id));
+          
+        // Delete messages in chats
+        const userChats = await tx
+          .select()
+          .from(schema.chats)
+          .where(eq(schema.chats.userId, id));
+          
+        for (const chat of userChats) {
+          await tx
+            .delete(schema.messages)
+            .where(eq(schema.messages.chatId, chat.id));
+        }
+        
+        // Delete chats
+        await tx
+          .delete(schema.chats)
+          .where(eq(schema.chats.userId, id));
+          
+        // Delete AI chat messages
+        await tx
+          .delete(schema.aiChatMessages)
+          .where(eq(schema.aiChatMessages.userId, id));
+          
+        // Delete AI job analyses 
+        await tx
+          .delete(schema.aiJobAnalyses)
+          .where(eq(schema.aiJobAnalyses.userId, id));
+          
+        // Delete the user
+        await tx
+          .delete(schema.users)
+          .where(eq(schema.users.id, id));
+      });
+      
+      console.log(`Successfully deleted user ${id} and all associated data`);
+      return true;
+    } catch (error) {
+      console.error(`Error deleting user ${id}:`, error);
+      return false;
+    }
+  }
 
   // Freelancer methods
   async getFreelancer(id: number): Promise<Freelancer | undefined> {
@@ -716,6 +859,54 @@ export class DatabaseStorage implements IStorage {
     
     console.log(`Updated freelancer ${id} rating to ${rating}`);
     return freelancer;
+  }
+  
+  async deleteFreelancer(id: number): Promise<boolean> {
+    try {
+      // Start a transaction to ensure atomicity
+      await db.transaction(async (tx) => {
+        // Delete all related data for this freelancer
+        await tx
+          .delete(schema.reviews)
+          .where(eq(schema.reviews.freelancerId, id));
+          
+        await tx
+          .delete(schema.bookings)
+          .where(eq(schema.bookings.freelancerId, id));
+          
+        await tx
+          .delete(schema.jobRequests)
+          .where(eq(schema.jobRequests.freelancerId, id));
+          
+        // Delete the freelancer record itself
+        await tx
+          .delete(schema.freelancers)
+          .where(eq(schema.freelancers.id, id));
+      });
+      
+      console.log(`Successfully deleted freelancer ${id} and all associated data`);
+      return true;
+    } catch (error) {
+      console.error(`Error deleting freelancer ${id}:`, error);
+      return false;
+    }
+  }
+  
+  async deleteFreelancerByUserId(userId: number): Promise<boolean> {
+    try {
+      // First get the freelancer ID for this user
+      const freelancer = await this.getFreelancerByUserId(userId);
+      if (!freelancer) {
+        console.log(`No freelancer profile found for user ${userId}`);
+        return false;
+      }
+      
+      // Use the existing method to delete the freelancer
+      return await this.deleteFreelancer(freelancer.id);
+    } catch (error) {
+      console.error(`Error deleting freelancer for user ${userId}:`, error);
+      return false;
+    }
   }
 
   async getAllFreelancers(): Promise<Freelancer[]> {
