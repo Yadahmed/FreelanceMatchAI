@@ -62,6 +62,8 @@ export function AdminPanel() {
   const queryClient = useQueryClient();
   const [selectedFreelancerId, setSelectedFreelancerId] = useState<number | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [confirmUserDeleteDialog, setConfirmUserDeleteDialog] = useState(false);
   
   // Redirect if not authenticated as admin
   useEffect(() => {
@@ -77,6 +79,21 @@ export function AdminPanel() {
     enabled: true
   });
   
+  // Fetch users
+  const { data: users, isLoading: loadingUsers } = useQuery<User[]>({
+    queryKey: ['/api/admin/users'],
+    queryFn: async () => {
+      const response = await apiRequest('/api/admin/users', {
+        method: 'GET',
+        headers: {
+          'admin-session': 'true',
+        },
+      });
+      return response.users || [];
+    },
+    enabled: true
+  });
+  
   // Add debug logging for freelancers data
   React.useEffect(() => {
     if (freelancers) {
@@ -89,6 +106,9 @@ export function AdminPanel() {
     mutationFn: async (freelancerId: number) => {
       const response = await apiRequest(`/api/admin/freelancers/${freelancerId}`, {
         method: 'DELETE',
+        headers: {
+          'admin-session': 'true',
+        },
       });
       return response;
     },
@@ -103,6 +123,40 @@ export function AdminPanel() {
       toast({
         title: 'Error',
         description: error.message || 'Failed to delete freelancer profile',
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Delete user mutation (includes Firebase account deletion)
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await apiRequest(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'admin-session': 'true',
+        },
+      });
+      return response;
+    },
+    onSuccess: (data) => {
+      // Invalidate both users and freelancers queries as user deletion may affect freelancers too
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/freelancers'] });
+      
+      const firebaseStatus = data.firebaseDeleted 
+        ? 'Firebase authentication account was also deleted.' 
+        : 'Note: Firebase authentication account could not be deleted.';
+      
+      toast({
+        title: 'Success',
+        description: `User deleted successfully. ${firebaseStatus}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete user',
         variant: 'destructive',
       });
     },
