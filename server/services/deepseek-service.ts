@@ -533,12 +533,24 @@ Ensure your response is ONLY the valid JSON object - no additional text.`;
       // Create a map of freelancer info for later use
       const freelancersMap = new Map();
       
+      // Get all user IDs from these freelancers to load user data
+      const userIds = allFreelancers.map(f => f.userId);
+      const users = await Promise.all(userIds.map(id => storage.getUser(id)));
+      
+      // Create a map of userId to displayName
+      const userNameMap = new Map();
+      users.forEach(user => {
+        if (user) {
+          userNameMap.set(user.id, user.displayName || user.username || `Freelancer ${user.id}`);
+        }
+      });
+      
       allFreelancers.forEach((f) => {
         // Store the freelancer in the map for later lookup
         freelancersMap.set(f.id, f);
         
         // Get the user info for this freelancer to include name
-        const displayName = f.displayName || `Freelancer ${f.id}`;
+        const displayName = userNameMap.get(f.userId) || `Freelancer ${f.id}`;
         
         userMessage += `
 Freelancer ID: ${f.id}
@@ -646,6 +658,7 @@ Fairness Score: ${f.fairnessScore || 0}/100
               location: freelancer.location,
               availability: freelancer.availability || true,
               imageUrl: freelancer.imageUrl,
+              // Add display name from user
               displayName: displayName
             }
           });
