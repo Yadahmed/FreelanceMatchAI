@@ -56,9 +56,9 @@ function Router() {
       <Route path="/ollama-test" component={Home} />
       
       {/* Admin routes */}
-      <Route path="/admin" component={AdminLogin} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/panel" component={AdminPanel} />
+      <Route path="/admin" component={AdminPanel} />
       
       {/* Legacy redirects in case old URLs are bookmarked */}
       <Route path="/home">

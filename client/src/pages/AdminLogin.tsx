@@ -15,7 +15,7 @@ export function AdminLogin() {
   useEffect(() => {
     const isAdminSession = localStorage.getItem('adminSession') === 'true';
     if (isAdminSession) {
-      window.location.href = '/admin';
+      window.location.href = '/admin/panel';
     }
   }, []);
 
@@ -31,7 +31,7 @@ export function AdminLogin() {
         description: "Welcome to the admin panel",
       });
       setTimeout(() => {
-        window.location.href = '/admin';
+        window.location.href = '/admin/panel';
       }, 1000);
     } else {
       toast({
