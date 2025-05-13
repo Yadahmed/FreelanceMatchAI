@@ -979,11 +979,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getChatsByUserId(userId: number): Promise<Chat[]> {
-    return await db
-      .select()
-      .from(schema.chats)
-      .where(eq(schema.chats.userId, userId))
-      .orderBy(desc(schema.chats.updated_at));
+    // First, check if this user has a freelancer profile
+    const freelancer = await this.getFreelancerByUserId(userId);
+    
+    if (freelancer) {
+      // If they're a freelancer, look for chats where they're either the userId OR freelancerId
+      return await db
+        .select()
+        .from(schema.chats)
+        .where(
+          or(
+            eq(schema.chats.userId, userId),
+            eq(schema.chats.freelancerId, freelancer.id)
+          )
+        )
+        .orderBy(desc(schema.chats.updated_at));
+    } else {
+      // If they're not a freelancer, just look for chats where they're the userId
+      return await db
+        .select()
+        .from(schema.chats)
+        .where(eq(schema.chats.userId, userId))
+        .orderBy(desc(schema.chats.updated_at));
+    }
   }
 
   async createChat(insertChat: InsertChat): Promise<Chat> {
