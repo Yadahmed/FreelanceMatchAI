@@ -49,7 +49,8 @@ import {
   getChatHistory,
   getChatMessages,
   getUserPreferences,
-  updateUserPreferences
+  updateUserPreferences,
+  getChats as getClientChats
 } from '../controllers/clientController';
 import { 
   authenticateUser, 
@@ -256,7 +257,7 @@ router.get('/client/bookings', requireClient, getClientBookings);
 router.post('/client/bookings', requireClient, createBooking);
 router.get('/client/availability', requireClient, checkFreelancerAvailability);
 router.post('/client/reviews', requireClient, createReview);
-router.get('/client/chats', requireClient, getChatHistory);
+router.get('/client/chats', requireClient, getClientChats);
 router.get('/client/chats/:chatId/messages', requireClient, getChatMessages);
 router.get('/client/preferences', requireClient, getUserPreferences);
 router.post('/client/preferences', requireClient, updateUserPreferences);
