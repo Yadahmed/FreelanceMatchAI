@@ -530,9 +530,20 @@ export class MemStorage implements IStorage {
   }
   
   async getChatsByUserId(userId: number): Promise<Chat[]> {
-    return Array.from(this.chats.values()).filter(
-      (chat) => chat.userId === userId,
-    );
+    // First, check if this user has a freelancer profile
+    const freelancer = await this.getFreelancerByUserId(userId);
+    
+    if (freelancer) {
+      // If they're a freelancer, return chats where they're either the userId OR freelancerId
+      return Array.from(this.chats.values()).filter(
+        (chat) => chat.userId === userId || chat.freelancerId === freelancer.id
+      );
+    } else {
+      // If they're not a freelancer, just return chats where they're the userId
+      return Array.from(this.chats.values()).filter(
+        (chat) => chat.userId === userId
+      );
+    }
   }
   
   async createChat(insertChat: InsertChat): Promise<Chat> {
