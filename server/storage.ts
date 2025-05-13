@@ -26,6 +26,7 @@ export interface IStorage {
   getFreelancerByUserId(userId: number): Promise<Freelancer | undefined>;
   createFreelancer(freelancer: InsertFreelancer): Promise<Freelancer>;
   updateFreelancer(id: number, freelancer: Partial<InsertFreelancer>): Promise<Freelancer>;
+  updateFreelancerRating(id: number, rating: number): Promise<Freelancer>;
   getAllFreelancers(): Promise<Freelancer[]>;
   getFreelancersByProfession(profession: string): Promise<Freelancer[]>;
   getFreelancersByLocation(location: string): Promise<Freelancer[]>;

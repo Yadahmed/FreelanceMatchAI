@@ -178,6 +178,16 @@ export async function createReview(req: Request, res: Response) {
       comment: comment || null
     });
     
+    // Get all reviews for this freelancer to calculate new average rating
+    const allReviews = await storage.getReviewsByFreelancerId(freelancerId);
+    
+    // Calculate new average rating (stored as an integer 0-50, where 45 = 4.5 stars)
+    const totalRating = allReviews.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = Math.round((totalRating / allReviews.length) * 10); // Convert 1-5 to 10-50
+    
+    // Update the freelancer's rating
+    await storage.updateFreelancerRating(freelancerId, averageRating);
+    
     // Create notification for freelancer
     await storage.createNotification({
       userId: freelancer.userId,
