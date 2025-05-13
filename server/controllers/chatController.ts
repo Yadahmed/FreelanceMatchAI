@@ -11,7 +11,8 @@ export async function sendMessage(req: Request, res: Response) {
     }
     
     // Parse and validate request
-    const { message, chatId } = chatRequestSchema.parse(req.body);
+    const { message } = chatRequestSchema.parse(req.body);
+    const chatId = req.body.chatId;
     
     // Check if chat exists if chatId is provided
     let currentChatId: number;
@@ -30,7 +31,7 @@ export async function sendMessage(req: Request, res: Response) {
       currentChatId = chat.id;
     } else {
       // Create a new chat
-      const newChat = await storage.createChat({ userId: req.user.id });
+      const newChat = await storage.createChat({ userId: req.user.id, type: 'ai' });
       currentChatId = newChat.id;
     }
     
@@ -212,6 +213,78 @@ export async function sendMessage(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error('Chat error:', error);
+    return res.status(400).json({ message: error.message });
+  }
+}
+
+// Send a direct message to a freelancer
+export async function sendDirectMessage(req: Request, res: Response) {
+  try {
+    // Only authenticated users can send direct messages
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    // Parse and validate request
+    const { message, freelancerId, chatId } = directMessageSchema.parse(req.body);
+    
+    // Check if freelancer exists
+    const freelancer = await storage.getFreelancerById(freelancerId);
+    if (!freelancer) {
+      return res.status(404).json({ message: 'Freelancer not found' });
+    }
+    
+    // Check if chat exists if chatId is provided
+    let currentChatId: number;
+    
+    if (chatId) {
+      const chat = await storage.getChat(chatId);
+      if (!chat) {
+        return res.status(404).json({ message: 'Chat not found' });
+      }
+      
+      // Ensure chat belongs to the current user and involves the specified freelancer
+      if (chat.userId !== req.user.id || chat.freelancerId !== freelancerId) {
+        return res.status(403).json({ message: 'Not authorized to access this chat' });
+      }
+      
+      currentChatId = chat.id;
+    } else {
+      // Create a new direct chat
+      const newChat = await storage.createChat({ 
+        userId: req.user.id,
+        freelancerId: freelancerId,
+        type: 'direct'
+      });
+      currentChatId = newChat.id;
+    }
+    
+    // Store user message
+    const userMessage = await storage.createMessage({
+      chatId: currentChatId,
+      content: message,
+      isUserMessage: true,
+      freelancerResults: null
+    });
+    
+    // Create notification for freelancer
+    const freelancerUser = await storage.getUser(freelancer.userId);
+    if (freelancerUser) {
+      await storage.createNotification({
+        userId: freelancerUser.id,
+        title: 'New Message',
+        content: `You have received a new message from ${req.user.displayName || req.user.username}`,
+        type: 'message',
+        relatedId: currentChatId
+      });
+    }
+    
+    return res.status(200).json({
+      chatId: currentChatId,
+      message: userMessage
+    });
+  } catch (error: any) {
+    console.error('Direct message error:', error);
     return res.status(400).json({ message: error.message });
   }
 }

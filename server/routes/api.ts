@@ -8,7 +8,8 @@ import {
   checkUsername
 } from '../controllers/authController';
 import { 
-  sendMessage 
+  sendMessage,
+  sendDirectMessage
 } from '../controllers/chatController';
 import {
   processAIMessage,
@@ -135,6 +136,7 @@ router.post('/auth/logout', logout);
 
 // Chat routes
 router.post('/chat/message', requireAuth, sendMessage);
+router.post('/chat/direct-message', requireAuth, sendDirectMessage);
 
 // AI routes
 router.get('/ai/status', checkAIStatus); // No authentication needed to check AI status
