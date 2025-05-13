@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar } from '@/components/ui/avatar';
-import { Loader2, Briefcase, Zap, Clock, Award, AlertCircle } from 'lucide-react';
+import { Loader2, Briefcase, Zap, Clock, Award, AlertCircle, Star } from 'lucide-react';
 import { AIMatchResult, FreelancerMatch } from '@shared/ai-schemas';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -19,6 +19,7 @@ interface FreelancerData {
   profession: string;
   imageUrl?: string;
   hourlyRate: number;
+  rating?: number; // Rating out of 50 (e.g., 45 = 4.5 stars)
 }
 
 // Function to get real freelancer data by ID
@@ -38,6 +39,7 @@ const getFreelancerById = async (id: number): Promise<FreelancerData> => {
       profession: data.profession || 'Professional',
       imageUrl: data.imageUrl,
       hourlyRate: data.hourlyRate || 50,
+      rating: data.rating || 45, // Default to 4.5 stars if not provided
     };
   } catch (error) {
     console.error(`Error fetching freelancer ${id}:`, error);
@@ -47,6 +49,7 @@ const getFreelancerById = async (id: number): Promise<FreelancerData> => {
       name: `Freelancer #${id}`,
       profession: 'Professional',
       hourlyRate: 50,
+      rating: 45, // Default to 4.5 stars
     };
   }
 };
@@ -59,6 +62,11 @@ interface AIStatusResponse {
     original: boolean;
   };
 }
+
+// CSS for half-star display
+const halfStarStyle = {
+  clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)'
+};
 
 export function JobAnalysis() {
   const [jobDescription, setJobDescription] = useState('');
@@ -164,7 +172,26 @@ export function JobAnalysis() {
             <div>
               <CardTitle className="text-lg">{freelancer.name}</CardTitle>
               <p className="text-sm text-muted-foreground">{freelancer.profession}</p>
-              <p className="text-sm font-semibold">${freelancer.hourlyRate}/hr</p>
+              <div className="flex items-center">
+                <p className="text-sm font-semibold mr-3">${freelancer.hourlyRate}/hr</p>
+                <div className="flex items-center">
+                  {freelancer.rating !== undefined && (
+                    <>
+                      <div className="flex text-yellow-500">
+                        {[...Array(Math.floor(freelancer.rating / 10))].map((_, i) => (
+                          <Star key={i} className="w-3 h-3 fill-current" />
+                        ))}
+                        {(freelancer.rating % 10) >= 5 && (
+                          <Star className="w-3 h-3 fill-current" style={halfStarStyle} />
+                        )}
+                      </div>
+                      <span className="text-xs ml-1 text-muted-foreground">
+                        {(freelancer.rating / 10).toFixed(1)}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="ml-auto">
               <Badge variant="outline" className="bg-primary/10">
@@ -176,6 +203,17 @@ export function JobAnalysis() {
         
         <CardContent>
           <div className="space-y-3">
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="flex items-center">
+                  <Star className="w-4 h-4 mr-1 text-yellow-500" />
+                  Rating
+                </span>
+                <span>{(freelancer.rating / 10).toFixed(1)}/5</span>
+              </div>
+              <Progress value={(freelancer.rating / 50) * 100} className="h-2 bg-yellow-100" />
+            </div>
+            
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span className="flex items-center">
