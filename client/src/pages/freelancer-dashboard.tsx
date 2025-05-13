@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,21 +10,34 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { ChevronRightIcon, LineChartIcon, MessageSquareIcon, ClockIcon, BriefcaseIcon, StarIcon, DollarSignIcon } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
+import { Rating } from '@/components/ui/rating';
 
 export default function FreelancerDashboard() {
   const { currentUser, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [selectedTab, setSelectedTab] = useState<string>("overview");
+  const queryClient = useQueryClient();
   
   // Fetch freelancer dashboard data
   const { 
     data: dashboardData, 
     isLoading: dashboardLoading,
-    error: dashboardError
+    error: dashboardError,
+    refetch: refetchDashboard
   } = useQuery({
     queryKey: ['/api/freelancer/dashboard'],
-    enabled: !!currentUser && !currentUser.isClient
+    enabled: !!currentUser && !currentUser.isClient,
+    refetchOnWindowFocus: true
   });
+  
+  // Refetch dashboard data periodically to get updated rating
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetchDashboard();
+    }, 10000); // Refetch every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, [refetchDashboard]);
   
   // Fetch job requests
   const { 
@@ -82,7 +95,7 @@ export default function FreelancerDashboard() {
     };
     completedJobs?: number;
     totalHours?: number;
-    rating?: number;
+    rating?: number | null;
     matchScore?: number;
   }
   
@@ -98,7 +111,7 @@ export default function FreelancerDashboard() {
     },
     completedJobs: typedDashboardData?.completedJobs || 0,
     totalHours: typedDashboardData?.totalHours || 0,
-    rating: typedDashboardData?.rating || 4.5,
+    rating: typedDashboardData?.rating !== undefined ? typedDashboardData.rating : null,
     matchScore: typedDashboardData?.matchScore || 85
   };
 
@@ -178,15 +191,9 @@ export default function FreelancerDashboard() {
                 <StarIcon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{statsData.rating}</div>
-                <div className="flex mt-1">
-                  {Array(5).fill(0).map((_, i) => (
-                    <StarIcon 
-                      key={i} 
-                      className={`h-3 w-3 ${i < Math.floor(statsData.rating) ? 'text-yellow-500' : 'text-muted-foreground'}`} 
-                      fill={i < Math.floor(statsData.rating) ? 'currentColor' : 'none'} 
-                    />
-                  ))}
+                <div className="text-2xl font-bold">{statsData.rating !== null ? statsData.rating.toFixed(1) : 'Not rated'}</div>
+                <div className="mt-1">
+                  <Rating value={statsData.rating} size="sm" showNoRating={true} />
                 </div>
               </CardContent>
             </Card>
