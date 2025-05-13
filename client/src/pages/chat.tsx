@@ -104,33 +104,12 @@ export default function ChatPage() {
         throw new Error('Freelancer ID not found. Try refreshing the page.');
       }
       
-      // When the freelancer is sending a message, we need to get the client's ID
-      // When the client is sending a message, we need the freelancer's ID
-      let messageData: any = {
+      // We've simplified the API - we just need the chatId now
+      // The server will determine user role and validate permissions
+      const messageData = {
         message: messageText,
         chatId: chatId
       };
-      
-      // For clients, set the freelancerId param
-      if (currentUser?.isClient) {
-        messageData.freelancerId = chatInfo?.freelancerId;
-      } 
-      // For freelancers, we still need to provide a freelancerId (our own ID)
-      else {
-        // Get the freelancer profile ID
-        const freelancerResponse = await fetch('/api/freelancer/profile', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-          }
-        });
-        
-        if (!freelancerResponse.ok) {
-          throw new Error('Failed to get freelancer profile');
-        }
-        
-        const freelancerData = await freelancerResponse.json();
-        messageData.freelancerId = freelancerData.freelancer.id;
-      }
       
       console.log('Sending message with data:', messageData);
       

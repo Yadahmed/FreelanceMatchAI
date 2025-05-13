@@ -217,7 +217,7 @@ export async function sendMessage(req: Request, res: Response) {
   }
 }
 
-// Send a direct message to a freelancer
+// Send a direct message in a chat
 export async function sendDirectMessage(req: Request, res: Response) {
   try {
     // Only authenticated users can send direct messages
@@ -225,56 +225,48 @@ export async function sendDirectMessage(req: Request, res: Response) {
       return res.status(401).json({ message: 'Authentication required' });
     }
     
-    // Parse and validate request
+    console.log('Direct message request body:', req.body);
+    
+    // Parse and validate request - now freelancerId is optional
     const { message, freelancerId, chatId } = directMessageSchema.parse(req.body);
     
-    // Check if freelancer exists
-    const freelancer = await storage.getFreelancerById(freelancerId);
-    if (!freelancer) {
-      return res.status(404).json({ message: 'Freelancer not found' });
+    // Check if chat exists 
+    const chat = await storage.getChat(chatId);
+    if (!chat) {
+      return res.status(404).json({ message: 'Chat not found' });
     }
     
-    // Check if chat exists if chatId is provided
-    let currentChatId: number;
+    // Determine if user is client or freelancer
+    const isClient = req.user.isClient;
+    let currentFreelancerId = chat.freelancerId;
     
-    if (chatId) {
-      const chat = await storage.getChat(chatId);
-      if (!chat) {
-        return res.status(404).json({ message: 'Chat not found' });
-      }
-      
-      // If the user is a client, make sure they own the chat
-      // If the user is a freelancer, make sure they are the freelancer for this chat
-      const isClient = req.user.isClient;
-      
-      if (isClient && chat.userId !== req.user.id) {
+    if (isClient) {
+      // If user is a client, they should own this chat
+      if (chat.userId !== req.user.id) {
         return res.status(403).json({ message: 'Not authorized to access this chat as client' });
       }
+    } else {
+      // If user is a freelancer, make sure they are the freelancer for this chat
+      const userFreelancer = await storage.getFreelancerByUserId(req.user.id);
       
-      // For freelancers, check if they are associated with this chat
-      if (!isClient) {
-        // Get the freelancer ID for the current user
-        const userFreelancer = await storage.getFreelancerByUserId(req.user.id);
-        
-        if (!userFreelancer || userFreelancer.id !== chat.freelancerId) {
-          return res.status(403).json({ 
-            message: 'Not authorized to access this chat as freelancer',
-            freelancerId: userFreelancer?.id,
-            chatFreelancerId: chat.freelancerId
-          });
-        }
+      if (!userFreelancer) {
+        return res.status(404).json({ message: 'Freelancer profile not found for user' });
       }
       
-      currentChatId = chat.id;
-    } else {
-      // Create a new direct chat
-      const newChat = await storage.createChat({ 
-        userId: req.user.id,
-        freelancerId: freelancerId,
-        type: 'direct'
-      });
-      currentChatId = newChat.id;
+      if (userFreelancer.id !== chat.freelancerId) {
+        return res.status(403).json({ 
+          message: 'Not authorized to access this chat as freelancer',
+          yourFreelancerId: userFreelancer.id,
+          chatFreelancerId: chat.freelancerId
+        });
+      }
+      
+      // Store this for reference
+      currentFreelancerId = userFreelancer.id;
     }
+    
+    // Use the chat ID from the request
+    const currentChatId = chatId;
     
     // Store user message
     const userMessage = await storage.createMessage({
@@ -284,13 +276,26 @@ export async function sendDirectMessage(req: Request, res: Response) {
       freelancerResults: null
     });
     
-    // Create notification for freelancer
-    const freelancerUser = await storage.getUser(freelancer.userId);
-    if (freelancerUser) {
+    // Create notification based on who's sending the message
+    if (isClient) {
+      // If client is sending message, notify the freelancer
+      // First get the freelancer user ID from the chat's freelancerId
+      const freelancerObj = await storage.getFreelancerById(currentFreelancerId);
+      if (freelancerObj) {
+        await storage.createNotification({
+          userId: freelancerObj.userId,
+          title: 'New Message',
+          content: `You have received a new message from ${req.user.displayName || req.user.username}`,
+          type: 'message',
+          relatedId: currentChatId
+        });
+      }
+    } else {
+      // If freelancer is sending message, notify the client
       await storage.createNotification({
-        userId: freelancerUser.id,
+        userId: chat.userId, // The chat owner (client)
         title: 'New Message',
-        content: `You have received a new message from ${req.user.displayName || req.user.username}`,
+        content: `You have received a new message from your freelancer`,
         type: 'message',
         relatedId: currentChatId
       });

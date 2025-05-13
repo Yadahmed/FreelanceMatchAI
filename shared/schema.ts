@@ -369,8 +369,8 @@ export type LoginRequest = z.infer<typeof loginSchema>;
 // Schema for direct messaging between clients and freelancers
 export const directMessageSchema = z.object({
   message: z.string().min(1, "Message cannot be empty"),
-  freelancerId: z.number(),
-  chatId: z.number().optional(),
+  freelancerId: z.number().optional(),
+  chatId: z.number(),
 });
 
 export type ChatRequest = z.infer<typeof chatRequestSchema>;
