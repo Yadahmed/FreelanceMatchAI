@@ -216,6 +216,20 @@ export class MemStorage implements IStorage {
     return updatedFreelancer;
   }
   
+  async updateFreelancerRating(id: number, rating: number): Promise<Freelancer> {
+    const freelancer = await this.getFreelancer(id);
+    if (!freelancer) throw new Error(`Freelancer with id ${id} not found`);
+    
+    const updatedFreelancer: Freelancer = {
+      ...freelancer,
+      rating // Update only the rating field
+    };
+    
+    this.freelancers.set(id, updatedFreelancer);
+    console.log(`MemStorage: Updated freelancer ${id} rating to ${rating}`);
+    return updatedFreelancer;
+  }
+  
   async getAllFreelancers(): Promise<Freelancer[]> {
     return Array.from(this.freelancers.values());
   }
@@ -686,6 +700,18 @@ export class DatabaseStorage implements IStorage {
       .set(freelancerData)
       .where(eq(schema.freelancers.id, id))
       .returning();
+    return freelancer;
+  }
+  
+  async updateFreelancerRating(id: number, rating: number): Promise<Freelancer> {
+    // Update only the rating field of the freelancer
+    const [freelancer] = await db
+      .update(schema.freelancers)
+      .set({ rating })
+      .where(eq(schema.freelancers.id, id))
+      .returning();
+    
+    console.log(`Updated freelancer ${id} rating to ${rating}`);
     return freelancer;
   }
 

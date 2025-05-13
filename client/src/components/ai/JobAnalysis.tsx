@@ -209,9 +209,9 @@ export function JobAnalysis() {
                   <Star className="w-4 h-4 mr-1 text-yellow-500" />
                   Rating
                 </span>
-                <span>{(freelancer.rating / 10).toFixed(1)}/5</span>
+                <span>{((freelancer.rating || 0) / 10).toFixed(1)}/5</span>
               </div>
-              <Progress value={(freelancer.rating / 50) * 100} className="h-2 bg-yellow-100" />
+              <Progress value={((freelancer.rating || 0) / 50) * 100} className="h-2 bg-yellow-100" />
             </div>
             
             <div>
