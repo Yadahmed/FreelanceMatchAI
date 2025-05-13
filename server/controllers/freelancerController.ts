@@ -180,6 +180,48 @@ export async function updateJobRequestStatus(req: Request, res: Response) {
         // Format the date as YYYY-MM-DD for the date field
         const formattedDate = oneWeekFromNow.toISOString().split('T')[0];
         
+        // Default time slots (9-10 AM)
+        let startTime = '09:00:00'; 
+        let endTime = '10:00:00';
+        
+        // Check if the default slot is already booked
+        const hasTimeConflict = existingBookings.some(booking => 
+          booking.date === formattedDate && 
+          ((booking.startTime <= startTime && booking.endTime > startTime) ||
+           (booking.startTime < endTime && booking.endTime >= endTime) ||
+           (booking.startTime >= startTime && booking.endTime <= endTime))
+        );
+        
+        // If there's a conflict, try to find the next available slot
+        if (hasTimeConflict) {
+          // Try slots from 8AM to 5PM
+          const timeSlots = [
+            { start: '08:00:00', end: '09:00:00' },
+            { start: '10:00:00', end: '11:00:00' },
+            { start: '11:00:00', end: '12:00:00' },
+            { start: '13:00:00', end: '14:00:00' },
+            { start: '14:00:00', end: '15:00:00' },
+            { start: '15:00:00', end: '16:00:00' },
+            { start: '16:00:00', end: '17:00:00' },
+          ];
+          
+          // Find the first available slot
+          const availableSlot = timeSlots.find(slot => {
+            return !existingBookings.some(booking => 
+              booking.date === formattedDate && 
+              ((booking.startTime <= slot.start && booking.endTime > slot.start) ||
+               (booking.startTime < slot.end && booking.endTime >= slot.end) ||
+               (booking.startTime >= slot.start && booking.endTime <= slot.end))
+            );
+          });
+          
+          // Use the available slot or stick with default if nothing is available
+          if (availableSlot) {
+            startTime = availableSlot.start;
+            endTime = availableSlot.end;
+          }
+        }
+        
         const booking = await storage.createBooking({
           freelancerId: freelancer.id,
           clientId: jobRequest.clientId,
@@ -187,8 +229,8 @@ export async function updateJobRequestStatus(req: Request, res: Response) {
           title: jobRequest.title,
           description: jobRequest.description,
           date: formattedDate,
-          startTime: '09:00:00', // Default 9 AM
-          endTime: '10:00:00',   // Default 10 AM
+          startTime: startTime,
+          endTime: endTime,
           status: 'confirmed'
         });
         

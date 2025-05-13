@@ -33,6 +33,8 @@ import {
   createJobRequest,
   getJobRequests as getClientJobRequests,
   getBookings as getClientBookings,
+  createBooking,
+  checkFreelancerAvailability,
   createReview,
   getChatHistory,
   getChatMessages,
@@ -241,6 +243,8 @@ router.get('/freelancer/chats/:chatId/messages', requireFreelancer, getFreelance
 router.post('/client/job-requests', requireClient, createJobRequest);
 router.get('/client/job-requests', requireClient, getClientJobRequests);
 router.get('/client/bookings', requireClient, getClientBookings);
+router.post('/client/bookings', requireClient, createBooking);
+router.get('/client/availability', requireClient, checkFreelancerAvailability);
 router.post('/client/reviews', requireClient, createReview);
 router.get('/client/chats', requireClient, getChatHistory);
 router.get('/client/chats/:chatId/messages', requireClient, getChatMessages);
