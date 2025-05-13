@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
+import { auth } from '../firebase';
 
 /**
  * Admin controller for managing freelancers and users
@@ -72,16 +73,34 @@ export async function deleteUser(req: Request, res: Response) {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    // Delete the user (this will cascade to delete freelancer if exists)
+    // Attempt to delete the Firebase user if we have their Firebase UID
+    let firebaseDeleted = false;
+    if (user.firebaseUid && auth) {
+      try {
+        await auth.deleteUser(user.firebaseUid);
+        firebaseDeleted = true;
+        console.log(`Firebase user ${user.firebaseUid} deleted successfully`);
+      } catch (fbError: any) {
+        console.error(`Failed to delete Firebase user ${user.firebaseUid}:`, fbError);
+        // We continue with deleting the database user even if Firebase deletion fails
+      }
+    } else if (!auth) {
+      console.warn('Firebase Admin SDK not initialized, skipping Firebase user deletion');
+    } else if (!user.firebaseUid) {
+      console.warn(`User ${userId} does not have a Firebase UID recorded`);
+    }
+    
+    // Delete the user from our database (this will cascade to delete freelancer if exists)
     const success = await storage.deleteUser(userId);
     
     if (success) {
       return res.status(200).json({ 
         message: 'User deleted successfully',
-        userId
+        userId,
+        firebaseDeleted
       });
     } else {
-      return res.status(500).json({ message: 'Failed to delete user' });
+      return res.status(500).json({ message: 'Failed to delete user from database' });
     }
   } catch (error: any) {
     console.error('Admin delete user error:', error);
