@@ -9,6 +9,7 @@ import {
 } from '../controllers/authController';
 import {
   isAdmin,
+  adminSessionAuth,
   deleteUser,
   deleteFreelancer,
   promoteToAdmin,
@@ -61,8 +62,8 @@ const router = Router();
 router.get('/auth/check-username', checkUsername); // No auth required, used during registration
 
 // Admin API endpoints with proper authentication and authorization
-// Admin routes are protected by the isAdmin middleware
-router.get('/admin/users', authenticateUser, isAdmin, async (req, res) => {
+// Admin routes are protected by the adminSessionAuth middleware
+router.get('/admin/users', adminSessionAuth, async (req, res) => {
   try {
     // Import the storage and db directly
     const { storage } = require('../storage');
@@ -83,10 +84,10 @@ router.get('/admin/users', authenticateUser, isAdmin, async (req, res) => {
 });
 
 // New admin routes using the admin controller
-router.delete('/admin/users/:id', authenticateUser, isAdmin, deleteUser);
-router.delete('/admin/freelancers/:id', authenticateUser, isAdmin, deleteFreelancer);
-router.patch('/admin/users/:id/promote', authenticateUser, isAdmin, promoteToAdmin);
-router.patch('/admin/users/:id/revoke', authenticateUser, isAdmin, revokeAdmin);
+router.delete('/admin/users/:id', adminSessionAuth, deleteUser);
+router.delete('/admin/freelancers/:id', adminSessionAuth, deleteFreelancer);
+router.patch('/admin/users/:id/promote', adminSessionAuth, promoteToAdmin);
+router.patch('/admin/users/:id/revoke', adminSessionAuth, revokeAdmin);
 
 // Legacy endpoint to fix roles for a specific user
 router.get('/admin/fix-role/:id', authenticateUser, isAdmin, async (req, res) => {

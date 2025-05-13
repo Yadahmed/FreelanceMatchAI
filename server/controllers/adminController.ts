@@ -6,10 +6,20 @@ import { storage } from '../storage';
  * This controller handles administrative operations like deleting freelancers and users
  */
 
-// Admin middleware to check if user is an admin
-export async function isAdmin(req: Request, res: Response, next: Function) {
+// Admin middleware to check for admin session header
+export async function adminSessionAuth(req: Request, res: Response, next: Function) {
   try {
-    // Check if user is authenticated
+    // Check for admin-session header
+    const adminSession = req.headers['admin-session'] === 'true';
+    
+    if (adminSession) {
+      // Admin session is valid
+      console.log('Admin session authenticated');
+      next();
+      return;
+    }
+    
+    // No admin session, check for user admin role as fallback
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication required' });
     }
@@ -25,6 +35,11 @@ export async function isAdmin(req: Request, res: Response, next: Function) {
     console.error('Admin auth error:', error);
     return res.status(500).json({ message: 'Server error' });
   }
+}
+
+// Legacy admin middleware - kept for backward compatibility
+export async function isAdmin(req: Request, res: Response, next: Function) {
+  return adminSessionAuth(req, res, next);
 }
 
 // Get all users

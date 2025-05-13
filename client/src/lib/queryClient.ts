@@ -4,6 +4,12 @@ import { getAuthHeaders } from "./auth";
 // Define a more specific headers type to avoid TypeScript errors
 type Headers = Record<string, string>;
 
+// Get admin session headers if admin session exists
+function getAdminHeaders(): Headers {
+  const isAdminSession = localStorage.getItem('adminSession') === 'true';
+  return isAdminSession ? { 'admin-session': 'true' } : {};
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -16,7 +22,10 @@ export async function apiRequest(
   options: RequestInit = {}
 ): Promise<any> {
   const authHeaders = getAuthHeaders();
-  const defaultHeaders: Record<string, string> = {};
+  const adminHeaders = getAdminHeaders();
+  const defaultHeaders: Record<string, string> = {
+    ...adminHeaders
+  };
   
   // Add auth headers if available
   if (authHeaders.Authorization) {
@@ -66,7 +75,10 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const authHeaders = getAuthHeaders();
-    const requestHeaders: Record<string, string> = {};
+    const adminHeaders = getAdminHeaders();
+    const requestHeaders: Record<string, string> = {
+      ...adminHeaders
+    };
     
     // Add auth headers if available
     if (authHeaders.Authorization) {
