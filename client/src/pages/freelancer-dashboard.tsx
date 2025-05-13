@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +13,7 @@ import { apiRequest } from '@/lib/queryClient';
 
 export default function FreelancerDashboard() {
   const { currentUser, isLoading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
   const [selectedTab, setSelectedTab] = useState<string>("overview");
   
   // Fetch freelancer dashboard data
@@ -420,7 +422,11 @@ export default function FreelancerDashboard() {
               ) : chats && chats.length > 0 ? (
                 <div className="space-y-4">
                   {chats.map((chat: any) => (
-                    <div key={chat.id} className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer">
+                    <div 
+                      key={chat.id} 
+                      className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => setLocation(`/chat/${chat.id}`)}
+                    >
                       <Avatar className="h-10 w-10">
                         <AvatarFallback>
                           {chat.relatedJobRequest?.client?.displayName?.substring(0, 2) || 'CL'}

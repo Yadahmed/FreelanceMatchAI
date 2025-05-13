@@ -1,0 +1,316 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useLocation } from 'wouter';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ArrowLeft, Send, User, Loader2 } from 'lucide-react';
+
+export default function ChatPage() {
+  const params = useParams<{ id: string }>();
+  const chatId = params?.id ? parseInt(params.id, 10) : null;
+  const [, setLocation] = useLocation();
+  const { currentUser, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+  
+  // Fetch chat details including messages
+  const { 
+    data: chatData, 
+    isLoading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: [`/api/${currentUser?.isClient ? 'client' : 'freelancer'}/chats/${chatId}/messages`],
+    queryFn: async () => {
+      if (!chatId) throw new Error('Chat ID is required');
+      
+      const response = await fetch(`/api/${currentUser?.isClient ? 'client' : 'freelancer'}/chats/${chatId}/messages`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch chat messages');
+      }
+      
+      return await response.json();
+    },
+    enabled: !!chatId && !!currentUser && !!isAuthenticated
+  });
+  
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatData]);
+  
+  // Handle going back
+  const handleBack = () => {
+    if (currentUser?.isClient) {
+      setLocation('/client-dashboard');
+    } else {
+      setLocation('/freelancer-dashboard');
+    }
+  };
+  
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: async (messageText: string) => {
+      const endpoint = currentUser?.isClient 
+        ? '/api/chat/direct-message' 
+        : '/api/chat/direct-message';
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({
+          message: messageText,
+          chatId: chatId,
+          freelancerId: currentUser?.isClient ? chatData?.freelancerId : undefined
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to send message');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      // Refetch chat messages after successful send
+      refetch();
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/${currentUser?.isClient ? 'client' : 'freelancer'}/chats`] 
+      });
+    }
+  });
+  
+  const handleSendMessage = async () => {
+    if (!message.trim() || isSending) return;
+    
+    setIsSending(true);
+    try {
+      await sendMessageMutation.mutateAsync(message);
+      setMessage('');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to send message',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+  
+  // Protect against unauthorized access or missing chat ID
+  if (!isAuthenticated) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center p-8">
+            <h2 className="text-xl font-medium text-red-600 mb-2">Authentication Required</h2>
+            <p className="text-muted-foreground">Please sign in to view this chat.</p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => setLocation('/')}
+            >
+              Go to Home
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!chatId) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center p-8">
+            <h2 className="text-xl font-medium text-red-600 mb-2">Invalid Chat ID</h2>
+            <p className="text-muted-foreground">The chat you are trying to view does not exist or is invalid.</p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={handleBack}
+            >
+              Go Back
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-3xl mx-auto">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <Button variant="ghost" size="sm" onClick={handleBack}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back
+                </Button>
+                <Skeleton className="h-6 w-40" />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="space-y-4">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-3/4 ml-auto" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-3/4 ml-auto" />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <div className="flex w-full gap-2">
+                <Skeleton className="h-10 flex-1" />
+                <Skeleton className="h-10 w-10" />
+              </div>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center p-8 bg-red-50 rounded-lg">
+            <h2 className="text-xl font-medium text-red-600 mb-2">Error Loading Chat</h2>
+            <p className="text-red-600">We couldn't load this chat. Please try again later.</p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={handleBack}
+            >
+              Go Back
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Get other participant info
+  const otherParticipant = currentUser?.isClient 
+    ? chatData?.freelancer?.displayName || 'Freelancer'
+    : chatData?.client?.displayName || 'Client';
+  
+  const messages = chatData?.messages || [];
+  
+  return (
+    <div className="container mx-auto py-8 px-4">
+      <div className="max-w-3xl mx-auto">
+        <Card className="flex flex-col h-[80vh]">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <Button variant="ghost" size="sm" onClick={handleBack}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
+              <div className="flex items-center gap-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>{otherParticipant.substring(0, 2)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <CardTitle className="text-base">{otherParticipant}</CardTitle>
+                  <CardDescription className="text-xs">
+                    {messages.length} messages
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="w-20"></div> {/* Spacer for balance */}
+            </div>
+          </CardHeader>
+          
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-4">
+              {messages.map((msg: any) => {
+                const isCurrentUser = (currentUser?.isClient && msg.isUserMessage) ||
+                                     (!currentUser?.isClient && !msg.isUserMessage);
+                                     
+                return (
+                  <div 
+                    key={msg.id}
+                    className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`flex gap-3 max-w-[80%] ${
+                        isCurrentUser ? 'flex-row-reverse' : 'flex-row'
+                      }`}
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {isCurrentUser ? (currentUser?.displayName?.substring(0, 2) || 'ME') : otherParticipant.substring(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div
+                          className={`rounded-lg p-3 ${
+                            isCurrentUser
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted'
+                          }`}
+                        >
+                          <p className="text-sm">{msg.content}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+          
+          <CardFooter className="p-4 border-t">
+            <div className="flex w-full gap-2">
+              <Input
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Type your message..."
+                className="flex-1"
+                disabled={isSending}
+              />
+              <Button onClick={handleSendMessage} disabled={!message.trim() || isSending}>
+                {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
+  );
+}
