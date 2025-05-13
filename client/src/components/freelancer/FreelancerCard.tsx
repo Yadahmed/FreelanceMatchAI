@@ -159,11 +159,11 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
             {[...Array(5)].map((_, i) => (
               <Star 
                 key={i} 
-                className={`h-4 w-4 ${i < Math.round(freelancer.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+                className={`h-4 w-4 ${i < Math.round(freelancer.rating / 10) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
               />
             ))}
           </div>
-          <span className="text-sm font-medium">{freelancer.rating.toFixed(1)}</span>
+          <span className="text-sm font-medium">{(freelancer.rating / 10).toFixed(1)}</span>
         </div>
         
         <div className="space-x-2">
