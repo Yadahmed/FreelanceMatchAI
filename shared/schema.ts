@@ -50,6 +50,7 @@ export const users = pgTable("users", {
   photoURL: text("photo_url"),
   firebaseUid: text("firebase_uid").unique(),
   isClient: boolean("is_client").notNull().default(true),
+  isAdmin: boolean("is_admin").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   lastLogin: timestamp("last_login").defaultNow(),
 });
@@ -62,6 +63,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   photoURL: true,
   firebaseUid: true,
   isClient: true,
+  isAdmin: true,
   lastLogin: true,
 });
 

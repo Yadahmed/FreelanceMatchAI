@@ -19,6 +19,7 @@ export interface IStorage {
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
+  deleteUser(id: number): Promise<boolean>;
   
   // Freelancer methods
   getFreelancer(id: number): Promise<Freelancer | undefined>;
@@ -27,6 +28,8 @@ export interface IStorage {
   createFreelancer(freelancer: InsertFreelancer): Promise<Freelancer>;
   updateFreelancer(id: number, freelancer: Partial<InsertFreelancer>): Promise<Freelancer>;
   updateFreelancerRating(id: number, rating: number): Promise<Freelancer>;
+  deleteFreelancer(id: number): Promise<boolean>;
+  deleteFreelancerByUserId(userId: number): Promise<boolean>;
   getAllFreelancers(): Promise<Freelancer[]>;
   getFreelancersByProfession(profession: string): Promise<Freelancer[]>;
   getFreelancersByLocation(location: string): Promise<Freelancer[]>;
