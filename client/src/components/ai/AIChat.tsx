@@ -248,12 +248,21 @@ export function AIChat() {
         }
       }
       
+      // Check if the response contains clarifying questions
+      const hasClarifyingQuestions = !!(
+        (Array.isArray(response.clarifyingQuestions) && response.clarifyingQuestions.length > 0) || 
+        (Array.isArray(response.metadata?.clarifyingQuestions) && response.metadata?.clarifyingQuestions.length > 0) || 
+        response.metadata?.needsMoreInfo
+      );
+      
       // Add AI response to chat
       const aiMessage: AIChatMessage = {
         id: generateId(),
         content: response.content,
         isUser: false,
         timestamp: new Date(),
+        clarifyingQuestions: response.clarifyingQuestions || response.metadata?.clarifyingQuestions,
+        needsMoreInfo: response.needsMoreInfo || response.metadata?.needsMoreInfo
       };
       
       setMessages(prev => [...prev, aiMessage]);
@@ -418,6 +427,36 @@ export function AIChat() {
                 }`}
               >
                 <p className="whitespace-pre-wrap">{message.content}</p>
+                
+                {/* Render clarifying questions as buttons if present */}
+                {!message.isUser && message.clarifyingQuestions && message.clarifyingQuestions.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {message.needsMoreInfo ? "I need more information:" : "Suggested questions:"}
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {message.clarifyingQuestions.map((question, index) => (
+                        <Button 
+                          key={index} 
+                          variant="outline" 
+                          size="sm" 
+                          className="justify-start text-left h-auto py-2"
+                          onClick={() => {
+                            setInputValue(question);
+                            // Focus the textarea
+                            const textarea = document.querySelector('textarea');
+                            if (textarea) {
+                              textarea.focus();
+                            }
+                          }}
+                        >
+                          {question}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <p className="text-xs opacity-70 mt-1">
                   {new Date(message.timestamp).toLocaleTimeString()}
                 </p>

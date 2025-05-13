@@ -313,7 +313,7 @@ export function JobAnalysis() {
         <div className="space-y-4">
           <h2 className="text-2xl font-bold">Analysis Results</h2>
           
-          {analysisResult.jobAnalysis && (
+          {analysisResult.jobAnalysis && !analysisResult.jobAnalysis.needsMoreInfo && (
             <Card>
               <CardHeader>
                 <CardTitle>Job Analysis</CardTitle>
@@ -329,16 +329,62 @@ export function JobAnalysis() {
             </Card>
           )}
           
-          <h3 className="text-xl font-semibold">Top Matches</h3>
-          {analysisResult.matches.length > 0 ? (
-            <div>
-              {analysisResult.matches.map(match => renderMatchCard(match))}
-            </div>
-          ) : (
-            <p>No matches found. Try broadening your job description or skills.</p>
+          {!analysisResult.jobAnalysis?.needsMoreInfo && (
+            <>
+              <h3 className="text-xl font-semibold">Top Matches</h3>
+              {analysisResult.matches.length > 0 ? (
+                <div>
+                  {analysisResult.matches.map(match => renderMatchCard(match))}
+                </div>
+              ) : (
+                <p>No matches found. Try broadening your job description or skills.</p>
+              )}
+            </>
           )}
           
-          {analysisResult.suggestedQuestions && analysisResult.suggestedQuestions.length > 0 && (
+          {/* Display clarifying questions if needed or suggested questions otherwise */}
+          {analysisResult.jobAnalysis?.needsMoreInfo ? (
+            <Card className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <AlertCircle className="h-5 w-5 mr-2 text-yellow-600 dark:text-yellow-400" />
+                  We Need More Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-3 text-yellow-800 dark:text-yellow-300">
+                  To provide the best freelancer matches, please answer these questions:
+                </p>
+                <div className="space-y-3">
+                  {analysisResult.suggestedQuestions?.map((question, index) => (
+                    <div key={index} className="bg-white dark:bg-yellow-900/30 p-3 rounded-md border border-yellow-200 dark:border-yellow-700">
+                      <p className="font-medium text-sm">{question}</p>
+                      <Textarea 
+                        className="mt-2 bg-transparent" 
+                        placeholder="Your answer..."
+                        onChange={(e) => {
+                          // When user types an answer, append it to the job description
+                          if (e.target.value.trim()) {
+                            setJobDescription(prev => 
+                              `${prev}\n\n${question}\n${e.target.value}`
+                            );
+                          }
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4">
+                  <Button 
+                    onClick={handleAnalyze}
+                    className="w-full"
+                  >
+                    Re-analyze With Additional Information
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : analysisResult.suggestedQuestions && analysisResult.suggestedQuestions.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Suggested Questions</CardTitle>
