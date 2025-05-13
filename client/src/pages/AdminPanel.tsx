@@ -144,13 +144,21 @@ export function AdminPanel() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       queryClient.invalidateQueries({ queryKey: ['/api/freelancers'] });
       
-      const firebaseStatus = data.firebaseDeleted 
-        ? 'Firebase authentication account was also deleted.' 
-        : 'Note: Firebase authentication account could not be deleted.';
+      let firebaseMessage = '';
+      if (data.firebaseDeleted) {
+        firebaseMessage = 'Firebase authentication account was also deleted.';
+      } else {
+        // Show more specific error message about why Firebase account wasn't deleted
+        if (data.firebaseError) {
+          firebaseMessage = `Note: Firebase authentication account could not be deleted. Reason: ${data.firebaseError}`;
+        } else {
+          firebaseMessage = 'Note: Firebase authentication account could not be deleted.';
+        }
+      }
       
       toast({
         title: 'Success',
-        description: `User deleted successfully. ${firebaseStatus}`,
+        description: `User deleted successfully. ${firebaseMessage}`,
       });
     },
     onError: (error: any) => {

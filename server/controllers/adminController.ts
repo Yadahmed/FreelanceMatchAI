@@ -93,36 +93,71 @@ export async function deleteUser(req: Request, res: Response) {
     
     // Attempt to delete the Firebase user if we have their Firebase UID
     let firebaseDeleted = false;
+    let firebaseError = null;
+    
     if (user.firebaseUid && auth) {
       try {
+        // Check if the Firebase Admin SDK is properly initialized
+        if (!auth.app) {
+          throw new Error('Firebase Admin SDK app not properly initialized');
+        }
+        
         await auth.deleteUser(user.firebaseUid);
         firebaseDeleted = true;
         console.log(`Firebase user ${user.firebaseUid} deleted successfully`);
       } catch (fbError: any) {
         console.error(`Failed to delete Firebase user ${user.firebaseUid}:`, fbError);
+        firebaseError = fbError.message || 'Unknown Firebase error';
+        
+        // Check for specific Firebase errors
+        if (fbError.code === 'auth/user-not-found') {
+          console.log(`Firebase user ${user.firebaseUid} not found - may have been already deleted`);
+        } else if (fbError.code === 'app/invalid-credential') {
+          console.error('Firebase Admin SDK credentials are invalid or expired');
+        }
+        
         // We continue with deleting the database user even if Firebase deletion fails
       }
     } else if (!auth) {
       console.warn('Firebase Admin SDK not initialized, skipping Firebase user deletion');
+      firebaseError = 'Firebase Admin SDK not initialized';
     } else if (!user.firebaseUid) {
       console.warn(`User ${userId} does not have a Firebase UID recorded`);
+      firebaseError = 'No Firebase UID associated with this user';
     }
     
     // Delete the user from our database (this will cascade to delete freelancer if exists)
     const success = await storage.deleteUser(userId);
     
     if (success) {
+      console.log(`Successfully deleted user ${userId} and all associated data`);
+      
+      // Return detailed information about the deletion
       return res.status(200).json({ 
         message: 'User deleted successfully',
-        userId,
-        firebaseDeleted
+        firebaseDeleted, // Indicate whether the Firebase auth was deleted too
+        firebaseError: firebaseDeleted ? null : firebaseError,
+        details: {
+          userId,
+          firebaseUid: user.firebaseUid,
+          databaseUserDeleted: true,
+          firebaseAuthDeleted: firebaseDeleted
+        }
       });
     } else {
-      return res.status(500).json({ message: 'Failed to delete user from database' });
+      return res.status(500).json({ 
+        message: 'Failed to delete user from database',
+        firebaseDeleted,
+        firebaseError
+      });
     }
   } catch (error: any) {
     console.error('Admin delete user error:', error);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ 
+      message: 'Server error deleting user', 
+      error: error.message || String(error),
+      stack: process.env.NODE_ENV === 'production' ? undefined : error.stack
+    });
   }
 }
 
