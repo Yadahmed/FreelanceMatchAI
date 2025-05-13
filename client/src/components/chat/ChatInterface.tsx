@@ -193,12 +193,16 @@ export function ChatInterface() {
                           {message.freelancerResults.map((result) => {
                             // Check if the result has a nested freelancer object (AI service format)
                             if (result.freelancer) {
+                              console.log("Rendering freelancer from nested object:", result.freelancer);
                               return <FreelancerCard key={result.freelancerId} freelancer={result.freelancer} />;
                             } 
                             // Fallback to treating the result itself as a freelancer (old format)
                             else if (result.id) {
+                              console.log("Rendering freelancer directly:", result);
                               return <FreelancerCard key={result.id} freelancer={result} />;
                             }
+                            // Log the result format if it doesn't match expected formats
+                            console.log("Skipping freelancer result due to unexpected format:", result);
                             // Skip rendering if neither format is available
                             return null;
                           })}
