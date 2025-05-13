@@ -138,7 +138,7 @@ export default function MessagesPage() {
         }
         
         // Send the message using the new chat ID
-        await apiRequest('/api/chat/direct', {
+        await apiRequest('/api/chat/direct-message', {
           method: 'POST',
           body: JSON.stringify({
             message: inputValue,
@@ -147,7 +147,7 @@ export default function MessagesPage() {
         });
       } else {
         // Send message to existing chat
-        await apiRequest('/api/chat/direct', {
+        await apiRequest('/api/chat/direct-message', {
           method: 'POST',
           body: JSON.stringify({
             message: inputValue,
