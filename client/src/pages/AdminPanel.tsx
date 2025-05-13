@@ -23,7 +23,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
 import { User as AuthUser } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 import { Trash2, UserMinus, UserCheck, Shield, ShieldOff } from 'lucide-react';
@@ -48,7 +47,6 @@ interface Freelancer {
 }
 
 export function AdminPanel() {
-  const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -56,23 +54,24 @@ export function AdminPanel() {
   const [deleteType, setDeleteType] = useState<'user' | 'freelancer'>('user');
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   
-  // Redirect if user is not an admin
+  // Redirect if not authenticated as admin
   useEffect(() => {
-    if (user && user.userData && !user.userData.isAdmin) {
-      window.location.href = '/';
+    const isAdminSession = localStorage.getItem('adminSession') === 'true';
+    if (!isAdminSession) {
+      window.location.href = '/admin/login';
     }
-  }, [user]);
+  }, []);
   
   // Fetch users
   const { data: users, isLoading: loadingUsers } = useQuery<{ message: string, users: User[] }>({ 
     queryKey: ['/api/admin/users'], 
-    enabled: !!user?.userData?.isAdmin,
+    enabled: true,
   });
   
   // Fetch freelancers
   const { data: freelancers, isLoading: loadingFreelancers } = useQuery<Freelancer[]>({
     queryKey: ['/api/freelancers'],
-    enabled: !!user?.userData?.isAdmin,
+    enabled: true,
   });
   
   // Delete user mutation
@@ -192,9 +191,11 @@ export function AdminPanel() {
     setConfirmDialogOpen(false);
   };
   
-  if (!user?.userData?.isAdmin) {
-    return <div className="container mx-auto p-4">You don't have admin access</div>;
-  }
+  // Function to handle logout
+  const handleLogout = () => {
+    localStorage.removeItem('adminSession');
+    window.location.href = '/admin/login';
+  };
   
   if (loadingUsers || loadingFreelancers) {
     return <div className="container mx-auto p-4">Loading...</div>;
@@ -207,7 +208,12 @@ export function AdminPanel() {
   
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Admin Panel</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Admin Panel</h1>
+        <Button variant="outline" onClick={handleLogout}>
+          Logout
+        </Button>
+      </div>
       
       <div className="grid grid-cols-1 gap-6">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
@@ -261,7 +267,6 @@ export function AdminPanel() {
                           variant="outline"
                           size="icon"
                           onClick={() => handleDeleteUser(user.id)}
-                          disabled={user.id === user?.id} // Prevent deleting self
                           title="Delete User Account"
                         >
                           <Trash2 className="h-4 w-4" />

@@ -13,6 +13,7 @@ import ExploreFreelancers from "@/pages/explore-freelancers";
 import Freelancer from "@/pages/freelancer";
 import DirectChat from "@/pages/direct-chat";
 import AdminPanel from "@/pages/AdminPanel";
+import AdminLogin from "@/pages/AdminLogin";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -55,7 +56,9 @@ function Router() {
       <Route path="/ollama-test" component={Home} />
       
       {/* Admin routes */}
-      <Route path="/admin" component={AdminPanel} />
+      <Route path="/admin" component={AdminLogin} />
+      <Route path="/admin/login" component={AdminLogin} />
+      <Route path="/admin/panel" component={AdminPanel} />
       
       {/* Legacy redirects in case old URLs are bookmarked */}
       <Route path="/home">
