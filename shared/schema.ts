@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, date, time } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, date, time, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -74,7 +74,7 @@ export const freelancers = pgTable("freelancers", {
   bio: text("bio").notNull(),
   hourlyRate: integer("hourly_rate").notNull(),
   yearsOfExperience: integer("years_of_experience").default(0),
-  rating: integer("rating").notNull().default(0),
+  rating: integer("rating").notNull().default(45), // Default to 4.5 stars (stored as 45 for backward compatibility)
   jobPerformance: integer("job_performance").notNull().default(0),
   skillsExperience: integer("skills_experience").notNull().default(0),
   responsiveness: integer("responsiveness").notNull().default(0),
