@@ -3,6 +3,7 @@ import { aiService } from '../services/ai-service';
 import { deepseekService } from '../services/deepseek-service';
 import { ollamaService } from '../services/ollama-service';
 import { anthropicService } from '../services/anthropic-service';
+import { storage } from '../storage';
 import { aiChatRequestSchema, jobAnalysisRequestSchema } from '@shared/ai-schemas';
 
 /**
@@ -68,6 +69,59 @@ export async function processAIMessage(req: Request, res: Response) {
     if (isDeepSeekAvailable) {
       try {
         const aiResponse = await deepseekService.sendMessage(currentUserId, message);
+        
+        // Check if this looks like a developer request by searching for keywords
+        if (message.toLowerCase().includes('developer') || 
+            message.toLowerCase().includes('programmer') || 
+            message.toLowerCase().includes('coder') ||
+            message.toLowerCase().includes('web') ||
+            message.toLowerCase().includes('mobile')) {
+          
+          // Get top freelancers to include in the response
+          const matchedFreelancers = await storage.getTopFreelancersByRanking(3);
+          
+          // Transform to match the schema expected by the UI
+          const formattedFreelancers = await Promise.all(matchedFreelancers.map(async (freelancer) => {
+            // Look up the user to get display name
+            const user = await storage.getUser(freelancer.userId);
+            const displayName = user?.displayName || user?.username || 'Anonymous Freelancer';
+            
+            // Calculate match score using the same algorithm as the chat controller
+            const matchScore = Math.round(
+              (freelancer.jobPerformance * 0.5) +
+              (freelancer.skillsExperience * 0.2) +
+              (freelancer.responsiveness * 0.15) +
+              (freelancer.fairnessScore * 0.15)
+            );
+            
+            return {
+              freelancerId: freelancer.id,
+              score: matchScore,
+              matchReasons: ['Strong match based on your requirements'],
+              jobPerformanceScore: freelancer.jobPerformance,
+              skillsScore: freelancer.skillsExperience,
+              responsivenessScore: freelancer.responsiveness,
+              fairnessScore: freelancer.fairnessScore,
+              // Include the full freelancer object for the UI to use
+              freelancer: {
+                ...freelancer,
+                displayName
+              }
+            };
+          }));
+          
+          // Return the response with freelancer results
+          return res.status(200).json({
+            content: aiResponse.content,
+            freelancerResults: formattedFreelancers,
+            metadata: {
+              ...aiResponse.metadata,
+              provider: 'deepseek'
+            }
+          });
+        }
+        
+        // If not a developer request, just return the standard response
         return res.status(200).json({
           content: aiResponse.content,
           metadata: {
@@ -87,6 +141,60 @@ export async function processAIMessage(req: Request, res: Response) {
       try {
         console.log('[processAIMessage] Using Anthropic as fallback');
         const anthropicResponse = await anthropicService.sendMessage(currentUserId, message);
+        
+        // Check if this looks like a developer request by searching for keywords
+        if (message.toLowerCase().includes('developer') || 
+            message.toLowerCase().includes('programmer') || 
+            message.toLowerCase().includes('coder') ||
+            message.toLowerCase().includes('web') ||
+            message.toLowerCase().includes('mobile')) {
+          
+          // Get top freelancers to include in the response
+          const matchedFreelancers = await storage.getTopFreelancersByRanking(3);
+          
+          // Transform to match the schema expected by the UI
+          const formattedFreelancers = await Promise.all(matchedFreelancers.map(async (freelancer) => {
+            // Look up the user to get display name
+            const user = await storage.getUser(freelancer.userId);
+            const displayName = user?.displayName || user?.username || 'Anonymous Freelancer';
+            
+            // Calculate match score using the same algorithm as the chat controller
+            const matchScore = Math.round(
+              (freelancer.jobPerformance * 0.5) +
+              (freelancer.skillsExperience * 0.2) +
+              (freelancer.responsiveness * 0.15) +
+              (freelancer.fairnessScore * 0.15)
+            );
+            
+            return {
+              freelancerId: freelancer.id,
+              score: matchScore,
+              matchReasons: ['Strong match based on your requirements'],
+              jobPerformanceScore: freelancer.jobPerformance,
+              skillsScore: freelancer.skillsExperience,
+              responsivenessScore: freelancer.responsiveness,
+              fairnessScore: freelancer.fairnessScore,
+              // Include the full freelancer object for the UI to use
+              freelancer: {
+                ...freelancer,
+                displayName
+              }
+            };
+          }));
+          
+          // Return the response with freelancer results
+          return res.status(200).json({
+            content: anthropicResponse.content,
+            freelancerResults: formattedFreelancers,
+            metadata: {
+              ...anthropicResponse.metadata,
+              provider: 'anthropic',
+              fallback: true
+            }
+          });
+        }
+        
+        // If not a developer request, just return the standard response
         return res.status(200).json({
           content: anthropicResponse.content,
           metadata: {
@@ -107,6 +215,60 @@ export async function processAIMessage(req: Request, res: Response) {
     if (isOllamaAvailable) {
       try {
         const ollamaResponse = await ollamaService.sendMessage(currentUserId, message);
+        
+        // Check if this looks like a developer request by searching for keywords
+        if (message.toLowerCase().includes('developer') || 
+            message.toLowerCase().includes('programmer') || 
+            message.toLowerCase().includes('coder') ||
+            message.toLowerCase().includes('web') ||
+            message.toLowerCase().includes('mobile')) {
+          
+          // Get top freelancers to include in the response
+          const matchedFreelancers = await storage.getTopFreelancersByRanking(3);
+          
+          // Transform to match the schema expected by the UI
+          const formattedFreelancers = await Promise.all(matchedFreelancers.map(async (freelancer) => {
+            // Look up the user to get display name
+            const user = await storage.getUser(freelancer.userId);
+            const displayName = user?.displayName || user?.username || 'Anonymous Freelancer';
+            
+            // Calculate match score using the same algorithm as the chat controller
+            const matchScore = Math.round(
+              (freelancer.jobPerformance * 0.5) +
+              (freelancer.skillsExperience * 0.2) +
+              (freelancer.responsiveness * 0.15) +
+              (freelancer.fairnessScore * 0.15)
+            );
+            
+            return {
+              freelancerId: freelancer.id,
+              score: matchScore,
+              matchReasons: ['Strong match based on your requirements'],
+              jobPerformanceScore: freelancer.jobPerformance,
+              skillsScore: freelancer.skillsExperience,
+              responsivenessScore: freelancer.responsiveness,
+              fairnessScore: freelancer.fairnessScore,
+              // Include the full freelancer object for the UI to use
+              freelancer: {
+                ...freelancer,
+                displayName
+              }
+            };
+          }));
+          
+          // Return the response with freelancer results
+          return res.status(200).json({
+            content: ollamaResponse.content,
+            freelancerResults: formattedFreelancers,
+            metadata: {
+              ...ollamaResponse.metadata,
+              provider: 'ollama',
+              fallback: true
+            }
+          });
+        }
+        
+        // If not a developer request, just return the standard response
         return res.status(200).json({
           content: ollamaResponse.content,
           metadata: {
