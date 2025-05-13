@@ -31,20 +31,44 @@ interface FreelancerCardProps {
 }
 
 export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCardProps) {
+  // Ensure freelancer has required fields with defaults if needed
+  console.log("FreelancerCard received freelancer:", freelancer);
+  
   // Always use the display name to show the real name of the freelancer
-  const name = freelancer.displayName || 'Anonymous Freelancer';
+  const name = freelancer.displayName || freelancer.username || 'Anonymous Freelancer';
+  
+  // Handle missing skills to prevent errors
+  const skills = Array.isArray(freelancer.skills) ? freelancer.skills : [];
   
   // Format skills to display only first 3
-  const displaySkills = freelancer.skills.slice(0, 3);
-  const extraSkillsCount = Math.max(0, freelancer.skills.length - 3);
+  const displaySkills = skills.slice(0, 3);
+  const extraSkillsCount = Math.max(0, skills.length - 3);
+  
+  // Set default values for all required properties to prevent errors
+  const jobPerformance = freelancer.jobPerformance || 0;
+  const skillsExperience = freelancer.skillsExperience || 0;
+  const responsiveness = freelancer.responsiveness || 0;
+  const fairnessScore = freelancer.fairnessScore || 0;
+  const location = freelancer.location || 'Unknown location';
+  const hourlyRate = freelancer.hourlyRate || 0;
+  const yearsOfExperience = freelancer.yearsOfExperience || 0;
+  const completedJobs = freelancer.completedJobs || 0;
+  const rating = freelancer.rating || 0;
+  const bio = freelancer.bio || 'No bio available';
+  const profession = freelancer.profession || 'Freelancer';
+  const availability = freelancer.availability !== undefined ? freelancer.availability : true;
   
   // Calculate the match score (weighted average)
   const matchScore = Math.round(
-    (freelancer.jobPerformance * 0.5) + 
-    (freelancer.skillsExperience * 0.2) + 
-    (freelancer.responsiveness * 0.15) + 
-    (freelancer.fairnessScore * 0.15)
+    (jobPerformance * 0.5) + 
+    (skillsExperience * 0.2) + 
+    (responsiveness * 0.15) + 
+    (fairnessScore * 0.15)
   );
+  
+  // Generate avatar initials
+  // Set image URL with fallback
+  const imageUrl = freelancer.imageUrl || null;
   
   // Generate avatar initials
   const initials = name
@@ -67,15 +91,15 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
               <CardTitle className="text-lg font-semibold">{name}</CardTitle>
               <CardDescription className="flex items-center gap-1">
                 <Briefcase className="h-3.5 w-3.5" />
-                <span>{freelancer.profession}</span>
+                <span>{profession}</span>
               </CardDescription>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-lg font-bold">${freelancer.hourlyRate}/hr</div>
-            <Badge variant={freelancer.availability ? "outline" : "secondary"} 
-              className={freelancer.availability ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}>
-              {freelancer.availability ? "Available" : "Busy"}
+            <div className="text-lg font-bold">${hourlyRate}/hr</div>
+            <Badge variant={availability ? "outline" : "secondary"} 
+              className={availability ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}>
+              {availability ? "Available" : "Busy"}
             </Badge>
           </div>
         </div>
@@ -85,21 +109,21 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-1 text-muted-foreground text-sm">
             <MapPin className="h-3.5 w-3.5" />
-            <span>{freelancer.location}</span>
+            <span>{location}</span>
             
             <div className="ml-2 flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />
-              <span>{freelancer.yearsOfExperience} {freelancer.yearsOfExperience === 1 ? 'year' : 'years'} experience</span>
+              <span>{yearsOfExperience} {yearsOfExperience === 1 ? 'year' : 'years'} experience</span>
             </div>
             
             <div className="ml-2 flex items-center gap-1">
               <Award className="h-3.5 w-3.5" />
-              <span>{freelancer.completedJobs} {freelancer.completedJobs === 1 ? 'job' : 'jobs'} completed</span>
+              <span>{completedJobs} {completedJobs === 1 ? 'job' : 'jobs'} completed</span>
             </div>
           </div>
           
           <div className="line-clamp-2 text-sm text-muted-foreground">
-            {freelancer.bio}
+            {bio}
           </div>
           
           <div className="flex flex-wrap gap-1">
@@ -120,33 +144,33 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
                   <span>Job Performance</span>
-                  <span>{freelancer.jobPerformance}%</span>
+                  <span>{jobPerformance}%</span>
                 </div>
-                <Progress value={freelancer.jobPerformance} className="h-1.5" />
+                <Progress value={jobPerformance} className="h-1.5" />
               </div>
               
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
                   <span>Skills & Experience</span>
-                  <span>{freelancer.skillsExperience}%</span>
+                  <span>{skillsExperience}%</span>
                 </div>
-                <Progress value={freelancer.skillsExperience} className="h-1.5" />
+                <Progress value={skillsExperience} className="h-1.5" />
               </div>
               
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
                   <span>Responsiveness</span>
-                  <span>{freelancer.responsiveness}%</span>
+                  <span>{responsiveness}%</span>
                 </div>
-                <Progress value={freelancer.responsiveness} className="h-1.5" />
+                <Progress value={responsiveness} className="h-1.5" />
               </div>
               
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
                   <span>Fairness Score</span>
-                  <span>{freelancer.fairnessScore}%</span>
+                  <span>{fairnessScore}%</span>
                 </div>
-                <Progress value={freelancer.fairnessScore} className="h-1.5" />
+                <Progress value={fairnessScore} className="h-1.5" />
               </div>
             </div>
           )}
@@ -159,26 +183,26 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
             {[...Array(5)].map((_, i) => (
               <Star 
                 key={i} 
-                className={`h-4 w-4 ${i < Math.round(freelancer.rating / 10) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+                className={`h-4 w-4 ${i < Math.round(rating / 10) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
               />
             ))}
           </div>
-          <span className="text-sm font-medium">{freelancer.rating ? (freelancer.rating / 10).toFixed(1) : "No ratings"}</span>
+          <span className="text-sm font-medium">{rating ? (rating / 10).toFixed(1) : "No ratings"}</span>
         </div>
         
         <div className="space-x-2">
           <Button variant="outline" asChild>
-            <Link href={`/freelancers/${freelancer.id}`}>
+            <Link href={`/freelancers/${freelancer.id || freelancer.freelancerId}`}>
               View Profile
             </Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link href={`/messages/${freelancer.id}`}>
+            <Link href={`/messages/${freelancer.id || freelancer.freelancerId}`}>
               Message
             </Link>
           </Button>
           <Button asChild>
-            <Link href={`/booking/${freelancer.id}`}>
+            <Link href={`/booking/${freelancer.id || freelancer.freelancerId}`}>
               Book Now
             </Link>
           </Button>
