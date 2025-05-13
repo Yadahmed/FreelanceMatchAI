@@ -163,12 +163,12 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
               />
             ))}
           </div>
-          <span className="text-sm font-medium">{freelancer.rating ? (freelancer.rating / 10).toFixed(1) : "No ratings"}</span>
+          <span className="text-sm font-medium">{(freelancer.rating / 10).toFixed(1)}</span>
         </div>
         
         <div className="space-x-2">
           <Button variant="outline" asChild>
-            <Link href={`/freelancers/${freelancer.id}`}>
+            <Link href={`/freelancer/${freelancer.id}`}>
               View Profile
             </Link>
           </Button>
