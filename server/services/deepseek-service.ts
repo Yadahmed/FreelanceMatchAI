@@ -710,8 +710,14 @@ Job Performance: ${f.jobPerformance || 0}/100
         // Skills match provides a base score
         score += (matchingSkills.length / Math.max(requestedSkills.length, 1)) * 30;
         
-        // Job performance is weighted highest (50%)
-        score += (freelancer.jobPerformance / 100) * 50;
+        // Normalize rating (which is stored as an integer from 0-50) to a 0-100 scale
+        // Default is 45 (4.5 stars) which equals a 90 on the 100-point scale
+        const normalizedRating = (freelancer.rating / 50) * 100;
+        
+        // Modified: Job performance and rating combined (50%)
+        // 50% of this comes from job performance, 50% from rating
+        const performanceScore = (freelancer.jobPerformance * 0.5 + normalizedRating * 0.5) / 100 * 50;
+        score += performanceScore;
         
         // Skills experience (20%)
         score += (freelancer.skillsExperience / 100) * 20;
