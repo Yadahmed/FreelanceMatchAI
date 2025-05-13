@@ -8,7 +8,11 @@ type Headers = Record<string, string>;
 function getAdminHeaders(): Headers {
   const isAdminSession = localStorage.getItem('adminSession') === 'true';
   console.log('[Admin Headers] Admin session check:', isAdminSession);
-  const headers = isAdminSession ? { 'admin-session': 'true' } : {};
+  // Create an empty header object then add to it conditionally to satisfy TypeScript
+  const headers: Headers = {};
+  if (isAdminSession) {
+    headers['admin-session'] = 'true';
+  }
   console.log('[Admin Headers] Returning headers:', headers);
   return headers;
 }
