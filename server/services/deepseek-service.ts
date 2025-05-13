@@ -194,6 +194,15 @@ Current date: ${new Date().toISOString().split('T')[0]}`
   private shouldAskClarifyingQuestions(message: string): boolean {
     const lowerMsg = message.toLowerCase();
     
+    // Get messages from context to see if this is the first message
+    const userContext = this.getUserContext(0); // Using default user ID
+    const isFirstFewMessages = userContext.length <= 4; // If 4 or fewer messages, consider it the start of conversation
+    
+    // If this is among the first few messages about freelancers, always ask clarifying questions
+    if (isFirstFewMessages && this.isFreelancerQuery(message)) {
+      return true;
+    }
+    
     // Check if the message is too vague (less than 10 words)
     const wordCount = message.trim().split(/\s+/).length;
     if (wordCount < 10) {
@@ -212,8 +221,9 @@ Current date: ${new Date().toISOString().split('T')[0]}`
       !lowerMsg.includes('skill') && !lowerMsg.includes('experience') && !lowerMsg.includes('qualified')
     ];
     
-    // If two or more key details are missing, ask clarifying questions
-    return missingDetails.filter(Boolean).length >= 2;
+    // If any key details are missing, ask clarifying questions
+    // Changed from "2 or more" to "any" to make the system more likely to ask questions
+    return missingDetails.filter(Boolean).length >= 1;
   }
   
   /**
