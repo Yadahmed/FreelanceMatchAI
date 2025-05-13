@@ -86,6 +86,27 @@ export default function FreelancerDetail() {
         throw new Error('Freelancer data is not available');
       }
       
+      // First, we need to create a chat or get an existing one
+      const initChatResponse = await fetch('/api/chat/init', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          freelancerId: freelancer.id
+        })
+      });
+      
+      if (!initChatResponse.ok) {
+        const errorData = await initChatResponse.json();
+        throw new Error(errorData.message || 'Failed to initialize chat');
+      }
+      
+      const chatData = await initChatResponse.json();
+      const chatId = chatData.chatId;
+      
+      // Now we can send a message to this chat
       const response = await fetch('/api/chat/direct-message', {
         method: 'POST',
         headers: {
@@ -94,7 +115,7 @@ export default function FreelancerDetail() {
         },
         body: JSON.stringify({
           message: `Hello, I'm interested in discussing a potential project with you.`,
-          freelancerId: freelancer.id
+          chatId: chatId
         })
       });
       
