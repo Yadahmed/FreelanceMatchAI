@@ -256,7 +256,7 @@ export default function FreelancerDetail() {
                   <CardDescription className="text-primary font-medium text-lg">{freelancer.profession}</CardDescription>
                 </div>
                 <div className="flex items-center mt-2 md:mt-0">
-                  <Rating value={freelancer.rating} size="lg" />
+                  <Rating value={freelancer.rating} size="lg" showNoRating={true} />
                 </div>
               </div>
             </CardHeader>

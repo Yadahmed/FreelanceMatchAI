@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Rating } from '@/components/ui/rating';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -33,7 +32,7 @@ export function ReviewsList({ freelancerId }: ReviewsListProps) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['freelancerReviews', freelancerId],
     queryFn: async () => {
-      const response = await apiRequest(`/api/freelancers/${freelancerId}/reviews`);
+      const response = await fetch(`/api/freelancers/${freelancerId}/reviews`);
       if (!response.ok) {
         throw new Error('Failed to fetch reviews');
       }

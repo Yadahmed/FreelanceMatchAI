@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -46,9 +45,23 @@ export function ReviewForm({ freelancerId, jobRequestId, onReviewSubmitted }: Re
   const onSubmit = async (values: ReviewFormValues) => {
     setIsSubmitting(true);
     try {
+      // Import token refresh function
+      const { refreshAuthToken } = await import('@/lib/auth');
+      
+      // Get a fresh token
+      const token = await refreshAuthToken();
+      
+      if (!token) {
+        throw new Error('Authentication required. Please sign in to submit a review.');
+      }
+      
       // Make the API request to submit the review
-      const response = await apiRequest('/api/client/reviews', {
+      const response = await fetch('/api/client/reviews', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           freelancerId,
           jobRequestId: jobRequestId || null,
@@ -72,8 +85,18 @@ export function ReviewForm({ freelancerId, jobRequestId, onReviewSubmitted }: Re
           onReviewSubmitted();
         }
       } else {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to submit review');
+        const errorText = await response.text();
+        let errorMessage = 'Failed to submit review';
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // If it's not valid JSON, use the text as is
+          errorMessage = errorText || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
       }
     } catch (error: any) {
       toast({
