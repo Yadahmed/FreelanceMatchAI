@@ -529,9 +529,20 @@ Ensure your response is ONLY the valid JSON object - no additional text.`;
       }
       
       userMessage += `Available Freelancers:\n`;
+      
+      // Create a map of freelancer info for later use
+      const freelancersMap = new Map();
+      
       allFreelancers.forEach((f) => {
+        // Store the freelancer in the map for later lookup
+        freelancersMap.set(f.id, f);
+        
+        // Get the user info for this freelancer to include name
+        const displayName = f.displayName || `Freelancer ${f.id}`;
+        
         userMessage += `
 Freelancer ID: ${f.id}
+Name: ${displayName}
 Profession: ${f.profession}
 Skills: ${f.skills ? f.skills.join(', ') : 'Not specified'}
 Experience: ${f.yearsOfExperience || 0} years
@@ -540,10 +551,13 @@ Rating: ${f.rating || 0}/5
 Location: ${f.location || 'Not specified'}
 Bio: ${f.bio || 'Not provided'}
 Job Performance: ${f.jobPerformance || 0}/100
+Skills Experience: ${f.skillsExperience || 0}/100  
+Responsiveness: ${f.responsiveness || 0}/100
+Fairness Score: ${f.fairnessScore || 0}/100
 `;
       });
       
-      userMessage += `\nBased on the job request and required skills, rank the top 3 freelancers with detailed reasoning.`;
+      userMessage += `\nBased on the job request and required skills, rank the top 3 freelancers with detailed reasoning. Include their full names in your response.`;
       
       // Make the API request
       const requestBody: any = {
@@ -593,11 +607,15 @@ Job Performance: ${f.jobPerformance || 0}/100
           const freelancer = await storage.getFreelancer(freelancerId);
           if (!freelancer) continue;
           
+          // Get the user info for this freelancer
+          const user = await storage.getUser(freelancer.userId);
+          const displayName = user?.displayName || freelancer.displayName || `Freelancer ${freelancerId}`;
+          
           // Calculate weights based on our algorithm
-          const jobPerformanceScore = 0.5;
-          const skillsScore = 0.2;
-          const responsivenessScore = 0.15;
-          const fairnessScore = 0.15;
+          const jobPerformanceScore = (freelancer.jobPerformance / 100) * 0.5;  // 50% weight
+          const skillsScore = (freelancer.skillsExperience / 100) * 0.2;        // 20% weight  
+          const responsivenessScore = (freelancer.responsiveness / 100) * 0.15; // 15% weight
+          const fairnessScore = (freelancer.fairnessScore / 100) * 0.15;        // 15% weight
           
           // Create match reasons from reasoning
           const reasons = [match.reasoning || 'Strong match for this job request'];
@@ -609,7 +627,27 @@ Job Performance: ${f.jobPerformance || 0}/100
             jobPerformanceScore,
             skillsScore,
             responsivenessScore,
-            fairnessScore
+            fairnessScore,
+            // Include the full freelancer object for the UI to use
+            freelancer: {
+              id: freelancer.id,
+              userId: freelancer.userId,
+              profession: freelancer.profession,
+              skills: freelancer.skills,
+              bio: freelancer.bio,
+              hourlyRate: freelancer.hourlyRate,
+              yearsOfExperience: freelancer.yearsOfExperience,
+              rating: freelancer.rating,
+              jobPerformance: freelancer.jobPerformance,
+              skillsExperience: freelancer.skillsExperience,
+              responsiveness: freelancer.responsiveness,
+              fairnessScore: freelancer.fairnessScore,
+              completedJobs: freelancer.completedJobs || 0,
+              location: freelancer.location,
+              availability: freelancer.availability || true,
+              imageUrl: freelancer.imageUrl,
+              displayName: displayName
+            }
           });
         }
       }
