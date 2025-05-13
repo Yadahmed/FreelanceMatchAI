@@ -70,8 +70,12 @@ export default function FreelancerDetail() {
 
   const handleHireClick = async () => {
     try {
-      // Check if user is authenticated
-      const token = localStorage.getItem('auth_token');
+      // Import the refreshAuthToken function
+      const { refreshAuthToken } = await import('@/lib/auth');
+      
+      // Refresh the token first to ensure it's valid
+      const token = await refreshAuthToken();
+      
       if (!token) {
         toast({
           title: "Authentication required",
@@ -99,6 +103,16 @@ export default function FreelancerDetail() {
       });
       
       if (!initChatResponse.ok) {
+        // Handle authentication errors specifically
+        if (initChatResponse.status === 401) {
+          toast({
+            title: "Session expired",
+            description: "Your session has expired. Please sign in again.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
         const errorData = await initChatResponse.json();
         throw new Error(errorData.message || 'Failed to initialize chat');
       }

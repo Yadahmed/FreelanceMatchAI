@@ -62,6 +62,7 @@ export async function apiRequest(
   
   console.log('[apiRequest] Making request to:', url, 'with auth token:', !!defaultHeaders.Authorization);
   
+  // Attempt the request with the current token
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -70,6 +71,31 @@ export async function apiRequest(
     },
     credentials: "include",
   });
+  
+  // If we get a 401 unauthorized error, try to refresh the token and retry the request once
+  if (res.status === 401) {
+    try {
+      // Dynamically import to avoid circular dependencies
+      const { refreshAuthToken } = await import('./auth');
+      const newToken = await refreshAuthToken();
+      
+      if (newToken) {
+        console.log('[apiRequest] Token refreshed, retrying request');
+        // Retry the request with the new token
+        return fetch(url, {
+          ...options,
+          headers: {
+            ...defaultHeaders,
+            ...options.headers,
+            'Authorization': `Bearer ${newToken}`
+          },
+          credentials: "include",
+        });
+      }
+    } catch (refreshError) {
+      console.error('[apiRequest] Failed to refresh token:', refreshError);
+    }
+  }
 
   await throwIfResNotOk(res);
   return res.json();
