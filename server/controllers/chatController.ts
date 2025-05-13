@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { chatRequestSchema, directMessageSchema, chatInitSchema } from '@shared/schema';
+import { chatRequestSchema, directMessageSchema, chatInitSchema, Chat } from '@shared/schema';
 import { storage } from '../storage';
 
 // Send a message to the AI assistant
@@ -236,9 +236,12 @@ export async function initChat(req: Request, res: Response) {
     }
     
     // Check if a chat already exists between this user and freelancer
-    const existingChats = await storage.getUserChats(req.user.id);
+    const existingChats = await storage.getChatsByUserId(req.user.id);
+    // Type safety: make sure we check for chats that have the right type and freelancerId
     const existingChat = existingChats.find(chat => 
-      chat.type === 'direct' && chat.freelancerId === freelancerId
+      chat.type === 'direct' && 
+      typeof chat.freelancerId === 'number' && 
+      chat.freelancerId === freelancerId
     );
     
     if (existingChat) {
@@ -286,7 +289,8 @@ export async function sendDirectMessage(req: Request, res: Response) {
     
     // Determine if user is client or freelancer
     const isClient = req.user.isClient;
-    let currentFreelancerId = chat.freelancerId;
+    // Initialize with chat's freelancerId (it's non-null since we're dealing with a direct message)
+    let currentFreelancerId = chat.freelancerId || 0; // Fallback to 0 in case it's somehow null
     
     if (isClient) {
       // If user is a client, they should own this chat
