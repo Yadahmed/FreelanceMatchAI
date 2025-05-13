@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
-import { getFreelancerNameFromBioOrDisplayName } from '../utils/freelancer';
+import { extractFreelancerName } from '../utils/freelancer';
 
 // Create a job request
 export async function createJobRequest(req: Request, res: Response) {
@@ -490,6 +490,89 @@ export async function createBooking(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error('Create booking error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+}
+
+// Get all client chats with freelancers
+export async function getChats(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    // Only clients can access this endpoint
+    if (!req.user.isClient) {
+      return res.status(403).json({ message: 'Client access required' });
+    }
+    
+    console.log('Getting chats for client ID:', req.user.id);
+    
+    // Get all chats for this client
+    const chats = await storage.getChatsByUserId(req.user.id);
+    
+    // Add the freelancer details to each chat
+    const enhancedChats = await Promise.all(
+      chats.map(async (chat) => {
+        // Skip AI chats (they don't have a freelancerId)
+        if (chat.type === 'ai' || !chat.freelancerId) {
+          return {
+            ...chat,
+            freelancer: null,
+            latestMessage: null
+          };
+        }
+        
+        // Get freelancer details
+        const freelancer = await storage.getFreelancer(chat.freelancerId);
+        
+        // Get the latest message in this chat
+        const messages = await storage.getMessagesByChatId(chat.id);
+        const latestMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+        
+        // Create a friendly display name for the freelancer
+        let freelancerWithName = freelancer;
+        if (freelancer) {
+          // Get the user associated with this freelancer for display name extraction
+          const user = await storage.getUserByFirebaseUid(freelancer.userId.toString());
+          const name = extractFreelancerName(freelancer, user);
+          freelancerWithName = {
+            ...freelancer,
+            displayName: name
+          };
+        }
+        
+        return {
+          ...chat,
+          freelancer: freelancerWithName,
+          latestMessage
+        };
+      })
+    );
+    
+    // Sort chats by latest message date (most recent first)
+    const sortedChats = enhancedChats.sort((a, b) => {
+      // Chats with messages come first
+      if (a.latestMessage && !b.latestMessage) return -1;
+      if (!a.latestMessage && b.latestMessage) return 1;
+      
+      // Sort by message timestamp (most recent first)
+      if (a.latestMessage && b.latestMessage) {
+        // Some messages use createdAt, others use timestamp field 
+        const aTime = a.latestMessage.createdAt || a.latestMessage.timestamp;
+        const bTime = b.latestMessage.createdAt || b.latestMessage.timestamp;
+        return new Date(bTime).getTime() - new Date(aTime).getTime();
+      }
+      
+      // Sort by chat updated_at if no messages
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    });
+    
+    return res.status(200).json({
+      chats: sortedChats
+    });
+  } catch (error: any) {
+    console.error('Get client chats error:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 }
