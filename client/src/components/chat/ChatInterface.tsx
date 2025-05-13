@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Send, User, Bot } from 'lucide-react';
 import { FreelancerCard } from '@/components/freelancer/FreelancerCard';
+import { FreelancerMention } from './FreelancerMention';
 
 // Types for chat messages
 interface Message {
@@ -208,7 +209,13 @@ export function ChatInterface() {
                           : 'bg-muted'
                       }`}
                     >
-                      <p className="text-sm">{message.content}</p>
+                      {message.isUserMessage ? (
+                        <p className="text-sm">{message.content}</p>
+                      ) : (
+                        <div className="text-sm">
+                          <FreelancerMention content={message.content} />
+                        </div>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {new Date(message.timestamp).toLocaleTimeString()}
