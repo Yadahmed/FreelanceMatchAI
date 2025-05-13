@@ -180,7 +180,11 @@ router.get('/freelancers', async (req, res) => {
         yearsOfExperience: freelancer.yearsOfExperience,
         location: freelancer.location,
         imageUrl: freelancer.imageUrl,
-        rating: freelancer.rating,
+        // Handle ratings correctly - we don't want the frontend to divide by 10
+        // For the seeded freelancers, we'll multiply their ratings to match the expected scale
+        rating: freelancer.rating !== null && typeof freelancer.rating === 'number'
+          ? (freelancer.rating <= 5 ? freelancer.rating * 10 : freelancer.rating)
+          : null, // Keep ratings as null if they're null
         jobPerformance: freelancer.jobPerformance,
         skillsExperience: freelancer.skillsExperience,
         responsiveness: freelancer.responsiveness,
@@ -228,7 +232,11 @@ router.get('/freelancers/:id', async (req, res) => {
       yearsOfExperience: freelancer.yearsOfExperience,
       location: freelancer.location,
       imageUrl: freelancer.imageUrl,
-      rating: freelancer.rating,
+      // Handle ratings correctly - we don't want the frontend to divide by 10
+      // For the seeded freelancers, we'll multiply their ratings to match the expected scale
+      rating: freelancer.rating !== null && typeof freelancer.rating === 'number'
+        ? (freelancer.rating <= 5 ? freelancer.rating * 10 : freelancer.rating)
+        : null, // Keep ratings as null if they're null
       jobPerformance: freelancer.jobPerformance,
       skillsExperience: freelancer.skillsExperience,
       responsiveness: freelancer.responsiveness,
