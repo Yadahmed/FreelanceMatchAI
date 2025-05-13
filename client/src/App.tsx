@@ -12,6 +12,7 @@ import FreelancerDashboard from "@/pages/freelancer-dashboard";
 import ExploreFreelancers from "@/pages/explore-freelancers";
 import Freelancer from "@/pages/freelancer";
 import DirectChat from "@/pages/direct-chat";
+import AdminPanel from "@/pages/AdminPanel";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -52,6 +53,9 @@ function Router() {
       <Route path="/direct-chat" component={DirectChat} />
       <Route path="/ai-assistant" component={Home} />
       <Route path="/ollama-test" component={Home} />
+      
+      {/* Admin routes */}
+      <Route path="/admin" component={AdminPanel} />
       
       {/* Legacy redirects in case old URLs are bookmarked */}
       <Route path="/home">

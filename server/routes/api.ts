@@ -60,11 +60,9 @@ const router = Router();
 // Add public routes (no auth required) first
 router.get('/auth/check-username', checkUsername); // No auth required, used during registration
 
-// Admin API endpoints for debugging
-// In a production app, these would be protected by admin authentication
-
-// Get all users endpoint
-router.get('/admin/users', async (req, res) => {
+// Admin API endpoints with proper authentication and authorization
+// Admin routes are protected by the isAdmin middleware
+router.get('/admin/users', authenticateUser, isAdmin, async (req, res) => {
   try {
     // Import the storage and db directly
     const { storage } = require('../storage');
@@ -84,8 +82,14 @@ router.get('/admin/users', async (req, res) => {
   }
 });
 
-// Endpoint to fix roles for a specific user
-router.get('/admin/fix-role/:id', async (req, res) => {
+// New admin routes using the admin controller
+router.delete('/admin/users/:id', authenticateUser, isAdmin, deleteUser);
+router.delete('/admin/freelancers/:id', authenticateUser, isAdmin, deleteFreelancer);
+router.patch('/admin/users/:id/promote', authenticateUser, isAdmin, promoteToAdmin);
+router.patch('/admin/users/:id/revoke', authenticateUser, isAdmin, revokeAdmin);
+
+// Legacy endpoint to fix roles for a specific user
+router.get('/admin/fix-role/:id', authenticateUser, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = parseInt(id, 10);
