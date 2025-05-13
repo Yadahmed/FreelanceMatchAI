@@ -487,17 +487,23 @@ export async function getChatMessages(req: Request, res: Response) {
     }
     
     // Check if this freelancer is associated with the chat
-    // For security, check if the chat belongs to this user
+    // For security, check if the chat belongs to this user directly,
+    // or if the freelancer is the recipient of the chat,
     // or if the freelancer is mentioned in any message in this chat
     
-    if (chat.userId !== req.user.id) {
-      // If chat doesn't belong to this user directly, check if this freelancer is mentioned in results
-      const freelancer = await storage.getFreelancerByUserId(req.user.id);
-      
-      if (!freelancer) {
-        return res.status(404).json({ message: 'Freelancer profile not found' });
-      }
-      
+    // Get the freelancer profile
+    const freelancer = await storage.getFreelancerByUserId(req.user.id);
+    
+    if (!freelancer) {
+      return res.status(404).json({ message: 'Freelancer profile not found' });
+    }
+    
+    // Check if this is a direct message chat to this freelancer
+    const isRecipient = chat.freelancerId === freelancer.id;
+    
+    // If the user doesn't own the chat and is not the recipient
+    if (chat.userId !== req.user.id && !isRecipient) {
+      // Check if the freelancer is mentioned in results as a fallback
       // Get all messages from this chat
       const messages = await storage.getMessagesByChatId(chat.id);
       
@@ -512,6 +518,8 @@ export async function getChatMessages(req: Request, res: Response) {
         return res.status(403).json({ message: 'Not authorized to access this chat' });
       }
     }
+    
+    console.log('Freelancer access granted to chat:', chat.id, 'Freelancer ID:', freelancer.id);
     
     // Get messages for this chat
     const messages = await storage.getMessagesByChatId(parseInt(chatId));
