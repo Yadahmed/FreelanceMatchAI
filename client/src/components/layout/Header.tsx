@@ -92,24 +92,22 @@ export function Header() {
                 <DropdownMenuLabel className="font-display text-base">My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator className="mb-1" />
                 
-                <DropdownMenuItem className="cursor-pointer rounded-lg transition-colors focus:bg-accent/80 hover:bg-accent/80 my-1" asChild>
-                  <Link href="/profile" className="flex items-center">
-                    <User className="mr-2 h-4 w-4 text-primary/80" />
-                    <span>Profile</span>
-                  </Link>
-                </DropdownMenuItem>
-                
-                {/* Client-specific menu items removed as they're accessible from the home page */}
-                
-                {isFreelancer && (
-                  <>
-                    <DropdownMenuItem className="cursor-pointer rounded-lg transition-colors focus:bg-accent/80 hover:bg-accent/80 my-1" asChild>
-                      <Link href="/freelancer-profile" className="flex items-center">
-                        <User className="mr-2 h-4 w-4 text-primary/80" />
-                        <span>Edit Freelancer Profile</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
+                {isFreelancer ? (
+                  // For freelancers, show a single combined profile option
+                  <DropdownMenuItem className="cursor-pointer rounded-lg transition-colors focus:bg-accent/80 hover:bg-accent/80 my-1" asChild>
+                    <Link href="/freelancer-profile" className="flex items-center">
+                      <User className="mr-2 h-4 w-4 text-primary/80" />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ) : (
+                  // For clients and others, show the standard profile option
+                  <DropdownMenuItem className="cursor-pointer rounded-lg transition-colors focus:bg-accent/80 hover:bg-accent/80 my-1" asChild>
+                    <Link href="/profile" className="flex items-center">
+                      <User className="mr-2 h-4 w-4 text-primary/80" />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
                 )}
                 
                 <DropdownMenuItem className="cursor-pointer rounded-lg transition-colors focus:bg-accent/80 hover:bg-accent/80 my-1" asChild>
