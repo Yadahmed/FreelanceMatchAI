@@ -162,7 +162,8 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
                 </div>
                 <Progress 
                   value={jobPerformance} 
-                  className="h-2 rounded-full overflow-hidden bg-primary/10 [&>div]:bg-gradient-to-r [&>div]:from-primary/80 [&>div]:to-primary [&>div]:transition-all [&>div]:duration-500"
+                  className="h-2 rounded-full overflow-hidden bg-primary/10"
+                  indicatorClassName="bg-gradient-to-r from-primary/80 to-primary transition-all duration-500"
                 />
               </div>
               
@@ -173,7 +174,8 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
                 </div>
                 <Progress 
                   value={skillsExperience} 
-                  className="h-2 rounded-full overflow-hidden bg-primary/10 [&>div]:bg-gradient-to-r [&>div]:from-primary/80 [&>div]:to-primary [&>div]:transition-all [&>div]:duration-500"
+                  className="h-2 rounded-full overflow-hidden bg-primary/10"
+                  indicatorClassName="bg-gradient-to-r from-primary/80 to-primary transition-all duration-500"
                 />
               </div>
               
@@ -184,7 +186,8 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
                 </div>
                 <Progress 
                   value={responsiveness} 
-                  className="h-2 rounded-full overflow-hidden bg-primary/10 [&>div]:bg-gradient-to-r [&>div]:from-primary/80 [&>div]:to-primary [&>div]:transition-all [&>div]:duration-500"
+                  className="h-2 rounded-full overflow-hidden bg-primary/10"
+                  indicatorClassName="bg-gradient-to-r from-primary/80 to-primary transition-all duration-500"
                 />
               </div>
               
@@ -195,7 +198,8 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
                 </div>
                 <Progress 
                   value={fairnessScore} 
-                  className="h-2 rounded-full overflow-hidden bg-primary/10 [&>div]:bg-gradient-to-r [&>div]:from-primary/80 [&>div]:to-primary [&>div]:transition-all [&>div]:duration-500"
+                  className="h-2 rounded-full overflow-hidden bg-primary/10"
+                  indicatorClassName="bg-gradient-to-r from-primary/80 to-primary transition-all duration-500"
                 />
               </div>
             </div>
