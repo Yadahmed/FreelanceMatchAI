@@ -48,7 +48,7 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
         });
         
         // Add debug info to console
-        console.log("Freelancer IDs in database:", freelancers.map(f => f.id).join(', '));
+        console.log("Freelancer IDs in database:", freelancers.map((f: any) => f.id).join(', '));
         
         // Process the content
         processContent(content, freelancers, userMap);
@@ -77,7 +77,8 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
       /ID:(\d+)/g                               // ID:X (minimal)
     ];
     
-    const matches: {id: number, index: number, length: number}[] = [];
+    // Update the type to include a notFound flag
+    const matches: {id: number, index: number, length: number, notFound?: boolean}[] = [];
     const processedIds = new Set<number>();
     
     // Find all matches with all patterns
@@ -101,7 +102,15 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
             });
             console.log(`Matched freelancer ID: ${id} using pattern #${patternIndex+1}`);
           } else {
-            console.log(`Found ID ${id} but no matching freelancer exists`);
+            // Add to matches with a notFound flag
+            processedIds.add(id);
+            matches.push({
+              id: id,
+              index: match.index,
+              length: match[0].length,
+              notFound: true
+            });
+            console.log(`Found ID ${id} but no matching freelancer exists - added with notFound flag`);
           }
         }
       }
@@ -123,71 +132,81 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
         elements.push(text.substring(lastIndex, match.index));
       }
       
-      // Find freelancer info
-      const freelancer = freelancers.find((f: any) => f.id === match.id);
-      if (freelancer) {
-        // Get user info for this freelancer
-        const user = userMap.get(freelancer.userId);
-        const displayName = user?.displayName || user?.username || `Freelancer ${match.id}`;
-        
-        // Get more freelancer info for display
-        const hourlyRate = freelancer.hourlyRate || "N/A";
-        // Adjust rating display to show correctly (divide by 10 if greater than 5)
-        const rating = freelancer.rating !== undefined 
-          ? (freelancer.rating > 5 ? (freelancer.rating / 10).toFixed(1) : freelancer.rating.toFixed(1))
-          : "N/A";
-        const skills = Array.isArray(freelancer.skills) ? freelancer.skills.slice(0, 2).join(', ') : '';
-        
-        // Add freelancer component with unique key and improved responsive styling
+      // Check if this is a notFound match (ID doesn't exist)
+      if (match.notFound) {
+        // Just render the original text for IDs that don't exist
         elements.push(
-          <span key={`freelancer-uid-${match.id}-${i}`} className="inline-flex flex-col my-2 bg-blue-50 rounded-lg border border-blue-100 overflow-hidden w-full sm:max-w-[400px] max-w-full shadow-sm">
-            <div className="p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4" /> 
-                  <span className="font-semibold">{displayName}</span>
-                </div>
-                <div className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded text-xs">
-                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  {rating}
-                </div>
-              </div>
-              {skills && <div className="text-xs mt-1 text-white/90">{skills}</div>}
-            </div>
-            
-            <div className="p-2 bg-white flex justify-between items-center">
-              <div className="text-indigo-700 font-semibold">${hourlyRate}/hr</div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="h-8 text-xs border-blue-200"
-                  asChild
-                >
-                  <Link href={`/freelancer/${match.id}`}>View Profile</Link>
-                </Button>
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  className="h-8 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                  asChild
-                >
-                  <Link href={`/messages/${match.id}`}>
-                    <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    Chat
-                  </Link>
-                </Button>
-              </div>
-            </div>
+          <span key={`freelancer-not-found-${match.id}-${i}`} className="text-gray-700">
+            ID:{match.id}
           </span>
         );
       } else {
-        // If freelancer not found, just add the original text
-        elements.push(text.substring(match.index, match.index + match.length));
+        // Find freelancer info
+        const freelancer = freelancers.find((f: any) => f.id === match.id);
+        if (freelancer) {
+          // Get user info for this freelancer
+          const user = userMap.get(freelancer.userId);
+          const displayName = user?.displayName || user?.username || `Freelancer ${match.id}`;
+          
+          // Get more freelancer info for display
+          const hourlyRate = freelancer.hourlyRate || "N/A";
+          // Adjust rating display to show correctly (divide by 10 if greater than 5)
+          const rating = freelancer.rating !== undefined 
+            ? (freelancer.rating > 5 ? (freelancer.rating / 10).toFixed(1) : freelancer.rating.toFixed(1))
+            : "N/A";
+          const skills = Array.isArray(freelancer.skills) ? freelancer.skills.slice(0, 2).join(', ') : '';
+        
+          // Add freelancer component with unique key and improved responsive styling
+          elements.push(
+            <span key={`freelancer-uid-${match.id}-${i}`} className="inline-flex flex-col my-2 bg-blue-50 rounded-lg border border-blue-100 overflow-hidden w-full sm:max-w-[400px] max-w-full shadow-sm">
+              <div className="p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4" /> 
+                    <span className="font-semibold">{displayName}</span>
+                  </div>
+                  <div className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded text-xs">
+                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    {rating}
+                  </div>
+                </div>
+                {skills && <div className="text-xs mt-1 text-white/90">{skills}</div>}
+              </div>
+              
+              <div className="p-2 bg-white flex justify-between items-center">
+                <div className="text-indigo-700 font-semibold">${hourlyRate}/hr</div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="h-8 text-xs border-blue-200"
+                    asChild
+                  >
+                    <Link href={`/freelancer/${match.id}`}>View Profile</Link>
+                  </Button>
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    className="h-8 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                    asChild
+                  >
+                    <Link href={`/messages/${match.id}`}>
+                      <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                      Chat
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </span>
+          );
+        } else {
+          // If freelancer not found, just add the original text
+          elements.push(text.substring(match.index, match.index + match.length));
+        }
       }
       
       // Update lastIndex
