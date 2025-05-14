@@ -42,9 +42,9 @@ export default function ClientProfile() {
     defaultValues: {
       displayName: currentUser?.displayName || "",
       email: currentUser?.email || "",
-      phone: currentUser?.phone || "",
-      location: currentUser?.location || "",
-      bio: currentUser?.bio || "",
+      phone: "", // These fields aren't in our user schema, but we'll keep them in the form
+      location: "",
+      bio: "",
     },
   });
   
@@ -54,9 +54,9 @@ export default function ClientProfile() {
       form.reset({
         displayName: currentUser?.displayName || "",
         email: currentUser?.email || "",
-        phone: currentUser?.phone || "",
-        location: currentUser?.location || "",
-        bio: currentUser?.bio || "",
+        phone: "", // These fields aren't in our user schema
+        location: "",
+        bio: "",
       });
     }
   }, [currentUser, form]);
@@ -64,8 +64,15 @@ export default function ClientProfile() {
   // Handle form submission
   const onSubmit = async (data: ProfileFormValues) => {
     try {
+      // Only send fields that our user model accepts
+      const updateData = {
+        displayName: data.displayName,
+        email: data.email,
+        // We exclude phone, location, and bio as they're not in our schema
+      };
+      
       // Call the update profile function
-      await updateProfile(data);
+      await updateProfile(updateData);
       
       toast({
         title: "Profile updated",
@@ -88,9 +95,9 @@ export default function ClientProfile() {
     form.reset({
       displayName: currentUser?.displayName || "",
       email: currentUser?.email || "",
-      phone: currentUser?.phone || "",
-      location: currentUser?.location || "",
-      bio: currentUser?.bio || "",
+      phone: "", // These fields aren't in our user schema
+      location: "",
+      bio: "",
     });
     setIsEditing(false);
   };

@@ -502,7 +502,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Update Firebase profile if display name is provided
       if (profileData.displayName) {
         // Use the Firebase function by using its imported name directly to avoid conflict with our own updateProfile function
-        await updateProfile(firebaseUser, { 
+        await updateFirebaseProfile(firebaseUser, { 
           displayName: profileData.displayName 
         });
       }
