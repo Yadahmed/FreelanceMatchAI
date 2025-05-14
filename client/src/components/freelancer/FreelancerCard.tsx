@@ -186,11 +186,16 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
             {[...Array(5)].map((_, i) => (
               <Star 
                 key={i} 
-                className={`h-4 w-4 ${i < Math.round(rating / 10) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+                className={`h-4 w-4 ${i < Math.round(rating > 5 ? rating / 10 : rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
               />
             ))}
           </div>
-          <span className="text-sm font-medium">{rating ? (rating / 10).toFixed(1) : "No ratings"}</span>
+          <span className="text-sm font-medium">
+            {rating 
+              ? (rating > 5 ? (rating / 10).toFixed(1) : rating.toFixed(1))
+              : "No ratings"
+            }
+          </span>
         </div>
         
         <div className="space-x-2">
@@ -211,7 +216,7 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
             return (
               <>
                 <Button variant="outline" size="sm" asChild className="flex items-center gap-1">
-                  <Link href={`/freelancers/${id}`}>
+                  <Link href={`/freelancer/${id}`}>
                     <User className="h-4 w-4" /> View Profile
                   </Link>
                 </Button>
@@ -221,7 +226,7 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
                   asChild 
                   className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700"
                 >
-                  <Link href={`/messages/new/${id}`}>
+                  <Link href={`/messages/${id}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                     </svg>

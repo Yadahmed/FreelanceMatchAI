@@ -129,7 +129,10 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
         
         // Get more freelancer info for display
         const hourlyRate = freelancer.hourlyRate || "N/A";
-        const rating = freelancer.rating !== undefined ? Number(freelancer.rating).toFixed(1) : "N/A";
+        // Adjust rating display to show correctly (divide by 10 if greater than 5)
+        const rating = freelancer.rating !== undefined 
+          ? (freelancer.rating > 5 ? (freelancer.rating / 10).toFixed(1) : freelancer.rating.toFixed(1))
+          : "N/A";
         const skills = Array.isArray(freelancer.skills) ? freelancer.skills.slice(0, 2).join(', ') : '';
         
         // Add freelancer component with unique key and improved responsive styling
