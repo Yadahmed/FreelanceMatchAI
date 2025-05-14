@@ -47,6 +47,9 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
           if (user && user.id) userMap.set(user.id, user);
         });
         
+        // Add debug info to console
+        console.log("Freelancer IDs in database:", freelancers.map(f => f.id).join(', '));
+        
         // Process the content
         processContent(content, freelancers, userMap);
       } catch (error) {
