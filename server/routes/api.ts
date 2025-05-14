@@ -190,6 +190,9 @@ router.get('/freelancers', async (req, res) => {
           ? (freelancer.rating <= 5 ? freelancer.rating * 10 : freelancer.rating)
           : null, // Keep ratings as null if they're null
         jobPerformance: freelancer.jobPerformance,
+        // Include availability info
+        availability: freelancer.availability,
+        availabilityDetails: freelancer.availabilityDetails,
         skillsExperience: freelancer.skillsExperience,
         responsiveness: freelancer.responsiveness,
         fairnessScore: freelancer.fairnessScore,
@@ -245,7 +248,10 @@ router.get('/freelancers/:id', async (req, res) => {
       skillsExperience: freelancer.skillsExperience,
       responsiveness: freelancer.responsiveness,
       fairnessScore: freelancer.fairnessScore,
-      completedJobs: freelancer.completedJobs
+      completedJobs: freelancer.completedJobs,
+      // Include availability info
+      availability: freelancer.availability,
+      availabilityDetails: freelancer.availabilityDetails
     });
   } catch (error) {
     console.error('Error fetching freelancer:', error);
