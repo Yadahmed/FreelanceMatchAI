@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { User, Star, MessageCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { User, Star, MessageCircle, CheckCircle2, XCircle, AlertCircle, Clock, Calendar } from 'lucide-react';
 
 interface FreelancerMentionProps {
   content: string;
@@ -320,6 +321,49 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
                     <div className="text-sm text-white/95">{freelancer.profession || 'Freelance Designer'} in {freelancer.location || 'Unknown'}</div>
                     {skills && <div className="text-xs text-white/90">Skills: {skills}</div>}
                   </div>
+                  
+                  {/* Availability Badge */}
+                  <div className="mt-2">
+                    {(() => {
+                      // Check for availabilityDetails first
+                      if (freelancer.availabilityDetails?.status) {
+                        const status = freelancer.availabilityDetails.status;
+                        
+                        if (status === 'available') {
+                          return (
+                            <div className="flex items-center gap-1 bg-green-600/30 text-white px-2 py-0.5 rounded text-xs w-fit">
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span>Available Now</span>
+                            </div>
+                          );
+                        } else if (status === 'limited') {
+                          return (
+                            <div className="flex items-center gap-1 bg-amber-600/30 text-white px-2 py-0.5 rounded text-xs w-fit">
+                              <AlertCircle className="h-3 w-3" />
+                              <span>Limited Availability</span>
+                            </div>
+                          );
+                        } else if (status === 'unavailable') {
+                          return (
+                            <div className="flex items-center gap-1 bg-red-600/30 text-white px-2 py-0.5 rounded text-xs w-fit">
+                              <XCircle className="h-3 w-3" />
+                              <span>Not Available</span>
+                            </div>
+                          );
+                        }
+                      }
+                      
+                      // Fall back to the boolean availability if no details
+                      return (
+                        <div className={`flex items-center gap-1 ${freelancer.availability ? 'bg-green-600/30' : 'bg-red-600/30'} text-white px-2 py-0.5 rounded text-xs w-fit`}>
+                          {freelancer.availability ? 
+                            <><CheckCircle2 className="h-3 w-3" /><span>Available</span></> : 
+                            <><XCircle className="h-3 w-3" /><span>Not Available</span></>
+                          }
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
                 
                 <div className="p-3 bg-background dark:bg-gray-800">
@@ -338,6 +382,21 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
                     <div className="flex items-center">
                       <span>Jobs: {freelancer.completedJobs || 10}+ completed</span>
                     </div>
+                    
+                    {/* Availability Details */}
+                    {freelancer.availabilityDetails?.workHours && (
+                      <div className="flex items-center gap-1 mt-1 w-full">
+                        <Clock className="h-3 w-3 text-primary" />
+                        <span>Works {freelancer.availabilityDetails.workHours.start} - {freelancer.availabilityDetails.workHours.end}</span>
+                      </div>
+                    )}
+                    
+                    {/* Availability Message */}
+                    {freelancer.availabilityDetails?.message && (
+                      <div className="italic text-xs text-gray-500 mt-1 w-full">
+                        "{freelancer.availabilityDetails.message}"
+                      </div>
+                    )}
                   </div>
                   
                   <div className="flex justify-between items-center">
@@ -354,13 +413,25 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
                       <Button 
                         variant="default" 
                         size="sm"
-                        className="h-8 text-xs bg-primary hover:bg-primary/90"
-                        asChild
+                        className={`h-8 text-xs ${
+                          freelancer.availabilityDetails?.status === 'unavailable' 
+                            ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed opacity-70' 
+                            : 'bg-primary hover:bg-primary/90'
+                        }`}
+                        disabled={freelancer.availabilityDetails?.status === 'unavailable'}
+                        asChild={freelancer.availabilityDetails?.status !== 'unavailable'}
                       >
-                        <Link href={`/chat?freelancer=${match.id}`}>
-                          <MessageCircle className="h-3 w-3 mr-1" />
-                          Chat
-                        </Link>
+                        {freelancer.availabilityDetails?.status === 'unavailable' ? (
+                          <span>
+                            <MessageCircle className="h-3 w-3 mr-1" />
+                            Unavailable
+                          </span>
+                        ) : (
+                          <Link href={`/chat?freelancer=${match.id}`}>
+                            <MessageCircle className="h-3 w-3 mr-1" />
+                            Chat
+                          </Link>
+                        )}
                       </Button>
                     </div>
                   </div>
