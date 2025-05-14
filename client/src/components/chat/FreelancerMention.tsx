@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { User } from 'lucide-react';
+import { User, Star, MessageCircle } from 'lucide-react';
 
 interface FreelancerMentionProps {
   content: string;
@@ -304,25 +304,23 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
           
             // Add freelancer component with unique key and improved responsive styling
             elements.push(
-              <span key={`freelancer-uid-${match.id}-${i}`} className="inline-flex flex-col my-2 bg-background rounded-lg border border-border/40 overflow-hidden w-full sm:max-w-[400px] max-w-full shadow-sm">
-                <div className="p-3 bg-gradient-to-r from-primary to-primary/80 text-white">
+              <div key={`freelancer-uid-${match.id}-${i}`} className="flex flex-col my-3 bg-background rounded-lg border border-border/40 overflow-hidden w-full shadow-md dark:bg-gray-800/95 dark:border-gray-700">
+                <div className="p-3 bg-gradient-to-r from-primary to-primary/80 text-white dark:from-primary/90 dark:to-primary/70">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4" /> 
                       <span className="font-semibold">{displayName}</span>
                     </div>
                     <div className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded text-xs">
-                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
+                      <Star className="h-3 w-3 fill-yellow-300 text-yellow-300" />
                       {rating}
                     </div>
                   </div>
                   {skills && <div className="text-xs mt-1 text-white/90">{skills}</div>}
                 </div>
                 
-                <div className="p-2 bg-background flex justify-between items-center">
-                  <div className="text-primary font-semibold">${hourlyRate}/hr</div>
+                <div className="p-3 bg-background dark:bg-gray-800 flex justify-between items-center">
+                  <div className="text-primary font-semibold dark:text-indigo-300">${hourlyRate}/hr</div>
                   <div className="flex gap-2">
                     <Button 
                       variant="outline" 
@@ -338,16 +336,14 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
                       className="h-8 text-xs bg-primary hover:bg-primary/90"
                       asChild
                     >
-                      <Link href={`/messages/${match.id}`}>
-                        <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg>
+                      <Link href={`/chat?freelancer=${match.id}`}>
+                        <MessageCircle className="h-3 w-3 mr-1" />
                         Chat
                       </Link>
                     </Button>
                   </div>
                 </div>
-              </span>
+              </div>
             );
           } else {
             // If freelancer not found, just add the original text
@@ -793,7 +789,7 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
   
   // Add a CSS class to properly wrap the content
   return (
-    <div className="freelancer-mention flex flex-col gap-1 break-words whitespace-pre-wrap">
+    <div className="freelancer-mention flex flex-col gap-3 break-words whitespace-pre-wrap">
       {processedContent}
     </div>
   );
