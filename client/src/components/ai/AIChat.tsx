@@ -427,48 +427,70 @@ export function AIChat() {
   }
   
   return (
-    <Card className="flex flex-col h-[500px] md:h-[600px] overflow-hidden">
+    <Card className="flex flex-col h-[600px] md:h-[700px] overflow-hidden shadow-lg border-0">
       {/* Status bar */}
-      <div className="bg-primary/10 p-2 flex items-center">
-        <Avatar className="h-8 w-8 mr-2 bg-primary">
-          <span className="text-xs font-bold">AI</span>
-        </Avatar>
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-3 flex items-center text-white">
+        <div className="flex-shrink-0 w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white mr-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 8v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"></path>
+            <path d="M19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+            <polyline points="7 8 12 13 17 8"></polyline>
+          </svg>
+        </div>
         <div className="flex-1">
-          <h3 className="text-sm font-medium">
-            FreelanceAI Assistant
+          <h3 className="text-base font-semibold text-white">
+            KurdJobs AI Assistant
           </h3>
           <div className="flex items-center">
             {isAIAvailable ? (
               <>
-                <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
-                <span className="text-xs text-muted-foreground">Online</span>
+                <div className="w-2 h-2 rounded-full bg-green-300 mr-2" />
+                <span className="text-xs text-white/80">AI Service Online</span>
               </>
             ) : (
               <>
-                <div className="w-2 h-2 rounded-full bg-red-500 mr-2" />
-                <span className="text-xs text-muted-foreground">Offline</span>
-                <span className="text-xs text-muted-foreground ml-2 bg-red-50 px-1 rounded">
-                  All Services Unavailable
+                <div className="w-2 h-2 rounded-full bg-red-300 mr-2" />
+                <span className="text-xs text-white/80">Offline</span>
+                <span className="text-xs ml-2 bg-red-400/30 px-1 rounded">
+                  Service Unavailable
                 </span>
               </>
+            )}
+            
+            {/* Show which service is active */}
+            {isAIAvailable && activeService && (
+              <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-white/20 text-white/90 border border-white/20">
+                {activeService === 'deepseek' && 'DeepSeek R1'}
+                {activeService === 'anthropic' && 'Claude 3.7 Sonnet'}
+                {activeService === 'ollama' && 'Local Ollama'}
+              </span>
             )}
           </div>
         </div>
       </div>
       
       {/* Messages area */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 px-4 py-6">
+        <div className="space-y-6">
           {messages.map(message => (
             <div
               key={message.id}
               className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
             >
+              {!message.isUser && (
+                <div className="w-8 h-8 mr-2 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex-shrink-0 flex items-center justify-center text-white font-medium">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                  </svg>
+                </div>
+              )}
               <div
-                className={`max-w-[80%] p-3 rounded-lg ${
+                className={`max-w-[80%] p-4 rounded-xl shadow-sm ${
                   message.isUser
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
+                    ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white'
+                    : 'bg-white border border-gray-100'
                 }`}
               >
                 {message.isUser ? (
@@ -508,22 +530,24 @@ export function AIChat() {
                   </div>
                 )}
                 
-                {/* Render freelancer matches with chat buttons if present */}
+                {/* Render freelancer matches with cards if present */}
                 {!message.isUser && message.freelancerMatches && message.freelancerMatches.length > 0 && (
-                  <div className={`mt-4 space-y-3 ${message.id === messages[0]?.id ? 'bg-gradient-to-r from-blue-50 to-indigo-50' : 'bg-blue-50'} p-4 rounded-lg border border-blue-100 shadow-sm`}>
-                    <div className="flex flex-col">
-                      <h4 className="font-medium text-blue-800">
+                  <div className="mt-4 p-0 rounded-xl overflow-hidden border border-blue-100 bg-white">
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white">
+                      <h4 className="font-medium text-lg">
                         {message.id === messages[0]?.id 
-                          ? "Start Connecting with Top Freelancers!" 
-                          : "Top Freelancers Found!"}
+                          ? "Top Matched Freelancers" 
+                          : "Recommended Freelancers"}
                       </h4>
-                      <p className="text-sm text-blue-600 mb-3">
+                      <p className="text-sm text-blue-100 mt-1">
                         {message.id === messages[0]?.id
-                          ? "Message these experienced professionals directly:"
-                          : "Contact these freelancers directly:"}
+                          ? "These freelancers match your requirements"
+                          : "Based on your specific requirements"}
                       </p>
-                      
-                      <div className="flex flex-wrap gap-2">
+                    </div>
+                    
+                    <div className="p-4 bg-white">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {message.freelancerMatches.slice(0, 3).map((match, index) => {
                           // Get freelancer ID and name from the match data
                           const freelancer = match.freelancer || match;
@@ -533,27 +557,79 @@ export function AIChat() {
                           
                           if (!freelancerId) return null;
                           
+                          // Get skills and other details
+                          const skills = freelancer.skills || [];
+                          const profession = freelancer.profession || "Freelancer";
+                          const location = freelancer.location || "";
+                          const rating = freelancer.rating || 5;
+                          const hourlyRate = freelancer.hourlyRate || 25;
+                          
                           return (
-                            <a 
-                              key={`chat-button-${index}`}
-                              href={`/messages/new/${freelancerId}`} 
-                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-white text-sm font-medium
-                                         bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700
-                                         shadow-sm hover:shadow-md transition-all"
+                            <div 
+                              key={`freelancer-card-${index}`}
+                              className="border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all bg-white overflow-hidden flex flex-col"
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-square">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                              </svg>
-                              Chat with {name.split(' ')[0]}
-                            </a>
+                              <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-lg">
+                                    {name.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <h5 className="font-medium">{name}</h5>
+                                    <p className="text-xs text-gray-500">{profession} in {location}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-full">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                  </svg>
+                                  <span className="text-sm font-medium">{rating}/5</span>
+                                </div>
+                              </div>
+                              
+                              <div className="p-4 flex-grow">
+                                <div className="flex flex-wrap gap-1 mb-3">
+                                  {skills.slice(0, 3).map((skill: string, i: number) => (
+                                    <span key={`skill-${i}`} className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">
+                                      {skill}
+                                    </span>
+                                  ))}
+                                  {skills.length > 3 && (
+                                    <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">
+                                      +{skills.length - 3} more
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-sm text-gray-600 mb-4">
+                                  <span className="font-medium">${hourlyRate}/hr</span> · {freelancer.yearsOfExperience || 5} years experience
+                                </div>
+                              </div>
+                              
+                              <div className="p-3 border-t border-gray-100 flex gap-2">
+                                <a 
+                                  href={`/freelancers/${freelancerId}`}
+                                  className="flex-1 text-center py-2 px-3 border border-gray-200 rounded-md text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
+                                >
+                                  View Profile
+                                </a>
+                                <a 
+                                  href={`/messages/new/${freelancerId}`}
+                                  className="flex-1 text-center py-2 px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-md text-white text-sm font-medium transition-colors"
+                                >
+                                  Chat Now
+                                </a>
+                              </div>
+                            </div>
                           );
                         })}
-                        
+                      </div>
+                      
+                      <div className="mt-4 flex justify-center">
                         <a 
-                          href="/messages"
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-blue-700 text-sm font-medium
-                                     bg-white border border-blue-300 hover:bg-blue-50 hover:border-blue-400
-                                     shadow-sm hover:shadow-md transition-all"
+                          href="/explore-freelancers"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-blue-700 text-sm font-medium
+                                    bg-white border border-blue-200 hover:bg-blue-50 hover:border-blue-300
+                                    shadow-sm hover:shadow-md transition-all"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-users">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
@@ -561,7 +637,7 @@ export function AIChat() {
                             <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                           </svg>
-                          View All Freelancers
+                          Explore All Freelancers
                         </a>
                       </div>
                     </div>
@@ -579,45 +655,49 @@ export function AIChat() {
       </ScrollArea>
       
       {/* Input area */}
-      <div className="p-3 border-t">
-        <div className="flex gap-2">
+      <div className="p-4 border-t bg-white shadow-inner">
+        <div className="flex gap-2 relative">
           <Textarea
-            placeholder={isAIAvailable ? "Ask me about finding freelancers..." : "AI Assistant is currently offline"}
+            placeholder={isAIAvailable 
+              ? "Ask me about finding freelancers for your project..." 
+              : "AI Assistant is currently offline"}
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="min-h-[60px] resize-none"
+            className="min-h-[70px] resize-none px-4 py-3 pr-24 rounded-xl border-gray-200 focus:border-blue-300 focus:ring-blue-200"
             disabled={!isAIAvailable || isLoading || isImprovingPrompt}
           />
-          <div className="flex flex-col gap-2">
-            <Button
-              onClick={handleSendMessage}
-              disabled={!isAIAvailable || isLoading || isImprovingPrompt || !inputValue.trim()}
-              variant="default"
-              size="icon"
-              className="h-[30px]"
-              title="Send message"
-            >
-              {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Send className="h-5 w-5" />
-              )}
-            </Button>
-            
+          <div className="absolute right-3 bottom-3 flex items-center gap-2">
             <Button
               onClick={improvePrompt}
               disabled={!isAIAvailable || isLoading || isImprovingPrompt || !inputValue.trim()}
               variant="outline"
-              size="icon"
-              className="h-[30px]"
-              title="Make this prompt better"
+              size="sm"
+              className="h-9 border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+              title="Improve prompt"
             >
               {isImprovingPrompt ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
               ) : (
-                <Sparkles className="h-5 w-5" />
+                <Sparkles className="h-4 w-4 mr-1" />
               )}
+              <span className="hidden sm:inline">Enhance</span>
+            </Button>
+            
+            <Button
+              onClick={handleSendMessage}
+              disabled={!isAIAvailable || isLoading || isImprovingPrompt || !inputValue.trim()}
+              variant="default"
+              size="sm"
+              className="h-9 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              title="Send message"
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              ) : (
+                <Send className="h-4 w-4 mr-1" />
+              )}
+              <span className="hidden sm:inline">Send</span>
             </Button>
           </div>
         </div>
