@@ -130,13 +130,21 @@ async function addReviewAndUpdateMetrics(clientId, freelancerId, rating, jobPerf
 
 // Function that mimics the match score calculation in the AI service
 function calculateMatchScore(jobPerformance, skillsExperience, responsiveness, fairnessScore) {
-  // Match algorithm from deepseek-service.ts
-  const jobPerformanceScore = (jobPerformance / 100) * 0.5;  // 50% weight
-  const skillsScore = (skillsExperience / 100) * 0.2;        // 20% weight
-  const responsivenessScore = (responsiveness / 100) * 0.15; // 15% weight
-  const fairnessScore_ = (fairnessScore / 100) * 0.15;       // 15% weight
+  // Ensure all inputs are within valid range (0-100)
+  const validatedJobPerformance = Math.max(0, Math.min(100, jobPerformance));
+  const validatedSkillsExperience = Math.max(0, Math.min(100, skillsExperience));
+  const validatedResponsiveness = Math.max(0, Math.min(100, responsiveness));
+  const validatedFairnessScore = Math.max(0, Math.min(100, fairnessScore));
   
-  return (jobPerformanceScore + skillsScore + responsivenessScore + fairnessScore_) * 100;
+  // Calculate weighted components
+  const jobPerformanceScore = (validatedJobPerformance / 100) * 0.5;  // 50% weight
+  const skillsScore = (validatedSkillsExperience / 100) * 0.2;        // 20% weight
+  const responsivenessScore = (validatedResponsiveness / 100) * 0.15; // 15% weight
+  const fairnessScore_ = (validatedFairnessScore / 100) * 0.15;       // 15% weight
+  
+  // Calculate total score and ensure it's within valid range (0-100)
+  const totalScore = (jobPerformanceScore + skillsScore + responsivenessScore + fairnessScore_) * 100;
+  return Math.max(0, Math.min(100, totalScore));
 }
 
 // Parse command line arguments
