@@ -363,20 +363,35 @@ Current date: ${new Date().toISOString().split('T')[0]}`
             console.log('[DeepSeekService] Adding real freelancer data to prompt');
             freelancerDataIncluded = true;
             
+            // Get all relevant users for the freelancers
+            const userIds = allFreelancers.map(f => f.userId);
+            const users = await storage.getUsersByIds(userIds);
+            const userMap = new Map();
+            users.forEach(user => {
+              userMap.set(user.id, user);
+            });
+            
             // Format the freelancer information
             let freelancerInfo = '\n\nHere are some actual freelancers from our database who might be relevant to your request:\n\n';
             
             // Add up to 5 freelancers
             const relevantFreelancers = allFreelancers.slice(0, 5);
             relevantFreelancers.forEach(f => {
-              freelancerInfo += `ID: ${f.id} - ${f.profession} in ${f.location}\n`;
+              // Get the user associated with this freelancer for display name
+              const freelancerUser = userMap.get(f.userId);
+              const displayName = freelancerUser?.displayName || freelancerUser?.username || 'Freelancer ' + f.id;
+              freelancerInfo += `**[FREELANCER_ID:${f.id}] ${displayName} - ${f.profession} in ${f.location}**\n`;
               freelancerInfo += `Skills: ${f.skills ? f.skills.join(', ') : 'Not specified'}\n`;
               freelancerInfo += `Experience: ${f.yearsOfExperience} years | Rating: ${f.rating}/5 | Rate: $${f.hourlyRate}/hr\n`;
-              freelancerInfo += `Bio: ${f.bio}\n\n`;
+              freelancerInfo += `${f.bio}\n\n`;
             });
             
-            // Add instruction to include specific freelancers in response
-            freelancerInfo += '\nPlease include these specific freelancers in your response with their ID numbers, skills, and rates. Mention at least 2-3 of them by ID that would be most relevant.';
+            // Add specific instructions about the required format for freelancers
+            freelancerInfo += '\n\nFORMATTING REQUIREMENTS:';
+            freelancerInfo += '\n- When mentioning freelancers, you MUST ALWAYS use the format: "[FREELANCER_ID:X] Freelancer Name" where X is their ID number';
+            freelancerInfo += '\n- The [FREELANCER_ID:X] tag is REQUIRED for EVERY mentioned freelancer';
+            freelancerInfo += '\n- Present freelancer details exactly as shown in the examples above';
+            freelancerInfo += '\n- Always include at least 2-3 relevant freelancers with their skills, experience and rates';
             
             // Update the last user message to include freelancer data
             const lastMessageIndex = messages.length - 1;
@@ -621,7 +636,7 @@ Fairness Score: ${f.fairnessScore || 0}/100
           
           // Get the user info for this freelancer
           const user = await storage.getUser(freelancer.userId);
-          const displayName = user?.displayName || freelancer.displayName || `Freelancer ${freelancerId}`;
+          const displayName = user?.displayName || user?.username || `Freelancer ${freelancerId}`;
           
           // Calculate weights based on our algorithm
           const jobPerformanceScore = (freelancer.jobPerformance / 100) * 0.5;  // 50% weight
