@@ -599,31 +599,31 @@ export function AIChat() {
                               <div className="p-4 flex-grow">
                                 <div className="flex flex-wrap gap-1 mb-3">
                                   {skills.slice(0, 3).map((skill: string, i: number) => (
-                                    <span key={`skill-${i}`} className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">
+                                    <span key={`skill-${i}`} className="inline-flex items-center px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
                                       {skill}
                                     </span>
                                   ))}
                                   {skills.length > 3 && (
-                                    <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">
+                                    <span className="inline-flex items-center px-2 py-1 bg-muted/50 text-muted-foreground text-xs font-medium rounded-full">
                                       +{skills.length - 3} more
                                     </span>
                                   )}
                                 </div>
-                                <div className="text-sm text-gray-600 mb-4">
+                                <div className="text-sm text-muted-foreground mb-4">
                                   <span className="font-medium">${hourlyRate}/hr</span> · {freelancer.yearsOfExperience || 5} years experience
                                 </div>
                               </div>
                               
-                              <div className="p-3 border-t border-gray-100 flex gap-2">
+                              <div className="p-3 border-t border-border/10 flex gap-2">
                                 <a 
                                   href={`/freelancers/${freelancerId}`}
-                                  className="flex-1 text-center py-2 px-3 border border-gray-200 rounded-md text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
+                                  className="flex-1 text-center py-2 px-3 border border-border/20 rounded-md text-foreground text-sm font-medium hover:bg-accent transition-colors"
                                 >
                                   View Profile
                                 </a>
                                 <a 
                                   href={`/messages/new/${freelancerId}`}
-                                  className="flex-1 text-center py-2 px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-md text-white text-sm font-medium transition-colors"
+                                  className="flex-1 text-center py-2 px-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary rounded-md text-white text-sm font-medium transition-colors"
                                 >
                                   Chat Now
                                 </a>
@@ -636,8 +636,8 @@ export function AIChat() {
                       <div className="mt-4 flex justify-center">
                         <a 
                           href="/explore-freelancers"
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-blue-700 text-sm font-medium
-                                    bg-white border border-blue-200 hover:bg-blue-50 hover:border-blue-300
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-primary text-sm font-medium
+                                    bg-background border border-primary/20 hover:bg-primary/5 hover:border-primary/30
                                     shadow-sm hover:shadow-md transition-all"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-users">
