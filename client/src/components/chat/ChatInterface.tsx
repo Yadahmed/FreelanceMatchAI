@@ -27,7 +27,7 @@ export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '0',
-      content: 'Hello! I\'m your FreelanceMatchAI assistant. Tell me what type of freelancer you\'re looking for, and I\'ll help match you with the best candidates for your project.',
+      content: 'Hello! I\'m your KurdJobs AI assistant. Tell me what type of freelancer you\'re looking for, and I\'ll help match you with the best candidates for your project.',
       isUserMessage: false,
       timestamp: new Date(),
     },
@@ -35,6 +35,13 @@ export function ChatInterface() {
   const [inputValue, setInputValue] = useState('');
   const [chatId, setChatId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [suggestedPrompts] = useState<string[]>([
+    "I need a web developer with React experience",
+    "Looking for a logo designer for my startup",
+    "Need a translator who speaks Kurdish and English",
+    "Need a writer for my technical blog"
+  ]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { isAuthenticated, currentUser } = useAuth();
@@ -80,6 +87,11 @@ export function ChatInterface() {
     setMessages((prev) => [...prev, userMessage]);
     setInputValue('');
     setIsLoading(true);
+    
+    // Add typing indicator with a slight delay to improve user experience
+    setTimeout(() => {
+      setIsTyping(true);
+    }, 300);
     
     try {
       // Decide which endpoint to use based on whether a chat was started
@@ -127,23 +139,33 @@ export function ChatInterface() {
         console.log("[Debug] No freelancer results in response");
       }
       
-      // Add bot response to chat
-      const botMessage: Message = {
-        id: response.id || (Date.now() + 1).toString(),
-        content: response.content || "I'm processing your request...",
-        isUserMessage: false,
-        timestamp: new Date(response.timestamp || Date.now()),
-        freelancerResults: response.freelancerResults || [],
-      };
+      // Remove typing indicator before showing the actual message
+      setIsTyping(false);
       
-      setMessages((prev) => [...prev, botMessage]);
+      // Add a small delay before showing the response for a more natural feel
+      setTimeout(() => {
+        // Add bot response to chat
+        const botMessage: Message = {
+          id: response.id || (Date.now() + 1).toString(),
+          content: response.content || "I'm processing your request...",
+          isUserMessage: false,
+          timestamp: new Date(response.timestamp || Date.now()),
+          freelancerResults: response.freelancerResults || [],
+        };
+        
+        setMessages((prev) => [...prev, botMessage]);
+        
+        // Invalidate queries if needed
+        if (response.freelancerResults) {
+          queryClient.invalidateQueries({ queryKey: ['/api/freelancers'] });
+        }
+      }, 500);
       
-      // Invalidate queries if needed
-      if (response.freelancerResults) {
-        queryClient.invalidateQueries({ queryKey: ['/api/freelancers'] });
-      }
     } catch (error: any) {
       console.error('Error sending message:', error);
+      
+      // Remove typing indicator before showing error
+      setIsTyping(false);
       
       // Add error message to chat
       const errorMessage: Message = {
@@ -174,68 +196,82 @@ export function ChatInterface() {
 
   return (
     <div className="flex flex-col h-full">
-      <Card className="flex-1 border rounded-lg overflow-hidden flex flex-col">
+      <Card className="flex-1 border rounded-lg overflow-hidden flex flex-col shadow-md dark:shadow-primary/5 bg-card">
         <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4">
+          <div className="space-y-6">
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.isUserMessage ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${message.isUserMessage ? 'justify-end' : 'justify-start'} animate-fade-in-up`}
               >
                 <div
-                  className={`flex gap-3 max-w-[80%] ${
+                  className={`flex gap-3 max-w-[85%] ${
                     message.isUserMessage ? 'flex-row-reverse' : 'flex-row'
                   }`}
                 >
-                  <Avatar className="h-8 w-8">
+                  <Avatar className={`h-10 w-10 border-2 shadow-sm mt-1 ${
+                    message.isUserMessage 
+                      ? 'border-primary/20 bg-primary/5' 
+                      : 'border-secondary/20 bg-secondary/5'
+                  }`}>
                     {message.isUserMessage ? (
                       <>
                         <AvatarImage 
                           src={currentUser?.photoURL || undefined} 
                           alt={currentUser?.displayName || currentUser?.username || 'User'} 
                         />
-                        <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          <User className="h-5 w-5" />
+                        </AvatarFallback>
                       </>
                     ) : (
                       <>
-                        <AvatarFallback><Bot className="h-4 w-4" /></AvatarFallback>
+                        <AvatarImage src="/ai-avatar.png" alt="KurdJobs AI" />
+                        <AvatarFallback className="bg-secondary/10 text-secondary">
+                          <Bot className="h-5 w-5" />
+                        </AvatarFallback>
                       </>
                     )}
                   </Avatar>
-                  <div>
+                  <div className="space-y-1">
+                    <div className={`text-xs font-medium ${message.isUserMessage ? 'text-right mr-2' : 'ml-1'}`}>
+                      {message.isUserMessage
+                        ? (currentUser?.displayName || currentUser?.username || 'You')
+                        : 'KurdJobs AI'}
+                    </div>
                     <div
-                      className={`rounded-lg p-3 ${
+                      className={`rounded-xl p-4 shadow-sm ${
                         message.isUserMessage
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
+                          ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-tr-none'
+                          : 'bg-muted/80 dark:bg-muted/40 rounded-tl-none'
                       }`}
                     >
                       {message.isUserMessage ? (
-                        <p className="text-sm">{message.content}</p>
+                        <p className="text-sm leading-relaxed">{message.content}</p>
                       ) : (
-                        <div className="text-sm">
+                        <div className="text-sm leading-relaxed">
                           <FreelancerMention content={message.content} />
                         </div>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(message.timestamp).toLocaleTimeString()}
+                    <p className={`text-xs text-muted-foreground ${message.isUserMessage ? 'text-right mr-2' : 'ml-1'}`}>
+                      {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </p>
                     
                     {/* Render freelancer results if available */}
                     {!message.isUserMessage && message.freelancerResults && message.freelancerResults.length > 0 && (
-                      <div className="mt-4 space-y-4">
+                      <div className="mt-5 space-y-5 animate-fade-in">
                         {/* Add a prominent "Chat with All Freelancers" button at the top */}
-                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-100 shadow-sm">
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                        <div className="bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 p-4 rounded-xl border border-primary/10 shadow-sm">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                             <div>
-                              <h4 className="font-medium text-blue-800">Expert Freelancers Found!</h4>
-                              <p className="text-sm text-blue-600">Connect directly with our top matches</p>
+                              <h4 className="font-semibold text-primary dark:text-primary/90">Expert Freelancers Found!</h4>
+                              <p className="text-sm text-muted-foreground mt-1">Connect directly with our top matches</p>
                             </div>
                             <Button 
                               size="default" 
-                              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 
-                                         shadow-md hover:shadow-lg transition-all items-center gap-2 w-full sm:w-auto"
+                              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary 
+                                         shadow-md hover:shadow-lg transition-all duration-300 items-center gap-2 w-full sm:w-auto"
                               asChild
                             >
                               <Link href="/messages">
@@ -246,11 +282,11 @@ export function ChatInterface() {
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-sm font-medium">Top Freelancers For Your Request:</h3>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <h3 className="text-sm font-semibold">Top Freelancers For Your Request:</h3>
                           
                           {/* Quick action buttons for top freelancers */}
-                          <div className="flex space-x-2">
+                          <div className="flex flex-wrap gap-2">
                             {message.freelancerResults.slice(0, 3).map((result) => {
                               // Get the freelancer ID from either format
                               const freelancerId = result.freelancerId || result.id || 
@@ -270,9 +306,9 @@ export function ChatInterface() {
                                 <Button 
                                   key={`chat-quick-${freelancerId}`}
                                   size="sm" 
-                                  variant="default" 
-                                  className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 
-                                             shadow-md hover:shadow-lg transition-all items-center gap-1 rounded-full px-3 py-1"
+                                  variant="outline" 
+                                  className="bg-background hover:bg-primary/5 hover:text-primary border-primary/20
+                                             shadow-sm hover:shadow transition-all duration-300 items-center gap-1 rounded-full px-3 py-1"
                                   asChild
                                 >
                                   <Link href={`/messages/new/${freelancerId}`}>
@@ -309,11 +345,56 @@ export function ChatInterface() {
                 </div>
               </div>
             ))}
+            
+            {/* Typing indicator */}
+            {isTyping && (
+              <div className="flex justify-start animate-fade-in-up">
+                <div className="flex gap-3">
+                  <Avatar className="h-10 w-10 border-2 border-secondary/20 bg-secondary/5 shadow-sm mt-1">
+                    <AvatarFallback className="bg-secondary/10 text-secondary">
+                      <Bot className="h-5 w-5" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium ml-1">KurdJobs AI</div>
+                    <div className="bg-muted/80 dark:bg-muted/40 rounded-xl rounded-tl-none p-4 shadow-sm">
+                      <div className="flex space-x-1 items-center h-5">
+                        <div className="w-2 h-2 rounded-full bg-primary/70 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 rounded-full bg-primary/70 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        <div className="w-2 h-2 rounded-full bg-primary/70 animate-bounce" style={{ animationDelay: '600ms' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
 
-        <div className="p-4 border-t">
+        <div className="p-4 border-t bg-card/80 backdrop-blur-sm">
+          {/* Suggested prompts */}
+          {messages.length <= 2 && (
+            <div className="mb-3">
+              <p className="text-xs font-medium text-muted-foreground mb-2">Suggested questions:</p>
+              <div className="flex flex-wrap gap-2">
+                {suggestedPrompts.map((prompt, index) => (
+                  <Button 
+                    key={index} 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs py-1 px-3 h-auto bg-background hover:bg-primary/5 hover:text-primary border-primary/10
+                              transition-colors duration-300"
+                    onClick={() => setInputValue(prompt)}
+                  >
+                    {prompt}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <div className="flex gap-2">
             <Input
               ref={inputRef}
@@ -321,11 +402,18 @@ export function ChatInterface() {
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type your message..."
-              className="flex-1"
-              disabled={isLoading}
+              className="flex-1 border-primary/20 focus-visible:ring-primary/30 py-6 bg-background"
+              disabled={isLoading || isTyping}
             />
-            <Button onClick={handleSendMessage} disabled={!inputValue.trim() || isLoading}>
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            <Button 
+              onClick={handleSendMessage} 
+              disabled={!inputValue.trim() || isLoading || isTyping}
+              className="bg-primary hover:bg-primary/90 shadow-md transition-all duration-300"
+            >
+              {isLoading ? 
+                <Loader2 className="h-4 w-4 animate-spin" /> : 
+                <Send className="h-4 w-4" />
+              }
             </Button>
           </div>
         </div>
