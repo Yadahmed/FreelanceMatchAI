@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Loader2, Send, AlertCircle, Sparkles } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { apiRequest } from '@/lib/queryClient';
+import { FreelancerMention } from '../chat/FreelancerMention';
 
 // Interface for AI status response
 interface AIStatusResponse {
@@ -470,7 +471,13 @@ export function AIChat() {
                     : 'bg-muted'
                 }`}
               >
-                <p className="whitespace-pre-wrap">{message.content}</p>
+                {message.isUser ? (
+                  <p className="whitespace-pre-wrap">{message.content}</p>
+                ) : (
+                  <div className="whitespace-pre-wrap">
+                    <FreelancerMention content={message.content} />
+                  </div>
+                )}
                 
                 {/* Render clarifying questions as buttons if present */}
                 {!message.isUser && message.clarifyingQuestions && message.clarifyingQuestions.length > 0 && (
