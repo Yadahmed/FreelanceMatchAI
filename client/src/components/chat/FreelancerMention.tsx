@@ -63,8 +63,20 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
   const processContent = (text: string, freelancers: any[], userMap: Map<any, any>) => {
     console.log("Processing content, length:", text.length);
     
+    // Log the content with line numbers for debugging
+    const contentLines = text.split('\n');
+    contentLines.forEach((line, index) => {
+      console.log(`Line ${index + 1}: ${line}`);
+    });
+    
     // Comprehensive set of patterns to match all possible formats
     const patterns = [
+      // First attempt to find direct numerical patterns from the screenshot
+      /^([0-9]{4})$/m,                          // Just a 4-digit ID at the start of a line (like "1092")
+      /ID:([0-9]{4})/,                          // ID:XXXX format (like "ID:1092")
+      /^([0-9]{4})\s/m,                         // 4-digit ID followed by space at line start
+      
+      // Regular ID patterns
       /\*\*\[FREELANCER_ID:(\d+)\]\*\*/g,       // **[FREELANCER_ID:X]**
       /\*\*\[FREELANCER_ID:(\d+)\]/g,           // **[FREELANCER_ID:X]
       /\[FREELANCER_ID:(\d+)\]\*\*/g,           // [FREELANCER_ID:X]**
@@ -72,9 +84,18 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
       /\*\*FREELANCER_ID:(\d+)\*\*/g,           // **FREELANCER_ID:X**
       /FREELANCER_ID:(\d+)/g,                   // FREELANCER_ID:X (basic)
       /\*\*\s*\[FREELANCER_ID:\s*(\d+)\s*\]\s*\*\*/g,  // With whitespace
-      /\*\*\s*FREELANCER_ID:\s*(\d+)\s*\*\*/g,          // With whitespace
+      /\*\*\s*FREELANCER_ID:\s*(\d+)\s*\*\*/g,   // With whitespace
       /\*\*ID:(\d+)\*\*/g,                      // **ID:X**
-      /ID:(\d+)/g                               // ID:X (minimal)
+      /ID:(\d+)/g,                              // ID:X (minimal)
+      /ID:\s*(\d+)/g,                           // ID: X (with space)
+      /^ID:(\d+)$/m,                            // ID:X at start of line
+      /\nID:(\d+)/g,                            // ID:X after newline
+      /\nID:\s*(\d+)/g,                         // ID: X after newline with space
+      /\bID:(\d+)\b/g,                          // ID:X with word boundary
+      /^ID:(\d+)/mg,                            // ID:X at start of any line 
+      // Match patterns from screenshots
+      /ID:(\d+)\n/g,                            // ID:X followed by newline
+      /^ID:(\d+)\s+/mg,                         // ID:X at line start with spaces after
     ];
     
     // Update the type to include a notFound flag
@@ -91,6 +112,8 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
         const id = parseInt(match[1], 10);
         // Verify ID is a valid number and not already processed
         if (!isNaN(id) && id > 0 && !processedIds.has(id)) {
+          console.log(`Processing potential freelancer ID: ${id} using pattern #${patternIndex+1} - match text: "${match[0]}"`);
+          
           // Check if the ID exists in our freelancers data
           const freelancer = freelancers.find(f => f.id === id);
           if (freelancer) {
@@ -100,17 +123,22 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
               index: match.index,
               length: match[0].length
             });
-            console.log(`Matched freelancer ID: ${id} using pattern #${patternIndex+1}`);
+            console.log(`Successfully matched freelancer ID: ${id} using pattern #${patternIndex+1}`);
           } else {
-            // Add to matches with a notFound flag
-            processedIds.add(id);
-            matches.push({
-              id: id,
-              index: match.index,
-              length: match[0].length,
-              notFound: true
-            });
-            console.log(`Found ID ${id} but no matching freelancer exists - added with notFound flag`);
+            // Check if ID is in valid range for our system
+            if (id > 0 && id < 5000) {  // Assuming IDs under 5000 are valid
+              // Add to matches with a notFound flag
+              processedIds.add(id);
+              matches.push({
+                id: id,
+                index: match.index,
+                length: match[0].length,
+                notFound: true
+              });
+              console.log(`Found ID ${id} but no matching freelancer exists - added with notFound flag`);
+            } else {
+              console.log(`Ignoring ID ${id} as it's likely not a valid freelancer ID`);
+            }
           }
         }
       }
