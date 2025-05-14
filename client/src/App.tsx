@@ -15,6 +15,7 @@ import DirectChat from "@/pages/direct-chat";
 import Chat from "@/pages/chat";
 import ClientMessages from "@/pages/client-messages";
 import ClientProfile from "@/pages/client-profile";
+import About from "@/pages/about";
 import AdminPanel from "@/pages/AdminPanel";
 import AdminLogin from "@/pages/AdminLogin";
 import { Header } from "@/components/layout/Header";
@@ -37,6 +38,7 @@ function Router() {
     location === "/" || 
     location === "/home" || 
     location === "/register" || 
+    location === "/about" || 
     location === "/admin/login";
   
   // For admin login, we don't want to show the RequireAuth component
@@ -53,6 +55,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/about" component={About} />
         <Route path="/home">
           {() => {
             window.location.href = '/';
@@ -74,6 +77,7 @@ function Router() {
     <RequireAuth>
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/about" component={About} />
         
         {/* Core freelancer routes */}
         <Route path="/freelancer-profile" component={FreelancerProfile} />
