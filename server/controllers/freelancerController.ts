@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
+import { z } from "zod";
 
 // Get freelancer dashboard data
 export async function getDashboard(req: Request, res: Response) {
@@ -92,6 +93,71 @@ export async function updateProfile(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error('Freelancer profile update error:', error);
+    return res.status(400).json({ message: error.message });
+  }
+}
+
+// Validate availability details
+const availabilityDetailsSchema = z.object({
+  status: z.enum(['available', 'unavailable', 'limited']),
+  message: z.string().optional(),
+  availableFrom: z.string().optional(),
+  availableUntil: z.string().optional(),
+  workHours: z.object({
+    start: z.string(),
+    end: z.string()
+  }).optional(),
+  workDays: z.array(z.number().min(0).max(6)).optional()
+});
+
+// Update freelancer availability
+export async function updateAvailability(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    // Only freelancers can update their availability
+    if (req.user.isClient) {
+      return res.status(403).json({ message: 'Freelancer access required' });
+    }
+    
+    // Find the freelancer profile
+    const freelancer = await storage.getFreelancerByUserId(req.user.id);
+    
+    if (!freelancer) {
+      return res.status(404).json({ message: 'Freelancer profile not found' });
+    }
+    
+    // Validate the availability data
+    const { status, message, availableFrom, availableUntil, workHours, workDays } = availabilityDetailsSchema.parse(req.body);
+    
+    // Prepare the update data
+    const updateData = {
+      availability: status === 'available',
+      availabilityDetails: {
+        status,
+        message: message || '',
+        availableFrom: availableFrom || '',
+        availableUntil: availableUntil || '',
+        workHours: workHours || { start: '09:00', end: '17:00' },
+        workDays: workDays || [1, 2, 3, 4, 5], // Monday to Friday by default
+        lastUpdated: new Date().toISOString()
+      }
+    };
+    
+    // Update freelancer availability
+    const updatedFreelancer = await storage.updateFreelancer(freelancer.id, updateData);
+    
+    return res.status(200).json({
+      message: 'Availability updated successfully',
+      profile: updatedFreelancer
+    });
+  } catch (error: any) {
+    console.error('Freelancer availability update error:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Invalid availability data', errors: error.errors });
+    }
     return res.status(400).json({ message: error.message });
   }
 }
