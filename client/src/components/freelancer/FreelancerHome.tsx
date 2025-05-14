@@ -20,6 +20,15 @@ interface FreelancerProfile {
   completedJobs?: number;
   imageUrl: string | null;
   availability?: boolean;
+  availabilityDetails?: {
+    status?: 'available' | 'limited' | 'unavailable';
+    message?: string;
+    availableFrom?: string;
+    availableUntil?: string;
+    workHours?: { start: string; end: string };
+    workDays?: number[];
+    lastUpdated?: string;
+  };
   matchScore?: number;
   jobPerformance?: number;
   skillsExperience?: number;
