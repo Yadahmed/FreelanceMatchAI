@@ -351,29 +351,31 @@ export default function FreelancerDetail() {
           </Card>
         </div>
         
-        {/* Sidebar */}
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl">Contact This Freelancer</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">Ready to discuss your project with {freelancer.displayName.split(' ')[0]}? Send a message to get started.</p>
-              
-              <Button 
-                className="w-full"
-                onClick={handleHireClick}
-              >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Message Now
-              </Button>
-              
-              <div className="text-xs text-muted-foreground mt-4 pt-4 border-t">
-                <p>By contacting this freelancer, you agree to our terms of service and privacy policy.</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Sidebar - Only show for clients or unauthenticated users */}
+        {(!isAuthenticated || currentUser?.isClient) && (
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">Contact This Freelancer</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">Ready to discuss your project with {freelancer.displayName.split(' ')[0]}? Send a message to get started.</p>
+                
+                <Button 
+                  className="w-full"
+                  onClick={handleHireClick}
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Message Now
+                </Button>
+                
+                <div className="text-xs text-muted-foreground mt-4 pt-4 border-t">
+                  <p>By contacting this freelancer, you agree to our terms of service and privacy policy.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
