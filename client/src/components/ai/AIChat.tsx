@@ -427,7 +427,7 @@ export function AIChat() {
   }
   
   return (
-    <Card className="flex flex-col h-[600px] md:h-[700px] overflow-hidden shadow-lg border-0">
+    <Card className="flex flex-col h-[600px] md:h-[700px] overflow-hidden shadow-lg border-0 bg-background">
       {/* Status bar */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-3 flex items-center text-white">
         <div className="flex-shrink-0 w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white mr-3">
@@ -490,7 +490,7 @@ export function AIChat() {
                 className={`max-w-[80%] p-4 rounded-xl shadow-sm ${
                   message.isUser
                     ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white'
-                    : 'bg-white border border-gray-100'
+                    : 'bg-background border border-border dark:text-foreground'
                 }`}
               >
                 {message.isUser ? (
@@ -576,9 +576,9 @@ export function AIChat() {
                           return (
                             <div 
                               key={`freelancer-card-${index}`}
-                              className="border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all bg-white overflow-hidden flex flex-col"
+                              className="border border-border rounded-lg shadow-sm hover:shadow-md transition-all bg-background overflow-hidden flex flex-col"
                             >
-                              <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                              <div className="p-4 border-b border-border/10 bg-muted/30 flex justify-between items-center">
                                 <div className="flex items-center gap-3">
                                   <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-lg">
                                     {typeof name === 'string' ? name.charAt(0) : 'F'}
