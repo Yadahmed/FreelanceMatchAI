@@ -50,8 +50,15 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
         const parts: React.ReactNode[] = [];
         let remainingContent = content;
         
-        // Check for freelancer IDs in the new format [FREELANCER_ID:X] or **[FREELANCER_ID:X] which we added to system prompt
-        const taggedIdRegex = /\*?\*?\[FREELANCER_ID:(\d+)\]\*?\*?/g;
+        // Try multiple regex patterns to catch different formatting variants in AI responses
+        // Pattern 1: Simple [FREELANCER_ID:X] format
+        const simpleTagRegex = /\[FREELANCER_ID:(\d+)\]/g;
+        // Pattern 2: With double asterisks before **[FREELANCER_ID:X]
+        const startAsteriskTagRegex = /\*\*\[FREELANCER_ID:(\d+)\]/g;
+        // Pattern 3: With double asterisks after [FREELANCER_ID:X]**
+        const endAsteriskTagRegex = /\[FREELANCER_ID:(\d+)\]\*\*/g;
+        // Pattern 4: With double asterisks on both sides **[FREELANCER_ID:X]**
+        const bothAsteriskTagRegex = /\*\*\[FREELANCER_ID:(\d+)\]\*\*/g;
         
         // Then check for freelancer IDs in the old format "ID: X" or "(ID: X)" as fallback
         const idRegex = /\b(ID:?\s*(\d+))\b/g;
@@ -69,19 +76,46 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
         });
         
         // First check for our special new tag format [FREELANCER_ID:X]
-        let tagMatch;
+        // Function to process matches from any regex
+        const processMatches = (regex: RegExp, content: string) => {
+          // Reset regex for search
+          regex.lastIndex = 0;
+          
+          let match;
+          let matches = [];
+          
+          while ((match = regex.exec(content)) !== null) {
+            matches.push({
+              fullMatch: match[0],
+              id: parseInt(match[1], 10),
+              index: match.index
+            });
+          }
+          
+          return matches;
+        };
         
-        // Add debugging info to see what we're matching or not matching
-        console.log('Looking for freelancer tags in:', remainingContent);
-        console.log('Using regex pattern:', taggedIdRegex.toString());
+        // Add debugging info
+        console.log('Looking for freelancer tags in content of length:', remainingContent.length);
         
-        // Reset regex for search
-        taggedIdRegex.lastIndex = 0;
+        // Try all regex patterns
+        let allMatches = [
+          ...processMatches(simpleTagRegex, remainingContent),
+          ...processMatches(startAsteriskTagRegex, remainingContent),
+          ...processMatches(endAsteriskTagRegex, remainingContent),
+          ...processMatches(bothAsteriskTagRegex, remainingContent)
+        ];
         
-        while ((tagMatch = taggedIdRegex.exec(remainingContent)) !== null) {
-          console.log('Found match:', tagMatch[0], 'ID:', tagMatch[1]);
-          const [fullTagMatch, idStr] = tagMatch;
-          const id = parseInt(idStr, 10);
+        // Sort matches by their position in text (ascending)
+        allMatches.sort((a, b) => a.index - b.index);
+        
+        console.log('Found total matches:', allMatches.length);
+        
+        // Process each match
+        for (const tagMatch of allMatches) {
+          console.log('Processing match:', tagMatch.fullMatch, 'ID:', tagMatch.id);
+          const fullTagMatch = tagMatch.fullMatch;
+          const id = tagMatch.id;
           
           // Find the freelancer with this ID
           const freelancer = sortedFreelancers.find(f => f.id === id);
@@ -92,8 +126,9 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
             const displayName = user?.displayName || user?.username || `Freelancer ${id}`;
             
             // Add text before the match
-            if (tagMatch.index > lastIndex) {
-              parts.push(remainingContent.substring(lastIndex, tagMatch.index));
+            const matchIndex = tagMatch.index;
+            if (matchIndex > lastIndex) {
+              parts.push(remainingContent.substring(lastIndex, matchIndex));
             }
             
             // Add a bold, prominent button for freelancer with a clear chat button
@@ -130,6 +165,10 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
             
             // Update lastIndex to after this match
             lastIndex = tagMatch.index + fullTagMatch.length;
+            
+            // Remove the matched text with formatting characters from the remaining content
+            remainingContent = remainingContent.substring(0, tagMatch.index) + 
+              displayName + remainingContent.substring(lastIndex);
           }
         }
         
