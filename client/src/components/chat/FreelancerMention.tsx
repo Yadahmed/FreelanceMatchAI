@@ -78,35 +78,80 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
       // Log the IDs we have in our database for reference
       console.log("Available freelancer IDs:", freelancers.map(f => f.id).join(', '));
       
-      // First try to detect the exact format from the screenshot with "ID: xxxx"
-      const fullText = text.toLowerCase();
-      for (const freelancer of freelancers) {
-        // Look for explicit ID mentions
-        const idString = `id: ${freelancer.id}`;
-        if (fullText.includes(idString)) {
-          console.log(`Found direct ID mention: "${idString}" for freelancer ${freelancer.id}`);
+      // First try to detect the exact format with [FREELANCER_ID:X] which is the most specific
+      const freelancerIdPattern = /\*\*\[FREELANCER_ID:(\d+)\]/;
+      const freelancerIdMatch = text.match(freelancerIdPattern);
+      if (freelancerIdMatch) {
+        const id = parseInt(freelancerIdMatch[1], 10);
+        const freelancer = freelancers.find(f => f.id === id);
+        if (freelancer) {
+          console.log(`Found direct [FREELANCER_ID:${id}] mention for ${freelancer.id}`);
           
-          // Find where in the text it occurs
-          const idIndex = fullText.indexOf(idString);
+          // Find where in the text it occurs and the whole entry
+          const matchIndex = text.indexOf(freelancerIdMatch[0]);
           
-          // Try to find the whole entry content
           // Find the start of the line containing this ID
-          let entryStart = fullText.lastIndexOf('\n', idIndex);
-          if (entryStart === -1) entryStart = 0;
+          let lineStart = text.lastIndexOf('\n', matchIndex);
+          if (lineStart === -1) lineStart = 0;
+          else lineStart += 1; // Skip the newline character
           
-          // Find the end of this entry (next empty line or end of text)
-          let entryEnd = fullText.indexOf('\n\n', idIndex);
-          if (entryEnd === -1) entryEnd = fullText.length;
+          // Find the end of this line
+          let lineEnd = text.indexOf('\n', matchIndex);
+          if (lineEnd === -1) lineEnd = text.length;
           
-          const entryText = fullText.substring(entryStart, entryEnd);
-          console.log(`Entry text for ID ${freelancer.id}: "${entryText}"`);
+          const lineText = text.substring(lineStart, lineEnd);
+          console.log(`Found freelancer line: "${lineText}"`);
           
           // Add as a match
           extracted.push({
-            id: freelancer.id,
-            index: entryStart,
-            length: entryEnd - entryStart
+            id: id,
+            index: lineStart,
+            length: lineEnd - lineStart
           });
+        }
+      }
+      
+      // If no direct FREELANCER_ID format, check for exact ID string mentions
+      if (extracted.length === 0) {
+        const fullText = text.toLowerCase();
+        for (const freelancer of freelancers) {
+          // Look for explicit ID mentions in various formats
+          const idPatterns = [
+            `id: ${freelancer.id}`,
+            `id:${freelancer.id}`,
+            `freelancer_id:${freelancer.id}`,
+            `freelancer id: ${freelancer.id}`
+          ];
+          
+          for (const idPattern of idPatterns) {
+            if (fullText.includes(idPattern)) {
+              console.log(`Found direct ID mention: "${idPattern}" for freelancer ${freelancer.id}`);
+              
+              // Find where in the text it occurs
+              const idIndex = fullText.indexOf(idPattern);
+              
+              // Try to find the whole entry content
+              // Find the start of the line containing this ID
+              let entryStart = fullText.lastIndexOf('\n', idIndex);
+              if (entryStart === -1) entryStart = 0;
+              
+              // Find the end of this entry (next empty line or end of text)
+              let entryEnd = fullText.indexOf('\n\n', idIndex);
+              if (entryEnd === -1) entryEnd = fullText.length;
+              
+              const entryText = fullText.substring(entryStart, entryEnd);
+              console.log(`Entry text for ID ${freelancer.id}: "${entryText}"`);
+              
+              // Add as a match
+              extracted.push({
+                id: freelancer.id,
+                index: entryStart,
+                length: entryEnd - entryStart
+              });
+              
+              break; // Found this freelancer, move to next
+            }
+          }
         }
       }
       
@@ -114,17 +159,53 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         
+        // Skip lines that are clearly questions in a list
+        if (line.toLowerCase().includes("what type") || 
+            line.toLowerCase().includes("budget") ||
+            line.toLowerCase().includes("timeline") || 
+            line.toLowerCase().includes("style preference")) {
+          console.log(`Skipping line that appears to be a question: "${line}"`);
+          continue;
+        }
+        
         // Check various markdown list patterns
         // 1. Bold number with a period as list item
         let listMatch = line.match(/^([0-9]+)[\.\s]+\*\*(?:Name|Freelancer):/i);
-        // 2. Number at start of line followed by any content
-        if (!listMatch) listMatch = line.match(/^([0-9]+)\.\s+(.*)/);
-        // 3. Just number at the start of a line (could be an ID)
-        if (!listMatch) listMatch = line.match(/^([0-9]+)\s+/);
+        // 2. Number at start of line followed by any content that might indicate a designer description
+        if (!listMatch && (
+            line.toLowerCase().includes("design") || 
+            line.toLowerCase().includes("graphic") ||
+            line.toLowerCase().includes("ui/ux") || 
+            line.toLowerCase().includes("artist") ||
+            line.toLowerCase().includes("rate") ||
+            line.toLowerCase().includes("skills")
+           )) {
+          listMatch = line.match(/^([0-9]+)\.\s+(.*)/);
+        }
+        // 3. Just number at the start of a line (could be an ID) - but only if line seems to be about a freelancer
+        if (!listMatch && (
+            line.toLowerCase().includes("design") || 
+            line.toLowerCase().includes("graphic") ||
+            line.toLowerCase().includes("ui/ux") || 
+            line.toLowerCase().includes("artist") ||
+            line.toLowerCase().includes("rate") ||
+            line.toLowerCase().includes("$")
+           )) {
+          listMatch = line.match(/^([0-9]+)\s+/);
+        }
         
         if (listMatch) {
           const potentialId = parseInt(listMatch[1], 10);
           console.log(`Potential ID from markdown list: ${potentialId} from line: "${line}"`);
+          
+          // Skip 1-4 if they appear in a typical list format and don't look like actual IDs
+          if (potentialId <= 4 && 
+              !line.toLowerCase().includes("freelancer") && 
+              !line.toLowerCase().includes("id:") &&
+              (line.match(/^[1-4]\.\s/) || line.match(/^[1-4]\)/))) {
+            console.log(`Skipping what appears to be a sequence number, not an ID: ${potentialId}`);
+            continue;
+          }
           
           // Try to see if this number is a valid ID
           const freelancer = freelancers.find(f => f.id === potentialId);
@@ -289,15 +370,55 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
     
     // Try to detect a numbered markdown list pattern in the text
     const detectNumberedList = () => {
+      // BEGIN SPECIAL CASE: First check for the specific FREELANCER_ID format
+      const freelancerIdPattern = /\*\*\[FREELANCER_ID:(\d+)\]/;
+      const freelancerIdMatch = text.match(freelancerIdPattern);
+      if (freelancerIdMatch) {
+        const id = parseInt(freelancerIdMatch[1], 10);
+        const freelancer = freelancers.find(f => f.id === id);
+        if (freelancer) {
+          console.log(`Found [FREELANCER_ID:${id}] format - using this directly`);
+          
+          // Find where in the text it occurs
+          const matchIndex = text.indexOf(freelancerIdMatch[0]);
+          
+          // Get the full line containing this match
+          const lineStart = text.lastIndexOf('\n', matchIndex) + 1;
+          const lineEnd = text.indexOf('\n', matchIndex);
+          const entryStart = lineStart === 0 ? 0 : lineStart;
+          const entryEnd = lineEnd === -1 ? text.length : lineEnd;
+          
+          return [{
+            id: id,
+            index: entryStart,
+            length: entryEnd - entryStart
+          }];
+        }
+      }
+      // END SPECIAL CASE
+    
       // Look for a pattern of lines that start with 1., 2., 3. in sequence
       const lines = text.split('\n');
       let listStartIndex = -1;
       
-      // Find where the numbered list might start
+      // Find where the numbered list might start that isn't a list of questions
       for (let i = 0; i < lines.length; i++) {
         if (lines[i].match(/^1[\.\s]/)) {
           // Check if next line starts with 2.
           if (i+1 < lines.length && lines[i+1].match(/^2[\.\s]/)) {
+            // Make sure this isn't a list of questions
+            const line1Lower = lines[i].toLowerCase();
+            const line2Lower = lines[i+1].toLowerCase();
+            
+            // Skip if these are clearly just questions and not freelancer profiles
+            if (line1Lower.includes("what type") || 
+                line1Lower.includes("looking for") ||
+                line2Lower.includes("budget") ||
+                line2Lower.includes("payment")) {
+              console.log("Skipping numbered list that appears to be questions");
+              continue;
+            }
+            
             listStartIndex = i;
             break;
           }
@@ -319,21 +440,41 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
             const listItemNum = parseInt(lineMatch[1], 10);
             console.log(`List item #${listItemNum}: "${line}"`);
             
-            // Strategy 1: Check if the list item number itself is a valid freelancer ID
-            let freelancer = freelancers.find(f => f.id === listItemNum);
-            if (freelancer) {
-              console.log(`✓ Found freelancer with ID matching list item number: ${listItemNum}`);
+            // IMPORTANT: Skip items that look like a numbered list (1., 2., etc.)
+            // where the numbers are just counting items, NOT freelancer IDs
+            
+            // Check if this is just a normal numbering for questions (skip these)
+            if (line.toLowerCase().includes("what type") || 
+                line.toLowerCase().includes("budget") ||
+                line.toLowerCase().includes("timeline") || 
+                line.toLowerCase().includes("style preference") ||
+                line.toLowerCase().includes("experience") ||
+                line.toLowerCase().includes("looking for")) {
+              console.log(`Skipping numbered list item that appears to be a question/instruction`);
+              continue;
+            }
+            
+            // Strategy 1: Only if the number is NOT a small sequence number (1,2,3,4)
+            // or if the line explicitly mentions designer/freelancer, then check if it's a freelancer ID
+            if (listItemNum > 4 || 
+               line.toLowerCase().includes("designer") || 
+               line.toLowerCase().includes("freelancer")) {
               
-              // Calculate position in text
-              const lineStart = i === 0 ? 0 : text.indexOf(lines[i-1]) + lines[i-1].length + 1;
-              const itemStart = text.indexOf(line, lineStart);
-              
-              extracted.push({
-                id: listItemNum,
-                index: itemStart,
-                length: line.length
-              });
-              continue; // Skip to next item
+              let freelancer = freelancers.find(f => f.id === listItemNum);
+              if (freelancer) {
+                console.log(`✓ Found freelancer with ID matching list item number: ${listItemNum}`);
+                
+                // Calculate position in text
+                const lineStart = i === 0 ? 0 : text.indexOf(lines[i-1]) + lines[i-1].length + 1;
+                const itemStart = text.indexOf(line, lineStart);
+                
+                extracted.push({
+                  id: listItemNum,
+                  index: itemStart,
+                  length: line.length
+                });
+                continue; // Skip to next item
+              }
             }
             
             // Strategy 2: If there is a numerical ID in the line, it might be the freelancer ID
@@ -544,26 +685,66 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
       // Fallback: Look for any valid freelancer IDs in the entire text
       const fallbackMatches: {id: number, index: number, length: number}[] = [];
       
-      // First, check if the content has numbered lists that might be freelancers
-      const hasOrderedList = text.match(/^1[\.\)]\s+/m) && text.match(/^2[\.\)]\s+/m);
-      
-      if (hasOrderedList) {
-        console.log("Content has numbered lists - might be freelancers");
-        // Assume the top 3 freelancers should be shown
-        const topFreelancers = [...freelancers]
-          .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-          .slice(0, 3);
-        
-        console.log(`Using top ${topFreelancers.length} freelancers as fallback`);
-        
-        // Create "virtual" matches positioned at the start of the text
-        topFreelancers.forEach((f, i) => {
-          fallbackMatches.push({
-            id: f.id,
-            index: 0,  // We'll position them at the start
-            length: 1  // Minimal length since we're not replacing anything
-          });
+      // Check if we're getting a design-related response
+      const isDesignResponse = text.toLowerCase().includes("design") || 
+                               text.toLowerCase().includes("graphic") ||
+                               text.toLowerCase().includes("ui/ux") ||
+                               text.toLowerCase().includes("logo");
+                               
+      // Look for any mentions of specific designs                         
+      let designerMatches = [];
+      if (isDesignResponse) {
+        // Look for designers specifically
+        const designFreelancers = freelancers.filter(f => {
+          const skills = Array.isArray(f.skills) ? f.skills.join(' ').toLowerCase() : '';
+          return skills.includes('design') || 
+                 skills.includes('graphic') || 
+                 skills.includes('ui') || 
+                 skills.includes('ux') || 
+                 skills.includes('logo');
         });
+        
+        if (designFreelancers.length > 0) {
+          console.log(`Found ${designFreelancers.length} designers in database`);
+          // Get top rated designers
+          designerMatches = [...designFreelancers]
+            .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+            .slice(0, 1); // Just get the top one
+            
+          if (designerMatches.length > 0) {
+            console.log(`Selected top designer with ID ${designerMatches[0].id} for design query`);
+            fallbackMatches.push({
+              id: designerMatches[0].id,
+              index: 0,
+              length: 1
+            });
+          }
+        }
+      }
+      
+      // If no designer matches or not a design query, check for specific keywords
+      if (fallbackMatches.length === 0) {
+        // First, check if the content has numbered lists that might be freelancers
+        const hasOrderedList = text.match(/^1[\.\)]\s+/m) && text.match(/^2[\.\)]\s+/m);
+        
+        if (hasOrderedList) {
+          console.log("Content has numbered lists - might be freelancers");
+          // Assume the top freelancers should be shown
+          const topFreelancers = [...freelancers]
+            .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+            .slice(0, 1); // Just get the top one to avoid confusion
+          
+          console.log(`Using top ${topFreelancers.length} freelancers as fallback`);
+          
+          // Create "virtual" matches positioned at the start of the text
+          topFreelancers.forEach((f, i) => {
+            fallbackMatches.push({
+              id: f.id,
+              index: 0,  // We'll position them at the start
+              length: 1  // Minimal length since we're not replacing anything
+            });
+          });
+        }
       }
       
       if (fallbackMatches.length > 0) {
