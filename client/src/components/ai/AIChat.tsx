@@ -113,7 +113,7 @@ export function AIChat() {
             if (services.deepseek) {
               welcomeMessage += " powered by DeepSeek R1 API.";
             } else if (services.anthropic) {
-              welcomeMessage += " powered by Anthropic Claude.";
+              welcomeMessage += " powered by Anthropic AI.";
             } else if (services.ollama) {
               welcomeMessage += " (using Ollama as a fallback service).";
             } else {
@@ -160,7 +160,7 @@ export function AIChat() {
           if (activeService === 'deepseek') {
             welcomeMessage += " powered by DeepSeek R1 API.";
           } else if (activeService === 'anthropic') {
-            welcomeMessage += " powered by Anthropic Claude.";
+            welcomeMessage += " powered by Anthropic AI.";
           } else if (activeService === 'ollama') {
             welcomeMessage += " (using Ollama as a fallback service).";
           } else {
@@ -260,7 +260,7 @@ export function AIChat() {
               ...prev, 
               {
                 id: generateId(),
-                content: "Note: I'm now using Anthropic Claude as a fallback service because DeepSeek R1 is currently unavailable. I'll continue to assist you with the best available service.",
+                content: "Note: I'm now using Anthropic AI as a fallback service because DeepSeek R1 is currently unavailable. I'll continue to assist you with the best available service.",
                 isUser: false,
                 timestamp: new Date(),
               }

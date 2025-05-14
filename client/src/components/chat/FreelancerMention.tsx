@@ -167,12 +167,20 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
         if (!usersResponse.ok) {
           throw new Error('Failed to fetch users');
         }
-        const users = await usersResponse.json();
+        const usersData = await usersResponse.json();
         
         // Create map of userId to user for quick lookups
         const userMap = new Map();
-        users.forEach((user: any) => {
-          userMap.set(user.id, user);
+        
+        // Handle both {users: [...]} format and direct array format
+        const userArray = Array.isArray(usersData) ? usersData : 
+                         (usersData && usersData.users && Array.isArray(usersData.users)) ? 
+                         usersData.users : [];
+        
+        userArray.forEach((user: any) => {
+          if (user && typeof user.id === 'number') {
+            userMap.set(user.id, user);
+          }
         });
         
         // Log the content we're processing for debugging
