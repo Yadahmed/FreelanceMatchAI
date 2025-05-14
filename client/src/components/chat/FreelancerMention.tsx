@@ -158,8 +158,8 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
         
           // Add freelancer component with unique key and improved responsive styling
           elements.push(
-            <span key={`freelancer-uid-${match.id}-${i}`} className="inline-flex flex-col my-2 bg-blue-50 rounded-lg border border-blue-100 overflow-hidden w-full sm:max-w-[400px] max-w-full shadow-sm">
-              <div className="p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+            <span key={`freelancer-uid-${match.id}-${i}`} className="inline-flex flex-col my-2 bg-background rounded-lg border border-border/40 overflow-hidden w-full sm:max-w-[400px] max-w-full shadow-sm">
+              <div className="p-3 bg-gradient-to-r from-primary to-primary/80 text-white">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4" /> 
@@ -175,13 +175,13 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
                 {skills && <div className="text-xs mt-1 text-white/90">{skills}</div>}
               </div>
               
-              <div className="p-2 bg-white flex justify-between items-center">
-                <div className="text-indigo-700 font-semibold">${hourlyRate}/hr</div>
+              <div className="p-2 bg-background flex justify-between items-center">
+                <div className="text-primary font-semibold">${hourlyRate}/hr</div>
                 <div className="flex gap-2">
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="h-8 text-xs border-blue-200"
+                    className="h-8 text-xs"
                     asChild
                   >
                     <Link href={`/freelancer/${match.id}`}>View Profile</Link>
@@ -189,7 +189,7 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
                   <Button 
                     variant="default" 
                     size="sm"
-                    className="h-8 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                    className="h-8 text-xs bg-primary hover:bg-primary/90"
                     asChild
                   >
                     <Link href={`/messages/${match.id}`}>

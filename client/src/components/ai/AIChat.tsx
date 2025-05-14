@@ -539,21 +539,21 @@ export function AIChat() {
                 
                 {/* Render freelancer matches with cards if present */}
                 {!message.isUser && message.freelancerMatches && message.freelancerMatches.length > 0 && (
-                  <div className="mt-4 p-0 rounded-xl overflow-hidden border border-blue-100 bg-white">
-                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white">
+                  <div className="mt-4 p-0 rounded-xl overflow-hidden border border-border/40 bg-background">
+                    <div className="bg-gradient-to-r from-primary to-primary/80 p-4 text-white">
                       <h4 className="font-medium text-lg">
                         {message.id === messages[0]?.id 
                           ? "Top Matched Freelancers" 
                           : "Recommended Freelancers"}
                       </h4>
-                      <p className="text-sm text-blue-100 mt-1">
+                      <p className="text-sm text-white/80 mt-1">
                         {message.id === messages[0]?.id
                           ? "These freelancers match your requirements"
                           : "Based on your specific requirements"}
                       </p>
                     </div>
                     
-                    <div className="p-4 bg-white">
+                    <div className="p-4 bg-background">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {message.freelancerMatches.slice(0, 3).map((match, index) => {
                           // Get freelancer ID and name from the match data
@@ -584,12 +584,12 @@ export function AIChat() {
                                     {typeof name === 'string' ? name.charAt(0) : 'F'}
                                   </div>
                                   <div>
-                                    <h5 className="font-medium">{typeof name === 'string' ? name : `Freelancer ${freelancerId}`}</h5>
-                                    <p className="text-xs text-gray-500">{profession} in {location}</p>
+                                    <h5 className="font-medium text-foreground">{typeof name === 'string' ? name : `Freelancer ${freelancerId}`}</h5>
+                                    <p className="text-xs text-muted-foreground">{profession} in {location}</p>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-full">
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                                <div className="flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2 py-1 rounded-full">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                   </svg>
                                   <span className="text-sm font-medium">{rating}/5</span>
@@ -616,13 +616,13 @@ export function AIChat() {
                               
                               <div className="p-3 border-t border-border/10 flex gap-2">
                                 <a 
-                                  href={`/freelancers/${freelancerId}`}
+                                  href={`/freelancer/${freelancerId}`}
                                   className="flex-1 text-center py-2 px-3 border border-border/20 rounded-md text-foreground text-sm font-medium hover:bg-accent transition-colors"
                                 >
                                   View Profile
                                 </a>
                                 <a 
-                                  href={`/messages/new/${freelancerId}`}
+                                  href={`/messages/${freelancerId}`}
                                   className="flex-1 text-center py-2 px-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary rounded-md text-white text-sm font-medium transition-colors"
                                 >
                                   Chat Now
