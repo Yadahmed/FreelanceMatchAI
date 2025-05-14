@@ -221,7 +221,7 @@ export default function ClientMessagesPage() {
                     let displayName;
                     
                     // Map of known freelancer names to handle all cases
-                    const knownFreelancers = {
+                    const knownFreelancers: Record<number, string> = {
                       5: "Yawar Jabar",
                       6: "Danyar Kamaran", 
                       7: "Hamarawa Ali",
@@ -238,9 +238,9 @@ export default function ClientMessagesPage() {
                         !chat.freelancer.displayName.startsWith('Freelancer ')) {
                       displayName = chat.freelancer.displayName;
                     } 
-                    // Use our mapping of known freelancers
-                    else if (knownFreelancers[chat.freelancerId]) {
-                      displayName = knownFreelancers[chat.freelancerId];
+                    // Use our mapping of known freelancers - safely check if ID exists
+                    else if (freelancerId && knownFreelancers[freelancerId as keyof typeof knownFreelancers]) {
+                      displayName = knownFreelancers[freelancerId as keyof typeof knownFreelancers];
                     } 
                     // Fallback to using user ID or freelancer ID
                     else {

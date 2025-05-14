@@ -554,7 +554,7 @@ export async function getChats(req: Request, res: Response) {
           }
           // Otherwise use a hardcoded mapping for known freelancers
           else {
-            const knownFreelancers = {
+            const knownFreelancers: Record<number, string> = {
               5: "Yawar Jabar",
               6: "Danyar Kamaran", 
               7: "Hamarawa Ali",
@@ -564,7 +564,9 @@ export async function getChats(req: Request, res: Response) {
               59: "Mohammed Salim"
             };
             
-            name = knownFreelancers[freelancer.id] || `Freelancer ${freelancer.id}`;
+            name = freelancer.id && freelancer.id in knownFreelancers ? 
+              knownFreelancers[freelancer.id] : 
+              `Freelancer ${freelancer.id}`;
           }
           
           // Add a real name to the freelancer object
