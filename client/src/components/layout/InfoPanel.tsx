@@ -31,7 +31,7 @@ export function InfoPanel() {
         
         {isAuthenticated && isClient && (
           <Link href="/client-messages">
-            <Button variant="outline" size="lg" className="w-full justify-start h-auto py-3">
+            <Button variant="outline" size="lg" className="w-full justify-start h-auto py-3 bg-background hover:bg-accent">
               <MessageSquare className="mr-2 h-5 w-5 text-primary" />
               <div className="text-left">
                 <div className="font-medium">View Messages</div>
