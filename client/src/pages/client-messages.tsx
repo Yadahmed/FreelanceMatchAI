@@ -185,7 +185,15 @@ export default function ClientMessagesPage() {
               <ScrollArea className="h-[500px] pr-4">
                 <div className="space-y-4">
                   {chats.map((chat: any) => {
-                    const freelancerName = chat.freelancer?.displayName || 'Freelancer';
+                    // Properly extract the freelancer name from the data
+                    let freelancerName = chat.freelancer?.displayName || '';
+                    
+                    // If we still have a generic name like "Freelancer 5", get the user data if available
+                    if (freelancerName.startsWith('Freelancer ') && chat.freelancer) {
+                      // Get the user's profession as additional context
+                      const profession = chat.freelancer.profession || '';
+                      freelancerName = `${freelancerName} (${profession})`;
+                    }
                     const latestMessage = chat.latestMessage?.content || 'No messages yet';
                     const timestamp = chat.latestMessage?.createdAt 
                       ? formatDistanceToNow(new Date(chat.latestMessage.createdAt), { addSuffix: true })
@@ -222,17 +230,7 @@ export default function ClientMessagesPage() {
                             )}
                           </div>
                           
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="opacity-0 group-hover:opacity-100"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleChatClick(chat.id);
-                            }}
-                          >
-                            View
-                          </Button>
+                          {/* Removed "View" button - entire row is now clickable */}
                         </div>
                         <Separator className="my-2" />
                       </div>
