@@ -50,8 +50,8 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
         const parts: React.ReactNode[] = [];
         let remainingContent = content;
         
-        // Check for freelancer IDs in the new format [FREELANCER_ID:X] which we added to system prompt
-        const taggedIdRegex = /\[FREELANCER_ID:(\d+)\]/g;
+        // Check for freelancer IDs in the new format [FREELANCER_ID:X] or **[FREELANCER_ID:X] which we added to system prompt
+        const taggedIdRegex = /\*?\*?\[FREELANCER_ID:(\d+)\]\*?\*?/g;
         
         // Then check for freelancer IDs in the old format "ID: X" or "(ID: X)" as fallback
         const idRegex = /\b(ID:?\s*(\d+))\b/g;
@@ -70,7 +70,16 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
         
         // First check for our special new tag format [FREELANCER_ID:X]
         let tagMatch;
+        
+        // Add debugging info to see what we're matching or not matching
+        console.log('Looking for freelancer tags in:', remainingContent);
+        console.log('Using regex pattern:', taggedIdRegex.toString());
+        
+        // Reset regex for search
+        taggedIdRegex.lastIndex = 0;
+        
         while ((tagMatch = taggedIdRegex.exec(remainingContent)) !== null) {
+          console.log('Found match:', tagMatch[0], 'ID:', tagMatch[1]);
           const [fullTagMatch, idStr] = tagMatch;
           const id = parseInt(idStr, 10);
           
