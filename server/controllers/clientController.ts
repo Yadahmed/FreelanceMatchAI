@@ -541,8 +541,8 @@ export async function getChats(req: Request, res: Response) {
           // Log to help debug
           console.log('User info for freelancer', freelancer.id, ':', user);
           
-          // Generate a name
-          const name = user?.username || `Freelancer ${freelancer.id}`;
+          // Use the display_name from the user if available, otherwise fallback to username or ID
+          const name = user?.displayName || user?.username || `Freelancer ${freelancer.id}`;
           
           // Add a real name to the freelancer object
           freelancerWithName = {
