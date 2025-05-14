@@ -20,22 +20,22 @@ export function InfoPanel() {
         <h2 className="text-xl font-semibold">What would you like to do?</h2>
         
         <Link href="/explore-freelancers">
-          <Button variant="outline" size="lg" className="w-full justify-start h-auto py-3">
+          <Button variant="outline" size="lg" className="w-full justify-start h-auto py-3 group">
             <Users className="mr-2 h-5 w-5 text-primary" />
             <div className="text-left">
               <div className="font-medium">Browse Freelancers</div>
-              <div className="text-xs text-muted-foreground">Explore our directory of qualified Kurdish freelancers</div>
+              <div className="text-xs text-muted-foreground group-hover:text-muted-foreground/80">Explore our directory of qualified Kurdish freelancers</div>
             </div>
           </Button>
         </Link>
         
         {isAuthenticated && isClient && (
           <Link href="/client-messages">
-            <Button variant="outline" size="lg" className="w-full justify-start h-auto py-3 bg-background hover:bg-accent">
+            <Button variant="outline" size="lg" className="w-full justify-start h-auto py-3 bg-background hover:bg-accent group">
               <MessageSquare className="mr-2 h-5 w-5 text-primary" />
               <div className="text-left">
                 <div className="font-medium">View Messages</div>
-                <div className="text-xs text-muted-foreground">Check your conversations with freelancers</div>
+                <div className="text-xs text-muted-foreground group-hover:text-muted-foreground/80">Check your conversations with freelancers</div>
               </div>
             </Button>
           </Link>
