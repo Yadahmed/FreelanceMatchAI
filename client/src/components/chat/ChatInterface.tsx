@@ -196,7 +196,7 @@ export function ChatInterface() {
 
   return (
     <div className="flex flex-col h-full">
-      <Card className="flex-1 border rounded-lg overflow-hidden flex flex-col shadow-md dark:shadow-primary/5 bg-card">
+      <Card className="flex-1 border rounded-lg overflow-hidden flex flex-col shadow-md dark:shadow-primary/5 bg-card dark:bg-background/95">
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-6">
             {messages.map((message) => (
@@ -373,7 +373,7 @@ export function ChatInterface() {
           </div>
         </ScrollArea>
 
-        <div className="p-4 border-t bg-card/80 backdrop-blur-sm">
+        <div className="p-4 border-t bg-card/80 dark:bg-muted/10 dark:border-muted backdrop-blur-sm">
           {/* Suggested prompts */}
           {messages.length <= 2 && (
             <div className="mb-3">
