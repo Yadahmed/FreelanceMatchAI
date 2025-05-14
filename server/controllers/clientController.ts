@@ -219,7 +219,7 @@ export async function getChatHistory(req: Request, res: Response) {
     const chats = await storage.getChatsByUserId(req.user.id);
     
     // Get messages for the most recent chat
-    let messages = [];
+    let messages: ReturnType<typeof storage.getMessagesByChatId> extends Promise<infer T> ? T : never = [];
     if (chats.length > 0) {
       const mostRecentChat = chats[0]; // Assuming chats are sorted by updated_at
       messages = await storage.getMessagesByChatId(mostRecentChat.id);
@@ -569,11 +569,12 @@ export async function getChats(req: Request, res: Response) {
               `Freelancer ${freelancer.id}`;
           }
           
-          // Add a real name to the freelancer object
+          // Create a new object with freelancer data plus the display name
+          // We use type assertion since displayName is not in the Freelancer type
           freelancerWithName = {
             ...freelancer,
             displayName: name
-          };
+          } as typeof freelancer & { displayName: string };
         }
         
         return {
@@ -592,9 +593,15 @@ export async function getChats(req: Request, res: Response) {
       
       // Sort by message timestamp (most recent first)
       if (a.latestMessage && b.latestMessage) {
-        // Some messages use createdAt, others use timestamp field 
-        const aTime = a.latestMessage.createdAt || a.latestMessage.timestamp;
-        const bTime = b.latestMessage.createdAt || b.latestMessage.timestamp;
+        // Some messages use createdAt, others use timestamp field
+        // We need to handle both timestamp formats
+        const aMessage = a.latestMessage as { timestamp?: Date, createdAt?: Date };
+        const bMessage = b.latestMessage as { timestamp?: Date, createdAt?: Date };
+        
+        const aTime = aMessage.createdAt || aMessage.timestamp;
+        const bTime = bMessage.createdAt || bMessage.timestamp;
+        
+        if (!aTime || !bTime) return 0;
         return new Date(bTime).getTime() - new Date(aTime).getTime();
       }
       
