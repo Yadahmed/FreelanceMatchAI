@@ -370,29 +370,59 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
     
     // Try to detect a numbered markdown list pattern in the text
     const detectNumberedList = () => {
-      // BEGIN SPECIAL CASE: First check for the specific FREELANCER_ID format
-      const freelancerIdPattern = /\*\*\[FREELANCER_ID:(\d+)\]/;
-      const freelancerIdMatch = text.match(freelancerIdPattern);
-      if (freelancerIdMatch) {
-        const id = parseInt(freelancerIdMatch[1], 10);
-        const freelancer = freelancers.find(f => f.id === id);
-        if (freelancer) {
-          console.log(`Found [FREELANCER_ID:${id}] format - using this directly`);
+      // BEGIN SPECIAL CASE: First check for all instances of the specific FREELANCER_ID format
+      const freelancerIdPattern = /\*\*\[FREELANCER_ID:(\d+)\]/g;
+      const allFreelancerIdMatches = Array.from(text.matchAll(freelancerIdPattern));
+      
+      if (allFreelancerIdMatches.length > 0) {
+        console.log(`Found ${allFreelancerIdMatches.length} [FREELANCER_ID:X] matches`);
+        const results = [];
+        
+        for (const match of allFreelancerIdMatches) {
+          const idStr = match[1];
+          const id = parseInt(idStr, 10);
+          const freelancer = freelancers.find(f => f.id === id);
           
-          // Find where in the text it occurs
-          const matchIndex = text.indexOf(freelancerIdMatch[0]);
-          
-          // Get the full line containing this match
-          const lineStart = text.lastIndexOf('\n', matchIndex) + 1;
-          const lineEnd = text.indexOf('\n', matchIndex);
-          const entryStart = lineStart === 0 ? 0 : lineStart;
-          const entryEnd = lineEnd === -1 ? text.length : lineEnd;
-          
-          return [{
-            id: id,
-            index: entryStart,
-            length: entryEnd - entryStart
-          }];
+          if (freelancer) {
+            console.log(`Processing [FREELANCER_ID:${id}] for ${freelancer.displayName}`);
+            
+            // Find where in the text this specific match occurs
+            const matchIndex = match.index!;
+            const matchText = match[0];
+            
+            // Find the paragraph containing this freelancer mention (from the line start to the next empty line)
+            let lineStart = text.lastIndexOf('\n', matchIndex) + 1;
+            if (lineStart <= 0) lineStart = 0;
+            
+            // Find where the freelancer description paragraph ends (next double newline or 4 lines)
+            let paraEnd = text.indexOf('\n\n', matchIndex);
+            if (paraEnd === -1) paraEnd = text.length;
+            
+            // Include a few lines after the mention to capture skills, experience, etc.
+            let currentPos = matchIndex;
+            let lineCount = 0;
+            for (let i = 0; i < 4; i++) {
+              const nextNewline = text.indexOf('\n', currentPos + 1);
+              if (nextNewline === -1 || nextNewline > paraEnd) break;
+              currentPos = nextNewline;
+              lineCount++;
+            }
+            
+            // If we found more lines, use the later position as the paragraph end
+            if (lineCount > 0 && currentPos > matchIndex) {
+              paraEnd = currentPos;
+            }
+            
+            results.push({
+              id: id,
+              index: lineStart,
+              length: paraEnd - lineStart
+            });
+          }
+        }
+        
+        if (results.length > 0) {
+          return results;
         }
       }
       // END SPECIAL CASE
