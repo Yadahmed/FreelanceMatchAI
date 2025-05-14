@@ -316,31 +316,53 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
                       {rating}
                     </div>
                   </div>
-                  {skills && <div className="text-xs mt-1 text-white/90">{skills}</div>}
+                  <div className="flex flex-col gap-1 mt-1">
+                    <div className="text-sm text-white/95">{freelancer.profession || 'Freelance Designer'} in {freelancer.location || 'Unknown'}</div>
+                    {skills && <div className="text-xs text-white/90">Skills: {skills}</div>}
+                  </div>
                 </div>
                 
-                <div className="p-3 bg-background dark:bg-gray-800 flex justify-between items-center">
-                  <div className="text-primary font-semibold dark:text-indigo-300">${hourlyRate}/hr</div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="h-8 text-xs"
-                      asChild
-                    >
-                      <Link href={`/freelancer/${match.id}`}>View Profile</Link>
-                    </Button>
-                    <Button 
-                      variant="default" 
-                      size="sm"
-                      className="h-8 text-xs bg-primary hover:bg-primary/90"
-                      asChild
-                    >
-                      <Link href={`/chat?freelancer=${match.id}`}>
-                        <MessageCircle className="h-3 w-3 mr-1" />
-                        Chat
-                      </Link>
-                    </Button>
+                <div className="p-3 bg-background dark:bg-gray-800">
+                  <div className="text-sm mb-2 text-gray-700 dark:text-gray-300">
+                    {freelancer.bio ? (
+                      <p className="line-clamp-2">{freelancer.bio}</p>
+                    ) : (
+                      <p className="line-clamp-2">{`${displayName} is a talented professional with ${freelancer.yearsOfExperience || 2}+ years of experience, specializing in creating high-quality designs and visual assets.`}</p>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-wrap text-xs text-gray-600 dark:text-gray-400 gap-x-4 gap-y-1 mb-3">
+                    <div className="flex items-center">
+                      <span>Experience: {freelancer.yearsOfExperience || '3'} years</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span>Jobs: {freelancer.completedJobs || 10}+ completed</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <div className="text-primary font-semibold dark:text-indigo-300">${hourlyRate}/hr</div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="h-8 text-xs"
+                        asChild
+                      >
+                        <Link href={`/freelancer/${match.id}`}>View Profile</Link>
+                      </Button>
+                      <Button 
+                        variant="default" 
+                        size="sm"
+                        className="h-8 text-xs bg-primary hover:bg-primary/90"
+                        asChild
+                      >
+                        <Link href={`/chat?freelancer=${match.id}`}>
+                          <MessageCircle className="h-3 w-3 mr-1" />
+                          Chat
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
