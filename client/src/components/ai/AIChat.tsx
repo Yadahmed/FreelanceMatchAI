@@ -668,7 +668,7 @@ export function AIChat() {
         <div className="flex gap-2 relative">
           <Textarea
             placeholder={isAIAvailable 
-              ? "Ask me about finding freelancers for your project..." 
+              ? "Ask me about finding freelancers..." 
               : "AI Assistant is currently offline"}
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
@@ -676,21 +676,21 @@ export function AIChat() {
             className="min-h-[70px] resize-none px-4 py-3 pr-[140px] rounded-xl border-primary/20 focus:border-primary focus:ring-primary/20"
             disabled={!isAIAvailable || isLoading || isImprovingPrompt}
           />
-          <div className="absolute right-3 bottom-3 flex items-center gap-2">
+          <div className="absolute right-3 bottom-3 flex items-center gap-1">
             <Button
               onClick={improvePrompt}
               disabled={!isAIAvailable || isLoading || isImprovingPrompt || !inputValue.trim()}
               variant="outline"
               size="sm"
-              className="h-9 border-primary/20 bg-background text-foreground hover:bg-accent"
+              className="h-8 px-3 border-primary/20 bg-background text-foreground hover:bg-accent"
               title="Improve prompt"
             >
               {isImprovingPrompt ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
               ) : (
-                <Sparkles className="h-4 w-4 mr-1" />
+                <Sparkles className="h-3.5 w-3.5 mr-1" />
               )}
-              <span>Enhance</span>
+              <span className="text-xs">Enhance</span>
             </Button>
             
             <Button
@@ -698,15 +698,15 @@ export function AIChat() {
               disabled={!isAIAvailable || isLoading || isImprovingPrompt || !inputValue.trim()}
               variant="default"
               size="sm"
-              className="h-9 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary"
+              className="h-8 px-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary"
               title="Send message"
             >
               {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
               ) : (
-                <Send className="h-4 w-4 mr-1" />
+                <Send className="h-3.5 w-3.5 mr-1" />
               )}
-              <span>Send</span>
+              <span className="text-xs">Send</span>
             </Button>
           </div>
         </div>
