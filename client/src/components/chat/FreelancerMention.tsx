@@ -78,6 +78,38 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
       // Log the IDs we have in our database for reference
       console.log("Available freelancer IDs:", freelancers.map(f => f.id).join(', '));
       
+      // First try to detect the exact format from the screenshot with "ID: xxxx"
+      const fullText = text.toLowerCase();
+      for (const freelancer of freelancers) {
+        // Look for explicit ID mentions
+        const idString = `id: ${freelancer.id}`;
+        if (fullText.includes(idString)) {
+          console.log(`Found direct ID mention: "${idString}" for freelancer ${freelancer.id}`);
+          
+          // Find where in the text it occurs
+          const idIndex = fullText.indexOf(idString);
+          
+          // Try to find the whole entry content
+          // Find the start of the line containing this ID
+          let entryStart = fullText.lastIndexOf('\n', idIndex);
+          if (entryStart === -1) entryStart = 0;
+          
+          // Find the end of this entry (next empty line or end of text)
+          let entryEnd = fullText.indexOf('\n\n', idIndex);
+          if (entryEnd === -1) entryEnd = fullText.length;
+          
+          const entryText = fullText.substring(entryStart, entryEnd);
+          console.log(`Entry text for ID ${freelancer.id}: "${entryText}"`);
+          
+          // Add as a match
+          extracted.push({
+            id: freelancer.id,
+            index: entryStart,
+            length: entryEnd - entryStart
+          });
+        }
+      }
+      
       // Look for lines that start with a number and have a pattern like "**Name:**"
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -141,6 +173,20 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
       // Create React elements from matches
       const elements: React.ReactNode[] = [];
       let lastIndex = 0;
+      
+      // Log detailed information about matched freelancers for debugging
+      console.log("=== MATCHED FREELANCERS ===");
+      for (const match of matches) {
+        const freelancer = freelancers.find(f => f.id === match.id);
+        if (freelancer) {
+          const user = userMap.get(freelancer.userId);
+          const displayName = user?.displayName || user?.username || `Freelancer ${match.id}`;
+          console.log(`✓ Match ID: ${match.id}, Name: ${displayName}, Skills: ${freelancer.skills?.join(', ') || 'none'}`);
+        } else {
+          console.log(`⚠️ Match ID: ${match.id} - Not found in database`);
+        }
+      }
+      console.log("=========================");
       
       // Sort matches by index to process them in order
       matches.sort((a, b) => a.index - b.index);
@@ -313,6 +359,41 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
                 }
               }
             }
+            
+            // Strategy 3: Find freelancer IDs in adjacent lines
+            // Exact format from screenshot - when a list has lines where the number is not itself an ID
+            if (!freelancer && i < lines.length - 3) {
+              // Check if this is a multi-line entry with skills, expertise, etc.
+              const nextLines = [lines[i+1], lines[i+2], lines[i+3]]; // Check next 3 lines
+              
+              for (const nextLine of nextLines) {
+                // Look for an ID pattern in those lines (direct number or ID: pattern)
+                const nextLineIdMatch = nextLine.match(/\b(\d{2,})\b/g); // Any 2+ digit number
+                if (nextLineIdMatch) {
+                  for (const numStr of nextLineIdMatch) {
+                    const potentialId = parseInt(numStr, 10);
+                    const freelancer = freelancers.find(f => f.id === potentialId);
+                    if (freelancer) {
+                      console.log(`✓ Found freelancer ID ${potentialId} in a nearby line: "${nextLine}"`);
+                      
+                      // Calculate position in text
+                      const lineStart = i === 0 ? 0 : text.indexOf(lines[i-1]) + lines[i-1].length + 1;
+                      const itemStart = text.indexOf(line, lineStart);
+                      
+                      extracted.push({
+                        id: potentialId,
+                        index: itemStart,
+                        length: line.length
+                      });
+                      
+                      // Skip processing those next lines
+                      i += nextLines.indexOf(nextLine) + 1;
+                      break;
+                    }
+                  }
+                }
+              }
+            }
           }
         }
         
@@ -353,10 +434,15 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
       /^([0-9]+)\.?\s.*(?:graphic|design|ui|ux|web)/im,  // Number followed by description containing design keywords
       /^([0-9]+)\.?\s.*(?:hourly rate|rate:)/im,  // Number followed by hourly rate mention
       
+      // Common ID formats
+      /id:?\s*([0-9]+)/i,                       // Literal "ID:" followed by a number
+      /id number:?\s*([0-9]+)/i,                // "ID number:" followed by number
+      /freelancer id:?\s*([0-9]+)/i,            // "Freelancer ID:" followed by number
+      
       // First attempt to find direct numerical patterns from the screenshot
-      /^([0-9]{4})$/m,                          // Just a 4-digit ID at the start of a line (like "1092")
-      /ID:([0-9]{4})/,                          // ID:XXXX format (like "ID:1092")
-      /^([0-9]{4})\s/m,                         // 4-digit ID followed by space at line start
+      /^([0-9]{2,4})$/m,                        // Just a 2-4 digit ID at the start of a line
+      /ID:([0-9]{2,4})/,                        // ID:XX or ID:XXXX format
+      /^([0-9]{2,4})\s/m,                       // 2-4 digit ID followed by space at line start
       
       // Regular ID patterns
       /\*\*\[FREELANCER_ID:(\d+)\]\*\*/g,       // **[FREELANCER_ID:X]**
@@ -451,9 +537,42 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
       }
     });
     
-    // If no matches found, just return the original text
+    // If no matches found through our patterns, try a fallback approach
     if (matches.length === 0) {
-      setProcessedContent([text]);
+      console.log("No pattern matches found, trying fallback approach");
+      
+      // Fallback: Look for any valid freelancer IDs in the entire text
+      const fallbackMatches: {id: number, index: number, length: number}[] = [];
+      
+      // First, check if the content has numbered lists that might be freelancers
+      const hasOrderedList = text.match(/^1[\.\)]\s+/m) && text.match(/^2[\.\)]\s+/m);
+      
+      if (hasOrderedList) {
+        console.log("Content has numbered lists - might be freelancers");
+        // Assume the top 3 freelancers should be shown
+        const topFreelancers = [...freelancers]
+          .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+          .slice(0, 3);
+        
+        console.log(`Using top ${topFreelancers.length} freelancers as fallback`);
+        
+        // Create "virtual" matches positioned at the start of the text
+        topFreelancers.forEach((f, i) => {
+          fallbackMatches.push({
+            id: f.id,
+            index: 0,  // We'll position them at the start
+            length: 1  // Minimal length since we're not replacing anything
+          });
+        });
+      }
+      
+      if (fallbackMatches.length > 0) {
+        console.log(`Added ${fallbackMatches.length} fallback matches`);
+        processMatchesIntoElements(fallbackMatches);
+      } else {
+        // No fallback matches either, just return the original text
+        setProcessedContent([text]);
+      }
       return;
     }
     
