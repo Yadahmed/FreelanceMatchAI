@@ -135,7 +135,7 @@ export default function ClientProfile() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Avatar className="h-20 w-20">
-                <AvatarImage src={currentUser.avatarUrl || ""} alt={displayName} />
+                <AvatarImage src={currentUser.photoURL || ""} alt={displayName} />
                 <AvatarFallback className="text-2xl bg-primary text-primary-foreground">{avatarInitial}</AvatarFallback>
               </Avatar>
               <div>
@@ -144,12 +144,7 @@ export default function ClientProfile() {
                   <AtSign className="h-4 w-4" />
                   {currentUser.username || currentUser.email}
                 </CardDescription>
-                {currentUser.location && (
-                  <CardDescription className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    {currentUser.location}
-                  </CardDescription>
-                )}
+                {/* Location field not available in our schema */}
                 <CardDescription className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
                   Member since {accountCreated}
@@ -205,48 +200,23 @@ export default function ClientProfile() {
                       )}
                     />
                     
+                    {/* These fields are left in the form but are not used in our schema
+                      For a production app, we should either:
+                      1. Add these fields to the schema, or
+                      2. Remove them from the UI completely
+                      For now, we're keeping them as visual elements but not sending the data */}
                     <FormField
                       control={form.control}
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Phone (Optional)</FormLabel>
+                          <FormLabel>Phone (Not supported yet)</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter your phone number" {...field} />
+                            <Input placeholder="This field is not yet available" disabled {...field} />
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="location"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location (Optional)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter your location" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="bio"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Bio (Optional)</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Tell us about yourself" 
-                              className="resize-none" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
+                          <FormDescription>
+                            This field is not supported in the current version.
+                          </FormDescription>
                         </FormItem>
                       )}
                     />
@@ -277,19 +247,19 @@ export default function ClientProfile() {
                   </div>
                   
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Phone</h3>
-                    <p className="mt-1">{currentUser.phone || "Not set"}</p>
+                    <h3 className="text-sm font-medium text-muted-foreground">Username</h3>
+                    <p className="mt-1">{currentUser.username || "Not set"}</p>
                   </div>
                   
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Location</h3>
-                    <p className="mt-1">{currentUser.location || "Not set"}</p>
+                    <h3 className="text-sm font-medium text-muted-foreground">Account Type</h3>
+                    <p className="mt-1">{currentUser.isClient ? "Client" : "Freelancer"}</p>
                   </div>
                 </div>
                 
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Bio</h3>
-                  <p className="mt-1">{currentUser.bio || "No bio available"}</p>
+                <div className="text-muted-foreground text-sm mt-4">
+                  <AlertTriangle className="h-5 w-5 inline mr-2" />
+                  Additional profile fields like phone, location, and bio will be available in a future update.
                 </div>
               </CardContent>
             )}
@@ -318,7 +288,7 @@ export default function ClientProfile() {
         
         <CardFooter className="flex flex-col sm:flex-row justify-between border-t p-6 mt-4">
           <p className="text-sm text-muted-foreground">
-            Last updated: {currentUser.updatedAt ? new Date(currentUser.updatedAt).toLocaleString() : "Never"}
+            Last login: {currentUser.lastLogin ? new Date(currentUser.lastLogin).toLocaleString() : "Never"}
           </p>
           {!isEditing && (
             <div className="mt-4 sm:mt-0">
