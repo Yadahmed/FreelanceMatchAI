@@ -562,6 +562,10 @@ export function AIChat() {
                           
                           if (!freelancerId) return null;
                           
+                          // Get name and other details
+                          const name = freelancer.displayName || 
+                            (freelancer.username ? freelancer.username : `Freelancer ${freelancerId}`);
+                          
                           // Get skills and other details
                           const skills = freelancer.skills || [];
                           const profession = freelancer.profession || "Freelancer";
@@ -577,10 +581,10 @@ export function AIChat() {
                               <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                                 <div className="flex items-center gap-3">
                                   <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-lg">
-                                    {name.charAt(0)}
+                                    {typeof name === 'string' ? name.charAt(0) : 'F'}
                                   </div>
                                   <div>
-                                    <h5 className="font-medium">{name}</h5>
+                                    <h5 className="font-medium">{typeof name === 'string' ? name : `Freelancer ${freelancerId}`}</h5>
                                     <p className="text-xs text-gray-500">{profession} in {location}</p>
                                   </div>
                                 </div>

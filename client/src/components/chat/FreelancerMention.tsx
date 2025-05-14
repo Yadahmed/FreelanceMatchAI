@@ -191,8 +191,13 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
         const parts = processMatches(content, matches, freelancers, userMap);
         setProcessedContent(parts);
       } catch (error) {
-        console.error('Error processing freelancer mentions:', {content, error});
-        setProcessedContent([content]);
+        console.error('Error processing freelancer mentions:', {
+          contentLength: content?.length || 0,
+          contentType: typeof content,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        // Safely return the original content
+        setProcessedContent([content || '']);
       }
     };
     
