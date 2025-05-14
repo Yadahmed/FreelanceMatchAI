@@ -29,6 +29,7 @@ interface AIChatMessage {
   timestamp: Date;
   clarifyingQuestions?: string[];
   needsMoreInfo?: boolean;
+  freelancerMatches?: any[]; // Freelancer matches returned from the AI
 }
 
 const generateId = () => Math.random().toString(36).substring(2, 11);
@@ -255,6 +256,18 @@ export function AIChat() {
         response.metadata?.needsMoreInfo
       );
       
+      // Check for freelancer matches in any format
+      let matches = [];
+      if (response.metadata?.matches && Array.isArray(response.metadata.matches)) {
+        matches = response.metadata.matches;
+      } else if (response.metadata?.freelancerMatches && Array.isArray(response.metadata.freelancerMatches)) {
+        matches = response.metadata.freelancerMatches;
+      } else if ((response as any).matches && Array.isArray((response as any).matches)) {
+        matches = (response as any).matches;
+      } else if ((response as any).freelancerMatches && Array.isArray((response as any).freelancerMatches)) {
+        matches = (response as any).freelancerMatches;
+      }
+      
       // Add AI response to chat
       const aiMessage: AIChatMessage = {
         id: generateId(),
@@ -262,7 +275,9 @@ export function AIChat() {
         isUser: false,
         timestamp: new Date(),
         clarifyingQuestions: response.clarifyingQuestions || response.metadata?.clarifyingQuestions,
-        needsMoreInfo: response.needsMoreInfo || response.metadata?.needsMoreInfo
+        needsMoreInfo: response.needsMoreInfo || response.metadata?.needsMoreInfo,
+        // Store any freelancer matches that were found
+        freelancerMatches: matches
       };
       
       setMessages(prev => [...prev, aiMessage]);
@@ -453,6 +468,58 @@ export function AIChat() {
                           {question}
                         </Button>
                       ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Render freelancer matches with chat buttons if present */}
+                {!message.isUser && message.freelancerMatches && message.freelancerMatches.length > 0 && (
+                  <div className="mt-4 space-y-3 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    <div className="flex flex-col">
+                      <h4 className="font-medium text-blue-800">Top Freelancers Found!</h4>
+                      <p className="text-sm text-blue-600 mb-3">Contact these freelancers directly:</p>
+                      
+                      <div className="flex flex-wrap gap-2">
+                        {message.freelancerMatches.slice(0, 3).map((match, index) => {
+                          // Get freelancer ID and name from the match data
+                          const freelancer = match.freelancer || match;
+                          const freelancerId = match.freelancerId || freelancer.id;
+                          const name = freelancer.displayName || 
+                            (freelancer.username ? freelancer.username : `Freelancer ${freelancerId}`);
+                          
+                          if (!freelancerId) return null;
+                          
+                          return (
+                            <a 
+                              key={`chat-button-${index}`}
+                              href={`/messages/new/${freelancerId}`} 
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-white text-sm font-medium
+                                         bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700
+                                         shadow-sm hover:shadow-md transition-all"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-square">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                              </svg>
+                              Chat with {name.split(' ')[0]}
+                            </a>
+                          );
+                        })}
+                        
+                        <a 
+                          href="/messages"
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-blue-700 text-sm font-medium
+                                     bg-white border border-blue-300 hover:bg-blue-50 hover:border-blue-400
+                                     shadow-sm hover:shadow-md transition-all"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-users">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                          </svg>
+                          View All Freelancers
+                        </a>
+                      </div>
                     </div>
                   </div>
                 )}
