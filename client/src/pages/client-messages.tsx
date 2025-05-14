@@ -53,7 +53,13 @@ export default function ClientMessagesPage() {
   };
   
   const handleChatClick = (chatId: number) => {
-    setLocation(`/chat/${chatId}`);
+    // Redirect to freelancer-specific chat page (using chat.freelancerId if available)
+    const chat = data?.chats.find((c: any) => c.id === chatId);
+    if (chat?.freelancerId) {
+      setLocation(`/messages/${chat.freelancerId}`);
+    } else {
+      setLocation(`/chat/${chatId}`);
+    }
   };
   
   // Protect route for clients only

@@ -453,7 +453,15 @@ export default function FreelancerDashboard() {
                     <div 
                       key={chat.id} 
                       className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={() => setLocation(`/chat/${chat.id}`)}
+                      onClick={() => {
+                        // Get the client ID from the chat and use messages route if available
+                        const clientId = chat.relatedJobRequest?.client?.id;
+                        if (clientId) {
+                          setLocation(`/messages/${clientId}`);
+                        } else {
+                          setLocation(`/chat/${chat.id}`);
+                        }
+                      }}
                     >
                       <Avatar className="h-10 w-10">
                         <AvatarFallback>
