@@ -151,8 +151,8 @@ export default function FreelancerDetail() {
         description: "Your message has been sent to the freelancer.",
       });
       
-      // Navigate to a messages page in the future
-      // For now we'll just show the success toast
+      // Navigate to the chat/messages page with this freelancer
+      setLocation(`/messages/${freelancer.id}`);
     } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
