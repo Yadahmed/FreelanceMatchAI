@@ -111,7 +111,9 @@ export default function MessagesPage() {
         throw new Error('Failed to fetch freelancer details');
       }
       
-      return await response.json();
+      const data = await response.json();
+      console.log('Freelancer data:', data);
+      return data;
     },
     enabled: !!freelancerId
   });
@@ -206,12 +208,13 @@ export default function MessagesPage() {
     );
   }
   
-  const freelancer = freelancerData?.freelancer;
+  // The freelancer data comes directly from the API, not nested under a 'freelancer' property
+  const freelancer = freelancerData;
   const messages = messagesData?.messages || [];
   const isInitializing = !chatId && messages.length === 0;
   
   // Generate avatar initials
-  const freelancerName = freelancer?.displayName || 'Freelancer';
+  const freelancerName = freelancer?.displayName || `Freelancer ${freelancerId}`;
   const initials = freelancerName
     .split(' ')
     .map((n) => n[0])
