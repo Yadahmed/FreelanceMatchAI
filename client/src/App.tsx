@@ -9,6 +9,7 @@ import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import FreelancerProfile from "@/pages/freelancer-profile";
 import FreelancerDashboard from "@/pages/freelancer-dashboard";
+import FreelancerAvailability from "@/pages/freelancer-availability";
 import ExploreFreelancers from "@/pages/explore-freelancers";
 import Freelancer from "@/pages/freelancer";
 import DirectChat from "@/pages/direct-chat";
@@ -82,6 +83,7 @@ function Router() {
         {/* Core freelancer routes */}
         <Route path="/freelancer-profile" component={FreelancerProfile} />
         <Route path="/freelancer-dashboard" component={FreelancerDashboard} />
+        <Route path="/freelancer-availability" component={FreelancerAvailability} />
         <Route path="/explore-freelancers" component={ExploreFreelancers} />
         <Route path="/freelancer/:id" component={Freelancer} />
         

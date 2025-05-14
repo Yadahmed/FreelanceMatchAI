@@ -36,6 +36,7 @@ import testOllamaRouter from './test-ollama';
 import {
   getDashboard,
   updateProfile,
+  updateAvailability,
   getJobRequests as getFreelancerJobRequests,
   updateJobRequestStatus,
   getBookings as getFreelancerBookings,
@@ -296,6 +297,7 @@ router.get('/freelancers/:id/reviews', async (req, res) => {
 // Freelancer routes
 router.get('/freelancer/dashboard', requireFreelancer, getDashboard);
 router.patch('/freelancer/profile', requireFreelancer, updateProfile);
+router.patch('/freelancer/availability', requireFreelancer, updateAvailability);
 router.get('/freelancer/job-requests', requireFreelancer, getFreelancerJobRequests);
 router.patch('/freelancer/job-requests/:id', requireFreelancer, updateJobRequestStatus);
 router.get('/freelancer/bookings', requireFreelancer, getFreelancerBookings);
