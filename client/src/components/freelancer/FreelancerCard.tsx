@@ -4,7 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Briefcase, MapPin, Award, Clock, Star, User } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Briefcase, MapPin, Award, Clock, Star, User, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 
 interface FreelancerCardProps {
   freelancer: {
@@ -24,6 +25,15 @@ interface FreelancerCardProps {
     yearsOfExperience?: number;
     completedJobs?: number;
     availability?: boolean;
+    availabilityDetails?: {
+      status?: 'available' | 'limited' | 'unavailable';
+      message?: string;
+      availableFrom?: string;
+      availableUntil?: string;
+      workHours?: { start: string; end: string };
+      workDays?: number[];
+      lastUpdated?: string;
+    };
     imageUrl?: string;
     displayName?: string;
     username?: string;
@@ -59,7 +69,51 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
   const rating = freelancer.rating || 0;
   const bio = freelancer.bio || 'No bio available';
   const profession = freelancer.profession || 'Freelancer';
+  
+  // Handle availability status
   const availability = freelancer.availability !== undefined ? freelancer.availability : true;
+  const availabilityDetails = freelancer.availabilityDetails || {
+    status: availability ? 'available' : 'unavailable',
+    message: '',
+    workHours: { start: '09:00', end: '17:00' },
+    workDays: [1, 2, 3, 4, 5]
+  };
+  
+  // Determine availability status icon and text
+  const getAvailabilityStatus = () => {
+    if (!availabilityDetails) return { icon: null, text: 'Unknown', color: 'gray' };
+    
+    const status = availabilityDetails.status || (availability ? 'available' : 'unavailable');
+    
+    switch (status) {
+      case 'available':
+        return { 
+          icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
+          text: 'Available',
+          color: 'green'
+        };
+      case 'limited':
+        return {
+          icon: <AlertCircle className="h-4 w-4 text-amber-500" />,
+          text: 'Limited Availability',
+          color: 'amber'
+        };
+      case 'unavailable':
+        return {
+          icon: <XCircle className="h-4 w-4 text-red-500" />,
+          text: 'Not Available',
+          color: 'red'
+        };
+      default:
+        return {
+          icon: <Clock className="h-4 w-4 text-gray-500" />,
+          text: 'Unknown',
+          color: 'gray'
+        };
+    }
+  };
+  
+  const availabilityStatus = getAvailabilityStatus();
   
   // Calculate the match score (weighted average)
   const matchScore = Math.round(
@@ -91,7 +145,27 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
               <AvatarFallback className="bg-primary/5 text-primary font-medium">{initials}</AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-lg font-display font-semibold group-hover:text-primary transition-colors duration-300">{name}</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-lg font-display font-semibold group-hover:text-primary transition-colors duration-300">{name}</CardTitle>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center">
+                        {availabilityStatus.icon}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="text-sm">
+                        <p className="font-medium">{availabilityStatus.text}</p>
+                        {availabilityDetails.message && (
+                          <p className="text-xs opacity-80 mt-1">{availabilityDetails.message}</p>
+                        )}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <CardDescription className="flex items-center gap-1 mt-1">
                 <Briefcase className="h-3.5 w-3.5 text-primary/70" />
                 <span>{profession}</span>
@@ -100,11 +174,18 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
           </div>
           <div className="text-right">
             <div className="text-lg font-bold font-display">${hourlyRate}<span className="text-sm font-normal text-muted-foreground">/hr</span></div>
-            <Badge variant={availability ? "outline" : "secondary"} 
-              className={availability 
-                ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors duration-300" 
-                : "transition-colors duration-300"}>
-              {availability ? "Available" : "Busy"}
+            <Badge 
+              variant="outline" 
+              className={
+                availabilityStatus.color === 'green'
+                  ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors duration-300"
+                  : availabilityStatus.color === 'amber'
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/30 transition-colors duration-300"
+                    : availabilityStatus.color === 'red'
+                      ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors duration-300"
+                      : "transition-colors duration-300"
+              }>
+              {availabilityStatus.text}
             </Badge>
           </div>
         </div>
