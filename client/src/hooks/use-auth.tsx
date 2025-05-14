@@ -6,7 +6,7 @@ import {
   signInWithPopup,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  updateProfile,
+  updateProfile as updateFirebaseProfile,
   sendEmailVerification,
   applyActionCode,
   verifyPasswordResetCode,
@@ -302,7 +302,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Update profile if display name provided
       if (displayName) {
-        await updateProfile(user, { displayName });
+        await updateFirebaseProfile(user, { displayName });
       }
       
       // Send verification email
@@ -501,11 +501,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Update Firebase profile if display name is provided
       if (profileData.displayName) {
-        // Use the Firebase function as a standalone call to avoid conflict with our own updateProfile function
-        await import('firebase/auth').then(({ updateProfile: updateFirebaseProfile }) => {
-          return updateFirebaseProfile(firebaseUser, { 
-            displayName: profileData.displayName 
-          });
+        // Use the Firebase function by using its imported name directly to avoid conflict with our own updateProfile function
+        await updateProfile(firebaseUser, { 
+          displayName: profileData.displayName 
         });
       }
       
