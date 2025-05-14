@@ -664,7 +664,7 @@ export function AIChat() {
       </ScrollArea>
       
       {/* Input area */}
-      <div className="p-4 border-t bg-white shadow-inner">
+      <div className="p-4 border-t bg-background shadow-inner">
         <div className="flex gap-2 relative">
           <Textarea
             placeholder={isAIAvailable 
@@ -673,7 +673,7 @@ export function AIChat() {
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="min-h-[70px] resize-none px-4 py-3 pr-24 rounded-xl border-gray-200 focus:border-blue-300 focus:ring-blue-200"
+            className="min-h-[70px] resize-none px-4 py-3 pr-[140px] rounded-xl border-primary/20 focus:border-primary focus:ring-primary/20"
             disabled={!isAIAvailable || isLoading || isImprovingPrompt}
           />
           <div className="absolute right-3 bottom-3 flex items-center gap-2">
@@ -682,7 +682,7 @@ export function AIChat() {
               disabled={!isAIAvailable || isLoading || isImprovingPrompt || !inputValue.trim()}
               variant="outline"
               size="sm"
-              className="h-9 border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+              className="h-9 border-primary/20 bg-background text-foreground hover:bg-accent"
               title="Improve prompt"
             >
               {isImprovingPrompt ? (
@@ -690,7 +690,7 @@ export function AIChat() {
               ) : (
                 <Sparkles className="h-4 w-4 mr-1" />
               )}
-              <span className="hidden sm:inline">Enhance</span>
+              <span>Enhance</span>
             </Button>
             
             <Button
@@ -698,7 +698,7 @@ export function AIChat() {
               disabled={!isAIAvailable || isLoading || isImprovingPrompt || !inputValue.trim()}
               variant="default"
               size="sm"
-              className="h-9 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              className="h-9 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary"
               title="Send message"
             >
               {isLoading ? (
@@ -706,7 +706,7 @@ export function AIChat() {
               ) : (
                 <Send className="h-4 w-4 mr-1" />
               )}
-              <span className="hidden sm:inline">Send</span>
+              <span>Send</span>
             </Button>
           </div>
         </div>
