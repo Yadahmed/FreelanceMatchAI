@@ -130,6 +130,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [location] = useLocation();
 
+  // Authentication effect
   useEffect(() => {
     const auth = getAuth(app);
     const unsubscribe = onAuthStateChanged(auth, () => {
@@ -139,15 +140,7 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  // Initialize theme based on user preference in localStorage
+  // Theme initialization effect - must be defined before any conditional returns
   useEffect(() => {
     // Check local storage for theme preference
     const savedTheme = localStorage.getItem("kurdjobs-theme");
@@ -158,6 +151,14 @@ function App() {
       document.documentElement.classList.remove("dark");
     }
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
