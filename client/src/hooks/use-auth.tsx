@@ -501,8 +501,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Update Firebase profile if display name is provided
       if (profileData.displayName) {
-        await updateProfile(firebaseUser, { 
-          displayName: profileData.displayName 
+        // Use the Firebase function as a standalone call to avoid conflict with our own updateProfile function
+        await import('firebase/auth').then(({ updateProfile: updateFirebaseProfile }) => {
+          return updateFirebaseProfile(firebaseUser, { 
+            displayName: profileData.displayName 
+          });
         });
       }
       
@@ -620,7 +623,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signInWithEmail,
     signUpWithEmail,
     signOut,
-    createFreelancerProfile
+    createFreelancerProfile,
+    updateProfile
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
