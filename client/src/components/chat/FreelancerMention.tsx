@@ -7,214 +7,164 @@ interface FreelancerMentionProps {
   content: string;
 }
 
-interface FreelancerMatch {
-  id: number;
-  fullMatch: string;
-  index: number;
-}
-
-// Function to find all freelancer ID mentions in the content
-const findFreelancerMatches = (text: string): FreelancerMatch[] => {
-  const matches: FreelancerMatch[] = [];
+export function FreelancerMention({ content }: FreelancerMentionProps) {
+  const [processedContent, setProcessedContent] = useState<React.ReactNode[]>([content]);
   
-  if (!text) return matches;
+  useEffect(() => {
+    const fetchFreelancers = async () => {
+      if (!content) return;
+      
+      try {
+        console.log("FreelancerMention processing content:", content.substring(0, 100) + (content.length > 100 ? "..." : ""));
+        
+        // Fetch freelancers data
+        const freelancersResponse = await fetch('/api/freelancers');
+        if (!freelancersResponse.ok) {
+          console.error("Failed to fetch freelancers:", freelancersResponse.status);
+          return;
+        }
+        const freelancers = await freelancersResponse.json();
+        console.log(`Fetched ${freelancers.length} freelancers`);
+        
+        // Fetch users data for matching with freelancers
+        const usersResponse = await fetch('/api/admin/users', {
+          headers: { 'admin-session': 'true' }
+        });
+        if (!usersResponse.ok) {
+          console.error("Failed to fetch users:", usersResponse.status);
+          return;
+        }
+        const usersData = await usersResponse.json();
+        
+        // Extract users array based on response format
+        const users = Array.isArray(usersData) ? usersData : 
+                    (usersData && 'users' in usersData) ? usersData.users : [];
+        console.log(`Fetched ${users.length} users`);
+        
+        // Create user map for faster lookup
+        const userMap = new Map();
+        users.forEach((user: any) => {
+          if (user && user.id) userMap.set(user.id, user);
+        });
+        
+        // Process the content
+        processContent(content, freelancers, userMap);
+      } catch (error) {
+        console.error('Error in FreelancerMention component:', error);
+      }
+    };
+    
+    fetchFreelancers();
+  }, [content]);
   
-  try {
-    // Various regex patterns to catch different formatting variations
+  const processContent = (text: string, freelancers: any[], userMap: Map<any, any>) => {
+    // Multiple ID extraction patterns to catch different formats
     const patterns = [
       /\*\*\[FREELANCER_ID:(\d+)\]\*\*/g,  // **[FREELANCER_ID:X]**
       /\*\*\[FREELANCER_ID:(\d+)\]/g,      // **[FREELANCER_ID:X]
       /\[FREELANCER_ID:(\d+)\]\*\*/g,      // [FREELANCER_ID:X]**
       /\[FREELANCER_ID:(\d+)\]/g,          // [FREELANCER_ID:X]
-      /\*\*\[FREELANCER_ID:(\d+)\]([^\*]*)\*\*/g, // **[FREELANCER_ID:X] Name** (with text between)
-      /\*\*\[FREELANCER_ID:(\d+)\]([^\*]*)/g,     // **[FREELANCER_ID:X] Name (without closing **)
-      /^\*\*FREELANCER_ID:(\d+)\*\*/gm,    // **FREELANCER_ID:X** (without brackets)
-      /^\*\*FREELANCER_ID:(\d+)/gm,        // **FREELANCER_ID:X (without closing **)
-      /^\*\*\[FREELANCER_ID:(\d+)\]/gm      // **[FREELANCER_ID:X at start of line
+      /\*\*FREELANCER_ID:(\d+)\*\*/g,      // **FREELANCER_ID:X**
+      /FREELANCER_ID:(\d+)/g               // FREELANCER_ID:X (basic)
     ];
     
-    // Try each pattern
-    patterns.forEach(regex => {
+    const matches: {id: number, index: number, length: number}[] = [];
+    const processedIds = new Set<number>();
+    
+    // Find all matches with all patterns
+    patterns.forEach(patternRegex => {
       let match;
-      // Reset regex for each use
-      regex.lastIndex = 0;
+      // Reset pattern for each use
+      patternRegex.lastIndex = 0;
       
-      while ((match = regex.exec(text)) !== null) {
-        matches.push({
-          id: parseInt(match[1], 10),
-          fullMatch: match[0],
-          index: match.index
-        });
-        console.log(`Match found: ${match[0]}, ID: ${match[1]}, at position: ${match.index}`);
+      while ((match = patternRegex.exec(text)) !== null) {
+        const id = parseInt(match[1], 10);
+        // Only process each ID once
+        if (!processedIds.has(id)) {
+          processedIds.add(id);
+          matches.push({
+            id: id,
+            index: match.index,
+            length: match[0].length
+          });
+          console.log(`Matched freelancer ID: ${id} using pattern`);
+        }
       }
     });
     
-    // Sort by position in the text
-    return matches.sort((a, b) => a.index - b.index);
-  } catch (error) {
-    console.error('Error finding freelancer matches:', error);
-    return [];
-  }
-};
-
-// Process the content with the freelancer matches
-const processMatches = (
-  text: string, 
-  matches: FreelancerMatch[], 
-  freelancers: any[], 
-  userMap: Map<number, any>
-): React.ReactNode[] => {
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  
-  try {
-    console.log("Processing matches:", JSON.stringify(matches));
-    console.log("Available freelancers:", freelancers.map(f => f.id));
+    // If no matches found, just return the original text
+    if (matches.length === 0) {
+      setProcessedContent([text]);
+      return;
+    }
     
-    matches.forEach(match => {
-      const { id, fullMatch, index } = match;
-      console.log(`Processing match with ID ${id}, fullMatch: ${fullMatch}`);
-      
-      // Find the freelancer
-      const freelancer = freelancers.find(f => f.id === id);
-      if (!freelancer) {
-        console.log(`No freelancer found with ID ${id}`);
-        return;
+    // Create React elements from matches
+    const elements: React.ReactNode[] = [];
+    let lastIndex = 0;
+    
+    matches.forEach((match, i) => {
+      // Add text before match
+      if (match.index > lastIndex) {
+        elements.push(text.substring(lastIndex, match.index));
       }
       
-      // Get user info
-      const user = userMap.get(freelancer.userId);
-      const displayName = user?.displayName || user?.username || `Freelancer ${id}`;
-      
-      // Add text before this match
-      if (index > lastIndex) {
-        parts.push(text.substring(lastIndex, index));
+      // Find freelancer info
+      const freelancer = freelancers.find((f: any) => f.id === match.id);
+      if (freelancer) {
+        // Get user info for this freelancer
+        const user = userMap.get(freelancer.userId);
+        const displayName = user?.displayName || user?.username || `Freelancer ${match.id}`;
+        
+        // Add freelancer component with unique key
+        elements.push(
+          <span key={`freelancer-uid-${match.id}-${i}`} className="inline-flex items-center gap-1 my-1 bg-blue-50 p-1 rounded-lg border border-blue-100">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="inline-flex items-center gap-1 border-blue-200 bg-white"
+              asChild
+            >
+              <Link href={`/freelancers/${match.id}`}>
+                <User className="h-3.5 w-3.5" /> 
+                {displayName}
+              </Link>
+            </Button>
+            <Button 
+              variant="default" 
+              size="sm"
+              className="inline-flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-3 py-1"
+              asChild
+            >
+              <Link href={`/messages/new/${match.id}`}>
+                <svg className="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Chat Now
+              </Link>
+            </Button>
+          </span>
+        );
+      } else {
+        // If freelancer not found, just add the original text
+        elements.push(text.substring(match.index, match.index + match.length));
       }
       
-      // Add the freelancer button group
-      parts.push(
-        <span key={`freelancer-${id}-${index}`} className="inline-flex items-center gap-1 my-1 bg-blue-50 p-1 rounded-lg border border-blue-100">
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="inline-flex items-center gap-1 border-blue-200 bg-white"
-            asChild
-          >
-            <Link href={`/freelancers/${id}`}>
-              <User className="h-3.5 w-3.5" /> 
-              {displayName}
-            </Link>
-          </Button>
-          <Button 
-            variant="default" 
-            size="sm"
-            className="inline-flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-3 py-1"
-            asChild
-          >
-            <Link href={`/messages/new/${id}`}>
-              <svg className="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-              </svg>
-              Chat Now
-            </Link>
-          </Button>
-        </span>
-      );
-      
-      // Update last index
-      lastIndex = index + fullMatch.length;
+      // Update lastIndex
+      lastIndex = match.index + match.length;
     });
     
     // Add any remaining text
     if (lastIndex < text.length) {
-      parts.push(text.substring(lastIndex));
+      elements.push(text.substring(lastIndex));
     }
     
-    return parts;
-  } catch (error) {
-    console.error('Error processing matches:', error);
-    return [text];
-  }
-};
-
-export function FreelancerMention({ content }: FreelancerMentionProps) {
-  const [processedContent, setProcessedContent] = useState<React.ReactNode[]>([]);
-  
-  useEffect(() => {
-    const processContent = async () => {
-      if (!content) {
-        setProcessedContent([]);
-        return;
-      }
-
-      try {
-        // Get all freelancers for matching
-        const response = await fetch('/api/freelancers');
-        if (!response.ok) {
-          throw new Error('Failed to fetch freelancers');
-        }
-        const freelancers = await response.json();
-        
-        if (!freelancers || freelancers.length === 0) {
-          setProcessedContent([content]);
-          return;
-        }
-        
-        // Also get users to find names
-        const usersResponse = await fetch('/api/admin/users', {
-          headers: { 'admin-session': 'true' }
-        });
-        if (!usersResponse.ok) {
-          throw new Error('Failed to fetch users');
-        }
-        const usersData = await usersResponse.json();
-        
-        // Create map of userId to user for quick lookups
-        const userMap = new Map();
-        
-        // Handle both {users: [...]} format and direct array format
-        const userArray = Array.isArray(usersData) ? usersData : 
-                         (usersData && usersData.users && Array.isArray(usersData.users)) ? 
-                         usersData.users : [];
-        
-        userArray.forEach((user: any) => {
-          if (user && typeof user.id === 'number') {
-            userMap.set(user.id, user);
-          }
-        });
-        
-        // Log the content we're processing for debugging
-        console.log('Processing content of length:', content.length);
-        
-        // Find all freelancer ID mentions in various formats
-        const matches = findFreelancerMatches(content);
-        console.log('Found freelancer matches:', matches);
-        
-        if (matches.length === 0) {
-          setProcessedContent([content]);
-          return;
-        }
-        
-        // Process the content with the matches
-        const parts = processMatches(content, matches, freelancers, userMap);
-        setProcessedContent(parts);
-      } catch (error) {
-        console.error('Error processing freelancer mentions:', {
-          contentLength: content?.length || 0,
-          contentType: typeof content,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
-        // Safely return the original content
-        setProcessedContent([content || '']);
-      }
-    };
-    
-    processContent();
-  }, [content]);
+    // Update state with processed content
+    setProcessedContent(elements);
+  };
   
   return (
     <div className="freelancer-mention">
-      {processedContent.length > 0 ? processedContent : content}
+      {processedContent}
     </div>
   );
 }
