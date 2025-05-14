@@ -50,7 +50,10 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
         const parts: React.ReactNode[] = [];
         let remainingContent = content;
         
-        // First check for freelancer IDs in the format "ID: X" or "(ID: X)"
+        // Check for freelancer IDs in the new format [FREELANCER_ID:X] which we added to system prompt
+        const taggedIdRegex = /\[FREELANCER_ID:(\d+)\]/g;
+        
+        // Then check for freelancer IDs in the old format "ID: X" or "(ID: X)" as fallback
         const idRegex = /\b(ID:?\s*(\d+))\b/g;
         let match;
         let lastIndex = 0;
@@ -65,7 +68,63 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
           }
         });
         
-        // Check for ID patterns first
+        // First check for our special new tag format [FREELANCER_ID:X]
+        let tagMatch;
+        while ((tagMatch = taggedIdRegex.exec(remainingContent)) !== null) {
+          const [fullTagMatch, idStr] = tagMatch;
+          const id = parseInt(idStr, 10);
+          
+          // Find the freelancer with this ID
+          const freelancer = sortedFreelancers.find(f => f.id === id);
+          
+          if (freelancer) {
+            // Find user for this freelancer
+            const user = userMap.get(freelancer.userId);
+            const displayName = user?.displayName || user?.username || `Freelancer ${id}`;
+            
+            // Add text before the match
+            if (tagMatch.index > lastIndex) {
+              parts.push(remainingContent.substring(lastIndex, tagMatch.index));
+            }
+            
+            // Add a bold, prominent button for freelancer with a clear chat button
+            parts.push(
+              <span key={`tag-group-${id}-${tagMatch.index}`} className="inline-flex items-center gap-1 my-1 bg-blue-50 p-1 rounded-lg border border-blue-100">
+                <Button 
+                  key={`tag-${id}-${tagMatch.index}`}
+                  variant="outline" 
+                  size="sm"
+                  className="inline-flex items-center gap-1 border-blue-200 bg-white"
+                  asChild
+                >
+                  <Link href={`/freelancers/${id}`}>
+                    <User className="h-3.5 w-3.5" /> 
+                    {displayName}
+                  </Link>
+                </Button>
+                <Button 
+                  key={`chat-tag-${id}-${tagMatch.index}`}
+                  variant="default" 
+                  size="sm"
+                  className="inline-flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-3 py-1"
+                  asChild
+                >
+                  <Link href={`/messages/new/${id}`}>
+                    <svg className="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Chat Now
+                  </Link>
+                </Button>
+              </span>
+            );
+            
+            // Update lastIndex to after this match
+            lastIndex = tagMatch.index + fullTagMatch.length;
+          }
+        }
+        
+        // Then check for old ID patterns as fallback
         while ((match = idRegex.exec(remainingContent)) !== null) {
           const [fullMatch, _, idStr] = match;
           const id = parseInt(idStr, 10);
@@ -83,20 +142,36 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
               parts.push(remainingContent.substring(lastIndex, match.index));
             }
             
-            // Add the button
+            // Add the profile button with chat button
             parts.push(
-              <Button 
-                key={`fr-${id}-${match.index}`}
-                variant="outline" 
-                size="sm"
-                className="mx-1 my-0.5 inline-flex items-center gap-1"
-                asChild
-              >
-                <Link href={`/freelancers/${id}`}>
-                  <User className="h-3.5 w-3.5" /> 
-                  {displayName}
-                </Link>
-              </Button>
+              <span key={`fr-group-${id}-${match.index}`} className="inline-flex items-center gap-1">
+                <Button 
+                  key={`fr-${id}-${match.index}`}
+                  variant="outline" 
+                  size="sm"
+                  className="mx-1 my-0.5 inline-flex items-center gap-1 border-blue-200"
+                  asChild
+                >
+                  <Link href={`/freelancers/${id}`}>
+                    <User className="h-3.5 w-3.5" /> 
+                    {displayName}
+                  </Link>
+                </Button>
+                <Button 
+                  key={`chat-${id}-${match.index}`}
+                  variant="default" 
+                  size="sm"
+                  className="ml-0 my-0.5 inline-flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-2 py-0"
+                  asChild
+                >
+                  <Link href={`/messages/new/${id}`}>
+                    <svg className="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Chat
+                  </Link>
+                </Button>
+              </span>
             );
             
             // Update lastIndex to after this match
@@ -135,20 +210,36 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
                   nameParts.push(remainingText.substring(nameLastIndex, nameMatch.index));
                 }
                 
-                // Add the button
+                // Add the profile button with chat button
                 nameParts.push(
-                  <Button 
-                    key={`name-${freelancerId}-${nameMatch.index}`}
-                    variant="outline" 
-                    size="sm"
-                    className="mx-1 my-0.5 inline-flex items-center gap-1"
-                    asChild
-                  >
-                    <Link href={`/freelancers/${freelancerId}`}>
-                      <User className="h-3.5 w-3.5" /> 
-                      {displayName}
-                    </Link>
-                  </Button>
+                  <span key={`name-group-${freelancerId}-${nameMatch.index}`} className="inline-flex items-center gap-1">
+                    <Button 
+                      key={`name-${freelancerId}-${nameMatch.index}`}
+                      variant="outline" 
+                      size="sm"
+                      className="mx-1 my-0.5 inline-flex items-center gap-1 border-blue-200"
+                      asChild
+                    >
+                      <Link href={`/freelancers/${freelancerId}`}>
+                        <User className="h-3.5 w-3.5" /> 
+                        {displayName}
+                      </Link>
+                    </Button>
+                    <Button 
+                      key={`chat-name-${freelancerId}-${nameMatch.index}`}
+                      variant="default" 
+                      size="sm"
+                      className="ml-0 my-0.5 inline-flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-2 py-0"
+                      asChild
+                    >
+                      <Link href={`/messages/new/${freelancerId}`}>
+                        <svg className="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        Chat
+                      </Link>
+                    </Button>
+                  </span>
                 );
                 
                 // Update nameLastIndex to after this match
