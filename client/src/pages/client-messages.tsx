@@ -43,7 +43,15 @@ export default function ClientMessagesPage() {
         throw new Error('Failed to fetch chats');
       }
       
-      return await response.json();
+      const responseData = await response.json();
+      console.log('CLIENT MESSAGES - Chat data received:', responseData);
+      
+      // Debug information about what we're receiving
+      if (responseData.chats && responseData.chats.length > 0) {
+        console.log('First chat freelancer data:', responseData.chats[0].freelancer);
+      }
+      
+      return responseData;
     },
     enabled: !!isAuthenticated && currentUser?.isClient === true
   });
