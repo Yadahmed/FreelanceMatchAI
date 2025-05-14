@@ -8,7 +8,8 @@ import {
   createFreelancerProfile, 
   getCurrentUser, 
   logout,
-  checkUsername
+  checkUsername,
+  updateUserProfile
 } from '../controllers/authController';
 import {
   isAdmin,
@@ -135,6 +136,7 @@ router.post('/auth/register', register);
 router.post('/auth/login', login);
 router.post('/auth/freelancer-profile', requireAuth, createFreelancerProfile);
 router.get('/auth/me', requireAuth, getCurrentUser);
+router.patch('/auth/profile', requireAuth, updateUserProfile);
 router.post('/auth/logout', logout);
 
 // Chat routes

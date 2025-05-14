@@ -370,3 +370,45 @@ export async function checkUsername(req: Request, res: Response) {
     return res.status(500).json({ message: 'Server error' });
   }
 }
+
+// Update user profile
+export async function updateUserProfile(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    const userId = req.body.userId || req.user.id;
+    
+    // Ensure the user can only update their own profile
+    if (userId !== req.user.id && !req.user.isAdmin) {
+      return res.status(403).json({ message: 'You can only update your own profile' });
+    }
+    
+    // Update Firebase profile if displayName is provided
+    if (req.body.displayName && req.user.firebaseUid && firebaseAdminAuth) {
+      try {
+        await firebaseAdminAuth.updateUser(req.user.firebaseUid, {
+          displayName: req.body.displayName
+        });
+      } catch (firebaseError) {
+        console.error('Firebase user update error:', firebaseError);
+        // Continue with the profile update even if Firebase update fails
+      }
+    }
+    
+    // Update user in database
+    const updatedUser = await storage.updateUser(userId, {
+      displayName: req.body.displayName,
+      photoURL: req.body.photoURL
+    });
+    
+    return res.status(200).json({
+      message: 'Profile updated successfully',
+      user: updatedUser
+    });
+  } catch (error: any) {
+    console.error('Update profile error:', error);
+    return res.status(500).json({ message: error.message || 'Server error' });
+  }
+}
