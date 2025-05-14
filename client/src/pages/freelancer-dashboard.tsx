@@ -12,6 +12,45 @@ import { ChevronRightIcon, LineChartIcon, MessageSquareIcon, ClockIcon, Briefcas
 import { apiRequest } from '@/lib/queryClient';
 import { Rating } from '@/components/ui/rating';
 
+// Define TypeScript interfaces for dashboard data
+interface FreelancerProfile {
+  id: number;
+  userId: number;
+  profession: string;
+  bio: string;
+  skills: string[];
+  hourlyRate: number;
+  yearsOfExperience: number | null;
+  rating: number | null;
+  completedJobs?: number;
+  imageUrl: string | null;
+  availability?: string;
+  matchScore?: number;
+  jobPerformance?: number;
+  skillsExperience?: number;
+  responsiveness?: number;
+  fairnessScore?: number;
+}
+
+interface FreelancerStats {
+  completedJobsCount: number;
+  averageRating: number | null;
+  totalEarnings: number;
+  totalHoursWorked: number;
+}
+
+interface DashboardData {
+  freelancer: FreelancerProfile;
+  stats: FreelancerStats;
+  earnings?: {
+    total: number;
+    thisMonth: number;
+    change: number;
+  };
+  totalHours?: number;
+  matchScore?: number;
+}
+
 export default function FreelancerDashboard() {
   const { currentUser, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
