@@ -126,6 +126,15 @@ export class MemStorage implements IStorage {
     );
   }
   
+  async getUsersByIds(ids: number[]): Promise<User[]> {
+    if (!ids || ids.length === 0) {
+      return [];
+    }
+    
+    return Array.from(this.users.values())
+      .filter(user => ids.includes(user.id));
+  }
+  
   async getAllUsers(): Promise<User[]> {
     return Array.from(this.users.values());
   }
@@ -730,6 +739,17 @@ export class DatabaseStorage implements IStorage {
   async getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined> {
     const [user] = await db.select().from(schema.users).where(eq(schema.users.firebaseUid, firebaseUid));
     return user;
+  }
+  
+  async getUsersByIds(ids: number[]): Promise<User[]> {
+    if (!ids || ids.length === 0) {
+      return [];
+    }
+    
+    return await db
+      .select()
+      .from(schema.users)
+      .where(sql`${schema.users.id} IN (${ids.join(',')})`);
   }
   
   async getAllUsers(): Promise<User[]> {

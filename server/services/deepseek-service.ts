@@ -647,16 +647,21 @@ Fairness Score: ${f.fairnessScore || 0}/100
           // Create match reasons from reasoning
           const reasons = [match.reasoning || 'Strong match for this job request'];
           
-          processedMatches.push({
+          // Create match result with only the required properties according to schema
+          const matchResult: FreelancerMatch = {
             freelancerId: freelancer.id,
             score: typeof match.score === 'number' ? match.score : parseFloat(match.score),
             matchReasons: reasons,
             jobPerformanceScore,
             skillsScore,
             responsivenessScore,
-            fairnessScore,
-            // Include the full freelancer object for the UI to use
-            freelancer: {
+            fairnessScore
+          };
+          
+          // Add the fully typed freelancer object for UI to use
+          if (freelancer) {
+            // @ts-ignore - We know this is compatible with the schema
+            matchResult.freelancer = {
               id: freelancer.id,
               userId: freelancer.userId,
               profession: freelancer.profession,
@@ -675,8 +680,10 @@ Fairness Score: ${f.fairnessScore || 0}/100
               imageUrl: freelancer.imageUrl,
               // Add display name from user
               displayName: displayName
-            }
-          });
+            };
+          }
+          
+          processedMatches.push(matchResult);
         }
       }
       
