@@ -100,7 +100,7 @@ export default function ExploreFreelancers() {
       } else if (sortBy === 'hourlyRate') {
         comparison = a.hourlyRate - b.hourlyRate;
       } else if (sortBy === 'availability') {
-        // Sort by availability status (available first, then limited, then unavailable)
+        // Sort by availability status
         const availabilityValueA = getAvailabilityValue(a);
         const availabilityValueB = getAvailabilityValue(b);
         comparison = availabilityValueA - availabilityValueB;
@@ -120,17 +120,6 @@ export default function ExploreFreelancers() {
   // Toggle sort order
   const toggleSortOrder = () => {
     setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-  };
-  
-  // Helper function to convert availability status to a numeric value for sorting
-  const getAvailabilityValue = (freelancer: Freelancer): number => {
-    // Higher values = more available
-    if (freelancer.availabilityDetails?.status === 'available') return 100;
-    if (freelancer.availabilityDetails?.status === 'limited') return 50;
-    if (freelancer.availabilityDetails?.status === 'unavailable') return 0;
-    
-    // Fall back to the boolean availability flag if no detailed status
-    return freelancer.availability === false ? 0 : 100;
   };
   
   // Change sort field
