@@ -193,15 +193,14 @@ export default function ClientMessagesPage() {
               <ScrollArea className="h-[500px] pr-4">
                 <div className="space-y-4">
                   {chats.map((chat: any) => {
-                    // Properly extract the freelancer name from the data
-                    let freelancerName = chat.freelancer?.displayName || '';
+                    // Get both the display name and profession
+                    const displayName = chat.freelancer?.displayName || 'Unknown';
+                    const profession = chat.freelancer?.profession || '';
                     
-                    // If we still have a generic name like "Freelancer 5", get the user data if available
-                    if (freelancerName.startsWith('Freelancer ') && chat.freelancer) {
-                      // Get the user's profession as additional context
-                      const profession = chat.freelancer.profession || '';
-                      freelancerName = `${freelancerName} (${profession})`;
-                    }
+                    // Always show the profession when available
+                    const freelancerName = profession 
+                      ? `${displayName} (${profession})` 
+                      : displayName;
                     const latestMessage = chat.latestMessage?.content || 'No messages yet';
                     const timestamp = chat.latestMessage?.createdAt 
                       ? formatDistanceToNow(new Date(chat.latestMessage.createdAt), { addSuffix: true })
