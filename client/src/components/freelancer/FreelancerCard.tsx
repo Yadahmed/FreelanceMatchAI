@@ -82,26 +82,28 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
     .substring(0, 2);
   
   return (
-    <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-shadow">
+    <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-300 hover:translate-y-[-2px] group">
       <CardHeader className="p-4 pb-0">
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <Avatar className="h-12 w-12 border">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-14 w-14 border-2 border-primary/10 transition-all duration-300 group-hover:border-primary/30 shadow-sm">
               <AvatarImage src={imageUrl} alt={name} />
-              <AvatarFallback>{initials}</AvatarFallback>
+              <AvatarFallback className="bg-primary/5 text-primary font-medium">{initials}</AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-lg font-semibold">{name}</CardTitle>
-              <CardDescription className="flex items-center gap-1">
-                <Briefcase className="h-3.5 w-3.5" />
+              <CardTitle className="text-lg font-display font-semibold group-hover:text-primary transition-colors duration-300">{name}</CardTitle>
+              <CardDescription className="flex items-center gap-1 mt-1">
+                <Briefcase className="h-3.5 w-3.5 text-primary/70" />
                 <span>{profession}</span>
               </CardDescription>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-lg font-bold">${hourlyRate}/hr</div>
+            <div className="text-lg font-bold font-display">${hourlyRate}<span className="text-sm font-normal text-muted-foreground">/hr</span></div>
             <Badge variant={availability ? "outline" : "secondary"} 
-              className={availability ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}>
+              className={availability 
+                ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors duration-300" 
+                : "transition-colors duration-300"}>
               {availability ? "Available" : "Busy"}
             </Badge>
           </div>
@@ -110,70 +112,95 @@ export function FreelancerCard({ freelancer, showDetails = false }: FreelancerCa
       
       <CardContent className="p-4">
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-1 text-muted-foreground text-sm">
-            <MapPin className="h-3.5 w-3.5" />
-            <span>{location}</span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm">
+            <div className="flex items-center gap-1 transition-colors duration-300 hover:text-foreground">
+              <MapPin className="h-3.5 w-3.5 text-primary/70" />
+              <span>{location}</span>
+            </div>
             
-            <div className="ml-2 flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-1 transition-colors duration-300 hover:text-foreground">
+              <Clock className="h-3.5 w-3.5 text-primary/70" />
               <span>{yearsOfExperience} {yearsOfExperience === 1 ? 'year' : 'years'} experience</span>
             </div>
             
-            <div className="ml-2 flex items-center gap-1">
-              <Award className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-1 transition-colors duration-300 hover:text-foreground">
+              <Award className="h-3.5 w-3.5 text-primary/70" />
               <span>{completedJobs} {completedJobs === 1 ? 'job' : 'jobs'} completed</span>
             </div>
           </div>
           
-          <div className="line-clamp-2 text-sm text-muted-foreground">
+          <div className="line-clamp-2 text-sm text-muted-foreground group-hover:text-muted-foreground/90 transition-colors duration-300">
             {bio}
           </div>
           
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1.5">
             {displaySkills.map((skill) => (
-              <Badge key={skill} variant="outline" className="font-normal">
+              <Badge 
+                key={skill} 
+                variant="outline" 
+                className="font-normal bg-primary/5 hover:bg-primary/10 border-primary/10 transition-all duration-300 hover:border-primary/20"
+              >
                 {skill}
               </Badge>
             ))}
             {extraSkillsCount > 0 && (
-              <Badge variant="outline" className="font-normal">
+              <Badge 
+                variant="outline" 
+                className="font-normal bg-muted hover:bg-muted/80 transition-all duration-300"
+              >
                 +{extraSkillsCount} more
               </Badge>
             )}
           </div>
           
           {showDetails && (
-            <div className="mt-2 space-y-3">
-              <div className="space-y-1">
+            <div className="mt-3 space-y-4 animate-fade-in">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-sm">
-                  <span>Job Performance</span>
-                  <span>{jobPerformance}%</span>
+                  <span className="font-medium">Job Performance</span>
+                  <span className="font-semibold text-primary">{jobPerformance}%</span>
                 </div>
-                <Progress value={jobPerformance} className="h-1.5" />
+                <Progress 
+                  value={jobPerformance} 
+                  className="h-2 rounded-full overflow-hidden bg-primary/10" 
+                  indicatorClassName="bg-gradient-to-r from-primary/80 to-primary transition-all duration-500"
+                />
               </div>
               
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-sm">
-                  <span>Skills & Experience</span>
-                  <span>{skillsExperience}%</span>
+                  <span className="font-medium">Skills & Experience</span>
+                  <span className="font-semibold text-primary">{skillsExperience}%</span>
                 </div>
-                <Progress value={skillsExperience} className="h-1.5" />
+                <Progress 
+                  value={skillsExperience} 
+                  className="h-2 rounded-full overflow-hidden bg-primary/10" 
+                  indicatorClassName="bg-gradient-to-r from-primary/80 to-primary transition-all duration-500"
+                />
               </div>
               
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-sm">
-                  <span>Responsiveness</span>
-                  <span>{responsiveness}%</span>
+                  <span className="font-medium">Responsiveness</span>
+                  <span className="font-semibold text-primary">{responsiveness}%</span>
                 </div>
-                <Progress value={responsiveness} className="h-1.5" />
+                <Progress 
+                  value={responsiveness} 
+                  className="h-2 rounded-full overflow-hidden bg-primary/10" 
+                  indicatorClassName="bg-gradient-to-r from-primary/80 to-primary transition-all duration-500"
+                />
               </div>
               
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-sm">
-                  <span>Fairness Score</span>
-                  <span>{fairnessScore}%</span>
+                  <span className="font-medium">Fairness Score</span>
+                  <span className="font-semibold text-primary">{fairnessScore}%</span>
                 </div>
-                <Progress value={fairnessScore} className="h-1.5" />
+                <Progress 
+                  value={fairnessScore} 
+                  className="h-2 rounded-full overflow-hidden bg-primary/10" 
+                  indicatorClassName="bg-gradient-to-r from-primary/80 to-primary transition-all duration-500"
+                />
               </div>
             </div>
           )}
