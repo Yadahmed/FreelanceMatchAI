@@ -508,8 +508,8 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
                line.toLowerCase().includes("designer") || 
                line.toLowerCase().includes("freelancer")) {
               
-              let freelancer = freelancers.find(f => f.id === listItemNum);
-              if (freelancer) {
+              let matchedFreelancer = freelancers.find(f => f.id === listItemNum);
+              if (matchedFreelancer) {
                 console.log(`✓ Found freelancer with ID matching list item number: ${listItemNum}`);
                 
                 // Calculate position in text
@@ -531,8 +531,8 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
               // Try all numbers in the line
               for (const numStr of idMatch) {
                 const potentialId = parseInt(numStr, 10);
-                freelancer = freelancers.find(f => f.id === potentialId);
-                if (freelancer) {
+                const matchedFreelancer = freelancers.find(f => f.id === potentialId);
+                if (matchedFreelancer) {
                   console.log(`✓ Found freelancer ID ${potentialId} in list item`);
                   
                   // Calculate position in text
@@ -551,7 +551,8 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
             
             // Strategy 3: Find freelancer IDs in adjacent lines
             // Exact format from screenshot - when a list has lines where the number is not itself an ID
-            if (!freelancer && i < lines.length - 3) {
+            let foundMatchingFreelancer = false;
+            if (i < lines.length - 3) {
               // Check if this is a multi-line entry with skills, expertise, etc.
               const nextLines = [lines[i+1], lines[i+2], lines[i+3]]; // Check next 3 lines
               
