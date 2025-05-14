@@ -401,7 +401,7 @@ export default function ChatPage() {
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
-                className="flex-1"
+                className="flex-1 dark:bg-muted/30 dark:border-muted"
                 disabled={isSending}
               />
               <Button onClick={handleSendMessage} disabled={!message.trim() || isSending}>

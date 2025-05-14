@@ -402,7 +402,7 @@ export function ChatInterface() {
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type your message..."
-              className="flex-1 border-primary/20 focus-visible:ring-primary/30 py-6 bg-background"
+              className="flex-1 border-primary/20 focus-visible:ring-primary/30 py-6 bg-background dark:bg-muted/30 dark:border-muted"
               disabled={isLoading || isTyping}
             />
             <Button 
