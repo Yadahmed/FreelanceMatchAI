@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Star, MapPin, DollarSign, Calendar, Search, Filter, ArrowUpDown } from 'lucide-react';
+import { Star, MapPin, DollarSign, Calendar, Search, Filter, ArrowUpDown, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 
 // Define the type for freelancer data
 interface Freelancer {
@@ -27,13 +27,23 @@ interface Freelancer {
   responsiveness: number;
   fairnessScore: number;
   completedJobs: number;
+  availability?: boolean;
+  availabilityDetails?: {
+    status?: 'available' | 'limited' | 'unavailable';
+    message?: string;
+    availableFrom?: string;
+    availableUntil?: string;
+    workHours?: { start: string; end: string };
+    workDays?: number[];
+    lastUpdated?: string;
+  };
 }
 
 export default function ExploreFreelancers() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'rating' | 'hourlyRate'>('rating');
+  const [sortBy, setSortBy] = useState<'rating' | 'hourlyRate' | 'availability'>('rating');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
   // Fetch freelancers data
@@ -152,6 +162,53 @@ export default function ExploreFreelancers() {
           <Calendar className="h-4 w-4 mr-1" />
           <span>{freelancer.yearsOfExperience} years experience</span>
         </div>
+        
+        {/* Availability Status */}
+        <div className="flex items-center mb-3">
+          {(() => {
+            // Check for availabilityDetails first
+            if (freelancer.availabilityDetails?.status) {
+              const status = freelancer.availabilityDetails.status;
+              
+              if (status === 'available') {
+                return (
+                  <div className="flex items-center gap-1 text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full">
+                    <CheckCircle2 className="h-3 w-3" />
+                    <span>Available</span>
+                  </div>
+                );
+              } else if (status === 'limited') {
+                return (
+                  <div className="flex items-center gap-1 text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-1 rounded-full">
+                    <AlertCircle className="h-3 w-3" />
+                    <span>Limited Availability</span>
+                  </div>
+                );
+              } else if (status === 'unavailable') {
+                return (
+                  <div className="flex items-center gap-1 text-xs bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 px-2 py-1 rounded-full">
+                    <XCircle className="h-3 w-3" />
+                    <span>Unavailable</span>
+                  </div>
+                );
+              }
+            }
+            
+            // Fall back to boolean availability
+            return freelancer.availability !== false ? (
+              <div className="flex items-center gap-1 text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full">
+                <CheckCircle2 className="h-3 w-3" />
+                <span>Available</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-xs bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 px-2 py-1 rounded-full">
+                <XCircle className="h-3 w-3" />
+                <span>Unavailable</span>
+              </div>
+            );
+          })()}
+        </div>
+        
         <p className="text-sm line-clamp-3 mb-3">
           {freelancer.bio || "No bio available"}
         </p>
