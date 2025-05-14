@@ -1,4 +1,4 @@
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { useAuth } from '@/hooks/use-auth';
@@ -13,9 +13,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ChevronDown, MessageSquare, User, Settings, LogOut, BrainCircuit, Search } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import { cn } from '@/lib/utils';
 
 export function Header() {
   const { currentUser, isAuthenticated, isClient, isFreelancer, signOut } = useAuth();
+  const [location] = useLocation();
 
   // Get user initials for avatar fallback
   const getUserInitials = () => {
@@ -42,13 +44,22 @@ export function Header() {
         </div>
 
         <nav className="hidden md:flex items-center gap-6">
-          <Link href="/" className="text-sm font-medium transition-colors hover:text-primary relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:bg-primary after:duration-300">
+          <Link href="/" className={cn(
+            "text-sm font-medium transition-colors hover:text-primary relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:transition-transform after:bg-primary after:duration-300",
+            location === "/" ? "text-primary font-semibold after:scale-x-100" : "after:scale-x-0 hover:after:scale-x-100"
+          )}>
             Home
           </Link>
-          <Link href="/explore-freelancers" className="text-sm font-medium transition-colors hover:text-primary relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:bg-primary after:duration-300">
+          <Link href="/explore-freelancers" className={cn(
+            "text-sm font-medium transition-colors hover:text-primary relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:transition-transform after:bg-primary after:duration-300",
+            location === "/explore-freelancers" ? "text-primary font-semibold after:scale-x-100" : "after:scale-x-0 hover:after:scale-x-100"
+          )}>
             Explore Freelancers
           </Link>
-          <Link href="/about" className="text-sm font-medium transition-colors hover:text-primary relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:bg-primary after:duration-300">
+          <Link href="/about" className={cn(
+            "text-sm font-medium transition-colors hover:text-primary relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:transition-transform after:bg-primary after:duration-300",
+            location === "/about" ? "text-primary font-semibold after:scale-x-100" : "after:scale-x-0 hover:after:scale-x-100"
+          )}>
             How It Works
           </Link>
         </nav>
