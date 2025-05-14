@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Send, User, Bot } from 'lucide-react';
+import { Loader2, Send, User, Bot, MessageSquare } from 'lucide-react';
+import { Link } from 'wouter';
 import { FreelancerCard } from '@/components/freelancer/FreelancerCard';
 import { FreelancerMention } from './FreelancerMention';
 
@@ -224,7 +225,66 @@ export function ChatInterface() {
                     {/* Render freelancer results if available */}
                     {!message.isUserMessage && message.freelancerResults && message.freelancerResults.length > 0 && (
                       <div className="mt-4 space-y-4">
-                        <h3 className="text-sm font-medium">Top Freelancers For Your Request:</h3>
+                        {/* Add a prominent "Chat with All Freelancers" button at the top */}
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-100 shadow-sm">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                            <div>
+                              <h4 className="font-medium text-blue-800">Expert Freelancers Found!</h4>
+                              <p className="text-sm text-blue-600">Connect directly with our top matches</p>
+                            </div>
+                            <Button 
+                              size="default" 
+                              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 
+                                         shadow-md hover:shadow-lg transition-all items-center gap-2 w-full sm:w-auto"
+                              asChild
+                            >
+                              <Link href="/messages">
+                                <MessageSquare className="h-4 w-4" />
+                                Chat with All Matched Freelancers
+                              </Link>
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-medium">Top Freelancers For Your Request:</h3>
+                          
+                          {/* Quick action buttons for top freelancers */}
+                          <div className="flex space-x-2">
+                            {message.freelancerResults.slice(0, 3).map((result) => {
+                              // Get the freelancer ID from either format
+                              const freelancerId = result.freelancerId || result.id || 
+                                (result.freelancer && result.freelancer.id);
+                              
+                              if (!freelancerId) return null;
+
+                              // Get the freelancer name from either format
+                              const freelancer = result.freelancer || result;
+                              const name = freelancer.displayName || 
+                                (freelancer.username ? freelancer.username : `Freelancer ${freelancerId}`);
+                              
+                              const shortName = name.split(' ')[0];
+                              
+                              // Create the chat buttons for the top 3 freelancers
+                              return (
+                                <Button 
+                                  key={`chat-quick-${freelancerId}`}
+                                  size="sm" 
+                                  variant="default" 
+                                  className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 
+                                             shadow-md hover:shadow-lg transition-all items-center gap-1 rounded-full px-3 py-1"
+                                  asChild
+                                >
+                                  <Link href={`/messages/new/${freelancerId}`}>
+                                    <MessageSquare className="h-3.5 w-3.5" />
+                                    Chat with {shortName}
+                                  </Link>
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        
                         <div className="grid gap-4">
                           {message.freelancerResults.map((result) => {
                             // Check if the result has a nested freelancer object (AI service format)
