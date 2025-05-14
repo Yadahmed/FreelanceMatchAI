@@ -11,6 +11,7 @@ import { db } from '../db';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { extractFreelancerName } from '../utils/freelancer';
+import { calculateMatchScore } from '../../shared/utils/match-score';
 
 /**
  * Service for interacting with DeepSeek Coder API
@@ -638,11 +639,19 @@ Fairness Score: ${f.fairnessScore || 0}/100
           const user = await storage.getUser(freelancer.userId);
           const displayName = user?.displayName || user?.username || `Freelancer ${freelancerId}`;
           
-          // Calculate weights based on our algorithm
-          const jobPerformanceScore = (freelancer.jobPerformance / 100) * 0.5;  // 50% weight
-          const skillsScore = (freelancer.skillsExperience / 100) * 0.2;        // 20% weight  
-          const responsivenessScore = (freelancer.responsiveness / 100) * 0.15; // 15% weight
-          const fairnessScore = (freelancer.fairnessScore / 100) * 0.15;        // 15% weight
+          // Calculate individual component scores using our algorithm
+          const totalScore = calculateMatchScore(
+            freelancer.jobPerformance,
+            freelancer.skillsExperience,
+            freelancer.responsiveness,
+            freelancer.fairnessScore
+          );
+          
+          // Calculate individual components for display
+          const jobPerformanceScore = (Math.min(100, Math.max(0, freelancer.jobPerformance)) / 100) * 0.5;  // 50% weight
+          const skillsScore = (Math.min(100, Math.max(0, freelancer.skillsExperience)) / 100) * 0.2;        // 20% weight  
+          const responsivenessScore = (Math.min(100, Math.max(0, freelancer.responsiveness)) / 100) * 0.15; // 15% weight
+          const fairnessScore = (Math.min(100, Math.max(0, freelancer.fairnessScore)) / 100) * 0.15;        // 15% weight
           
           // Create match reasons from reasoning
           const reasons = [match.reasoning || 'Strong match for this job request'];
@@ -650,7 +659,7 @@ Fairness Score: ${f.fairnessScore || 0}/100
           // Create match result with only the required properties according to schema
           const matchResult: FreelancerMatch = {
             freelancerId: freelancer.id,
-            score: typeof match.score === 'number' ? match.score : parseFloat(match.score),
+            score: Math.min(100, Math.max(0, typeof match.score === 'number' ? match.score : parseFloat(match.score))),
             matchReasons: reasons,
             jobPerformanceScore,
             skillsScore,
@@ -798,19 +807,13 @@ Fairness Score: ${f.fairnessScore || 0}/100
         // Default is 45 (4.5 stars) which equals a 90 on the 100-point scale
         const normalizedRating = (freelancer.rating / 50) * 100;
         
-        // Modified: Job performance and rating combined (50%)
-        // 50% of this comes from job performance, 50% from rating
-        const performanceScore = (freelancer.jobPerformance * 0.5 + normalizedRating * 0.5) / 100 * 50;
-        score += performanceScore;
-        
-        // Skills experience (20%)
-        score += (freelancer.skillsExperience / 100) * 20;
-        
-        // Responsiveness (15%)
-        score += (freelancer.responsiveness / 100) * 15;
-        
-        // Fairness score (15%) 
-        score += (freelancer.fairnessScore / 100) * 15;
+        // Use our validated match score calculation with proper clamping
+        score = calculateMatchScore(
+          freelancer.jobPerformance,
+          freelancer.skillsExperience,
+          freelancer.responsiveness,
+          freelancer.fairnessScore
+        );
         
         return score;
       };
@@ -863,16 +866,16 @@ Fairness Score: ${f.fairnessScore || 0}/100
             matchReasons.push(`Located in ${f.location}`);
           }
           
-          // Calculate component scores based on our algorithm weights
-          const jobPerformanceScore = (f.jobPerformance / 100) * 0.5;  // 50% weight
-          const skillsScore = (f.skillsExperience / 100) * 0.2;        // 20% weight
-          const responsivenessScore = (f.responsiveness / 100) * 0.15; // 15% weight
-          const fairnessScore = (f.fairnessScore / 100) * 0.15;        // 15% weight
+          // Calculate component scores based on our algorithm weights with proper validation
+          const jobPerformanceScore = (Math.min(100, Math.max(0, f.jobPerformance)) / 100) * 0.5;  // 50% weight
+          const skillsScore = (Math.min(100, Math.max(0, f.skillsExperience)) / 100) * 0.2;        // 20% weight
+          const responsivenessScore = (Math.min(100, Math.max(0, f.responsiveness)) / 100) * 0.15; // 15% weight
+          const fairnessScore = (Math.min(100, Math.max(0, f.fairnessScore)) / 100) * 0.15;        // 15% weight
                     
           // Return a complete freelancer object with all information needed by the client
           return {
             freelancerId: f.id,
-            score: Math.min(100, Math.round(match.score)),
+            score: Math.min(100, Math.max(0, Math.round(match.score))),
             matchReasons: matchReasons,
             jobPerformanceScore,
             skillsScore,
