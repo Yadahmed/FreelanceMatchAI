@@ -160,7 +160,7 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
                   className="h-8 text-xs border-blue-200"
                   asChild
                 >
-                  <Link href={`/freelancers/${match.id}`}>View Profile</Link>
+                  <Link href={`/freelancer/${match.id}`}>View Profile</Link>
                 </Button>
                 <Button 
                   variant="default" 
@@ -168,7 +168,7 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
                   className="h-8 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                   asChild
                 >
-                  <Link href={`/messages/new/${match.id}`}>
+                  <Link href={`/messages/${match.id}`}>
                     <svg className="h-3 w-3 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
