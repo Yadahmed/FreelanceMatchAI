@@ -14,6 +14,7 @@ import Freelancer from "@/pages/freelancer";
 import DirectChat from "@/pages/direct-chat";
 import Chat from "@/pages/chat";
 import ClientMessages from "@/pages/client-messages";
+import ClientProfile from "@/pages/client-profile";
 import AdminPanel from "@/pages/AdminPanel";
 import AdminLogin from "@/pages/AdminLogin";
 import { Header } from "@/components/layout/Header";
@@ -103,7 +104,7 @@ function Router() {
         <Route path="/chat/:id" component={Chat} />
         <Route path="/notifications" component={Home} />
         <Route path="/settings" component={Home} />
-        <Route path="/profile" component={Home} />
+        <Route path="/profile" component={ClientProfile} />
         
         {/* AI testing and diagnostic routes */}
         <Route path="/direct-chat" component={DirectChat} />

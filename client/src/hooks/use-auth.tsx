@@ -31,6 +31,7 @@ interface AuthContextType {
   signUpWithEmail: (username: string, email: string, password: string, displayName?: string, isClient?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
   createFreelancerProfile: (profileData: any) => Promise<void>;
+  updateProfile: (profileData: any) => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
   verifyEmail: (actionCode: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -472,6 +473,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Send verification email to the currently logged in user
+  const updateProfile = async (profileData: any): Promise<void> => {
+    if (!currentUser || !firebaseUser) {
+      throw new Error('You must be logged in to update your profile');
+    }
+    
+    try {
+      setIsLoading(true);
+      
+      // Get a fresh token
+      const token = await firebaseUser.getIdToken(true); // Force refresh token
+      
+      // Update token in localStorage
+      localStorage.setItem('auth_token', token);
+      
+      // Update the user profile
+      const response = await apiRequest('/api/auth/profile', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          ...profileData,
+          userId: currentUser.id
+        }),
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      // Update Firebase profile if display name is provided
+      if (profileData.displayName) {
+        await updateProfile(firebaseUser, { 
+          displayName: profileData.displayName 
+        });
+      }
+      
+      // Update current user in state
+      setCurrentUser({
+        ...currentUser,
+        ...response.user
+      });
+      
+      // Force refresh user data
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const sendVerificationEmail = async (): Promise<void> => {
     if (!firebaseUser) {
       throw new Error('You must be logged in to verify your email');
