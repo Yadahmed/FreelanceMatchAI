@@ -11,7 +11,8 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronDown, MessageSquare, User, Settings, LogOut, BrainCircuit } from 'lucide-react';
+import { ChevronDown, MessageSquare, User, Settings, LogOut, BrainCircuit, Search } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Header() {
   const { currentUser, isAuthenticated, isClient, isFreelancer, signOut } = useAuth();
