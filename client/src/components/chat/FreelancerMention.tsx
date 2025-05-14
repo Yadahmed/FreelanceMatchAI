@@ -25,7 +25,12 @@ const findFreelancerMatches = (text: string): FreelancerMatch[] => {
       /\*\*\[FREELANCER_ID:(\d+)\]\*\*/g,  // **[FREELANCER_ID:X]**
       /\*\*\[FREELANCER_ID:(\d+)\]/g,      // **[FREELANCER_ID:X]
       /\[FREELANCER_ID:(\d+)\]\*\*/g,      // [FREELANCER_ID:X]**
-      /\[FREELANCER_ID:(\d+)\]/g           // [FREELANCER_ID:X]
+      /\[FREELANCER_ID:(\d+)\]/g,          // [FREELANCER_ID:X]
+      /\*\*\[FREELANCER_ID:(\d+)\]([^\*]*)\*\*/g, // **[FREELANCER_ID:X] Name** (with text between)
+      /\*\*\[FREELANCER_ID:(\d+)\]([^\*]*)/g,     // **[FREELANCER_ID:X] Name (without closing **)
+      /^\*\*FREELANCER_ID:(\d+)\*\*/gm,    // **FREELANCER_ID:X** (without brackets)
+      /^\*\*FREELANCER_ID:(\d+)/gm,        // **FREELANCER_ID:X (without closing **)
+      /^\*\*\[FREELANCER_ID:(\d+)\]/gm      // **[FREELANCER_ID:X at start of line
     ];
     
     // Try each pattern
@@ -186,7 +191,7 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
         const parts = processMatches(content, matches, freelancers, userMap);
         setProcessedContent(parts);
       } catch (error) {
-        console.error('Error processing freelancer mentions:', error);
+        console.error('Error processing freelancer mentions:', {content, error});
         setProcessedContent([content]);
       }
     };

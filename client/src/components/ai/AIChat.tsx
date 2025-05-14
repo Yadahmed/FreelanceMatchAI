@@ -460,8 +460,8 @@ export function AIChat() {
             {/* Show which service is active */}
             {isAIAvailable && activeService && (
               <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-white/20 text-white/90 border border-white/20">
-                {activeService === 'deepseek' && 'DeepSeek R1'}
-                {activeService === 'anthropic' && 'Claude 3.7 Sonnet'}
+                {activeService === 'deepseek' && 'DeepSeek API'}
+                {activeService === 'anthropic' && 'Anthropic API'}
                 {activeService === 'ollama' && 'Local Ollama'}
               </span>
             )}
@@ -497,7 +497,14 @@ export function AIChat() {
                   <p className="whitespace-pre-wrap">{message.content}</p>
                 ) : (
                   <div className="whitespace-pre-wrap">
-                    <FreelancerMention content={message.content} />
+                    {/* If there are freelancer matches, render the plain text without processing - 
+                        the cards will be rendered separately below */}
+                    {message.freelancerMatches && message.freelancerMatches.length > 0 ? (
+                      <div>{message.content}</div>
+                    ) : (
+                      /* Otherwise, process the text for any inline freelancer mentions */
+                      <FreelancerMention content={message.content} />
+                    )}
                   </div>
                 )}
                 
@@ -552,8 +559,6 @@ export function AIChat() {
                           // Get freelancer ID and name from the match data
                           const freelancer = match.freelancer || match;
                           const freelancerId = match.freelancerId || freelancer.id;
-                          const name = freelancer.displayName || 
-                            (freelancer.username ? freelancer.username : `Freelancer ${freelancerId}`);
                           
                           if (!freelancerId) return null;
                           
