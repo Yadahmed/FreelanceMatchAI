@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,9 +53,12 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 export function FreelancerProfileForm() {
   const [skillInput, setSkillInput] = useState('');
   const [skillsList, setSkillsList] = useState<string[]>([]);
-  const { createFreelancerProfile, isLoading } = useAuth();
+  const { createFreelancerProfile, updateProfile, currentUser, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
   // Initialize form with default values
   const form = useForm<ProfileFormValues>({
@@ -72,12 +76,44 @@ export function FreelancerProfileForm() {
     },
   });
 
+  // Fetch the user's freelancer profile if they already have one
+  const { data: dashboardData, isLoading: profileLoading } = useQuery<any>({
+    queryKey: ['/api/freelancer/dashboard'],
+    enabled: !!currentUser && !currentUser.isClient,
+  });
+  
+  // Update form with existing profile data when it's loaded
+  useEffect(() => {
+    if (dashboardData && dashboardData.freelancer) {
+      setIsEditMode(true);
+      
+      // Update the skills list
+      if (dashboardData.freelancer.skills && Array.isArray(dashboardData.freelancer.skills)) {
+        setSkillsList(dashboardData.freelancer.skills);
+      }
+      
+      // Set form values with existing profile data
+      form.reset({
+        profession: dashboardData.freelancer.profession || '',
+        bio: dashboardData.freelancer.bio || '',
+        skills: dashboardData.freelancer.skills?.join(',') || '',
+        hourlyRate: dashboardData.freelancer.hourlyRate?.toString() || '',
+        location: dashboardData.freelancer.location || '',
+        yearsOfExperience: dashboardData.freelancer.yearsOfExperience?.toString() || '',
+        timeZone: dashboardData.freelancer.timeZone || '',
+        websiteUrl: dashboardData.freelancer.websiteUrl || '',
+        imageUrl: dashboardData.freelancer.imageUrl || '',
+      });
+    }
+  }, [dashboardData, form]);
+
   // Add a skill to the list
   const addSkill = () => {
     if (skillInput.trim() && !skillsList.includes(skillInput.trim())) {
-      setSkillsList([...skillsList, skillInput.trim()]);
+      const newSkillsList = [...skillsList, skillInput.trim()];
+      setSkillsList(newSkillsList);
       setSkillInput('');
-      form.setValue('skills', skillsList.join(','));
+      form.setValue('skills', newSkillsList.join(','));
     }
   };
 
@@ -99,6 +135,8 @@ export function FreelancerProfileForm() {
   // Form submission
   const onSubmit = async (data: ProfileFormValues) => {
     try {
+      setIsSubmitting(true);
+      
       // Prepare the data for API submission
       const profileData = {
         profession: data.profession,
@@ -113,20 +151,37 @@ export function FreelancerProfileForm() {
         imageUrl: data.imageUrl || null,
       };
 
-      await createFreelancerProfile(profileData);
+      if (isEditMode && dashboardData && dashboardData.freelancer) {
+        // Update existing profile
+        await updateProfile({
+          ...profileData,
+          id: dashboardData.freelancer.id
+        });
+        
+        toast({
+          title: 'Profile Updated',
+          description: 'Your freelancer profile has been updated successfully!',
+        });
+      } else {
+        // Create new profile
+        await createFreelancerProfile(profileData);
+        
+        toast({
+          title: 'Profile Created',
+          description: 'Your freelancer profile has been created successfully!',
+        });
+      }
       
-      toast({
-        title: 'Profile Created',
-        description: 'Your freelancer profile has been created successfully!',
-      });
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/freelancer/dashboard'] });
       
       // Add delay to allow server state to update
       setTimeout(() => {
         // Clear any cached data that might be stale
         window.sessionStorage.removeItem('user-data');
         
-        // Redirect to freelancer dashboard 
-        setLocation('/freelancer-dashboard');
+        // Redirect to home page 
+        setLocation('/');
         
         // Reload the page after a short delay to ensure fresh state
         setTimeout(() => {
@@ -135,19 +190,25 @@ export function FreelancerProfileForm() {
       }, 300);
     } catch (error: any) {
       toast({
-        title: 'Profile Creation Failed',
-        description: error.message || 'An error occurred while creating your profile',
+        title: isEditMode ? 'Profile Update Failed' : 'Profile Creation Failed',
+        description: error.message || 'An error occurred while updating your profile',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <Card className="w-full max-w-3xl mx-auto">
       <CardHeader>
-        <CardTitle className="text-2xl">Create Your Freelancer Profile</CardTitle>
+        <CardTitle className="text-2xl">
+          {isEditMode ? 'Edit Your Freelancer Profile' : 'Create Your Freelancer Profile'}
+        </CardTitle>
         <CardDescription>
-          Complete your profile to start receiving job requests and client matches
+          {isEditMode 
+            ? 'Update your profile information to attract more clients' 
+            : 'Complete your profile to start receiving job requests and client matches'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -232,9 +293,9 @@ export function FreelancerProfileForm() {
                 <FormItem>
                   <FormLabel>Bio</FormLabel>
                   <FormControl>
-                    <Textarea
+                    <Textarea 
                       placeholder="Tell clients about yourself, your expertise, and your work experience..."
-                      className="resize-none h-32"
+                      className="min-h-[120px]"
                       {...field}
                     />
                   </FormControl>
@@ -246,55 +307,50 @@ export function FreelancerProfileForm() {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="skills"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Skills</FormLabel>
-                  <div className="flex space-x-2">
-                    <FormControl>
-                      <Input
-                        placeholder="Add a skill and press Enter"
-                        value={skillInput}
-                        onChange={(e) => setSkillInput(e.target.value)}
-                        onKeyDown={handleKeyPress}
-                        onBlur={() => skillInput && addSkill()}
-                      />
-                    </FormControl>
-                    <Button 
-                      type="button" 
-                      variant="secondary"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        addSkill();
-                      }}
+            <div>
+              <FormField
+                control={form.control}
+                name="skills"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Skills</FormLabel>
+                    <div className="flex space-x-2">
+                      <FormControl>
+                        <Input 
+                          placeholder="Add a skill and press Enter"
+                          value={skillInput}
+                          onChange={(e) => setSkillInput(e.target.value)}
+                          onKeyDown={handleKeyPress}
+                        />
+                      </FormControl>
+                      <Button type="button" onClick={addSkill}>Add</Button>
+                    </div>
+                    <FormDescription>
+                      Add your skills one by one
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="flex flex-wrap gap-2 mt-2">
+                {skillsList.map((skill, index) => (
+                  <Badge key={index} variant="secondary" className="px-3 py-1">
+                    {skill}
+                    <button 
+                      type="button"
+                      className="ml-2 text-muted-foreground hover:text-destructive transition-colors"
+                      onClick={() => removeSkill(skill)}
                     >
-                      Add
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {skillsList.map((skill) => (
-                      <Badge 
-                        key={skill} 
-                        variant="secondary"
-                        className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
-                        onClick={() => removeSkill(skill)}
-                      >
-                        {skill} ×
-                      </Badge>
-                    ))}
-                  </div>
-                  <FormDescription>
-                    Add your skills one by one
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                      ×
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
 
             <Separator />
-
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -305,6 +361,9 @@ export function FreelancerProfileForm() {
                     <FormControl>
                       <Input placeholder="e.g. EST, GMT+1" {...field} />
                     </FormControl>
+                    <FormDescription>
+                      Your preferred time zone for work
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -319,12 +378,15 @@ export function FreelancerProfileForm() {
                     <FormControl>
                       <Input placeholder="https://your-portfolio.com" {...field} />
                     </FormControl>
+                    <FormDescription>
+                      Link to your personal website or portfolio
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-
+            
             <FormField
               control={form.control}
               name="imageUrl"
@@ -335,23 +397,25 @@ export function FreelancerProfileForm() {
                     <Input placeholder="https://example.com/your-image.jpg" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Link to your professional profile picture
+                    URL to your profile image
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Profile...
-                </>
-              ) : (
-                'Create Freelancer Profile'
-              )}
-            </Button>
+            <div className="flex justify-end">
+              <Button type="submit" disabled={isSubmitting || authLoading || profileLoading}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isEditMode ? 'Updating...' : 'Creating...'}
+                  </>
+                ) : (
+                  isEditMode ? 'Update Profile' : 'Create Profile'
+                )}
+              </Button>
+            </div>
           </form>
         </Form>
       </CardContent>
