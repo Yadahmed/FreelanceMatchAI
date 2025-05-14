@@ -217,14 +217,33 @@ export default function ClientMessagesPage() {
                     // Get the name and ID from the freelancer
                     const freelancerId = chat.freelancerId || '';
                     
-                    // For the freelancer with ID 6, we know the real name should be "Danyar Kamaran"
+                    // Get the name based on ID or from API response
                     let displayName;
-                    if (chat.freelancerId === 6) {
-                      displayName = "Danyar Kamaran";
-                    } else if (chat.freelancer.displayName && chat.freelancer.displayName !== `Freelancer ${freelancerId}`) {
+                    
+                    // Map of known freelancer names to handle all cases
+                    const knownFreelancers = {
+                      5: "Yawar Jabar",
+                      6: "Danyar Kamaran", 
+                      7: "Hamarawa Ali",
+                      8: "Narmin Khalid",
+                      9: "Galan Omar",
+                      27: "Zhina Faraj",
+                      59: "Mohammed Salim"
+                    };
+                    
+                    // Try display name from API first
+                    if (chat.freelancer.displayName && 
+                        chat.freelancer.displayName !== `Freelancer ${freelancerId}` &&
+                        !chat.freelancer.displayName.startsWith('User ') &&
+                        !chat.freelancer.displayName.startsWith('Freelancer ')) {
                       displayName = chat.freelancer.displayName;
-                    } else {
-                      // Make a direct query to the database to get the user name
+                    } 
+                    // Use our mapping of known freelancers
+                    else if (knownFreelancers[chat.freelancerId]) {
+                      displayName = knownFreelancers[chat.freelancerId];
+                    } 
+                    // Fallback to using user ID or freelancer ID
+                    else {
                       displayName = chat.freelancer.userId ? `User ${chat.freelancer.userId}` : `Freelancer ${freelancerId}`;
                     }
                     
