@@ -20,7 +20,10 @@ import {
   MessageSquare,
   Award,
   ArrowLeft,
-  Star
+  Star,
+  CheckCircle2,
+  XCircle,
+  AlertCircle
 } from 'lucide-react';
 
 // Define the type for freelancer data
@@ -41,6 +44,16 @@ interface Freelancer {
   responsiveness: number;
   fairnessScore: number;
   completedJobs: number;
+  availability?: boolean;
+  availabilityDetails?: {
+    status?: 'available' | 'limited' | 'unavailable';
+    message?: string;
+    availableFrom?: string;
+    availableUntil?: string;
+    workHours?: { start: string; end: string };
+    workDays?: number[];
+    lastUpdated?: string;
+  };
 }
 
 export default function FreelancerDetail() {
@@ -353,7 +366,109 @@ export default function FreelancerDetail() {
         
         {/* Sidebar - Only show for clients or unauthenticated users */}
         {(!isAuthenticated || currentUser?.isClient) && (
-          <div>
+          <div className="space-y-4">
+            {/* Availability Card */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xl">Availability</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {/* Determine availability status */}
+                {(() => {
+                  // Check for availabilityDetails first
+                  if (freelancer.availabilityDetails?.status) {
+                    const status = freelancer.availabilityDetails.status;
+                    
+                    if (status === 'available') {
+                      return (
+                        <div className="flex items-center gap-2 text-green-600">
+                          <CheckCircle2 className="h-5 w-5" />
+                          <span className="font-medium">Available for Work</span>
+                        </div>
+                      );
+                    } else if (status === 'limited') {
+                      return (
+                        <div className="flex items-center gap-2 text-amber-600">
+                          <AlertCircle className="h-5 w-5" />
+                          <span className="font-medium">Limited Availability</span>
+                        </div>
+                      );
+                    } else if (status === 'unavailable') {
+                      return (
+                        <div className="flex items-center gap-2 text-red-600">
+                          <XCircle className="h-5 w-5" />
+                          <span className="font-medium">Not Available</span>
+                        </div>
+                      );
+                    }
+                  }
+                  
+                  // Fall back to the boolean availability if no details
+                  return (
+                    <div className={`flex items-center gap-2 ${freelancer.availability ? 'text-green-600' : 'text-red-600'}`}>
+                      {freelancer.availability ? 
+                        <><CheckCircle2 className="h-5 w-5" /><span className="font-medium">Available for Work</span></> : 
+                        <><XCircle className="h-5 w-5" /><span className="font-medium">Not Available</span></>
+                      }
+                    </div>
+                  );
+                })()}
+                
+                {/* Custom availability message if available */}
+                {freelancer.availabilityDetails?.message && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    "{freelancer.availabilityDetails.message}"
+                  </div>
+                )}
+                
+                {/* Work Hours */}
+                {freelancer.availabilityDetails?.workHours && (
+                  <div className="flex items-center mt-3 text-sm">
+                    <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span>
+                      Works {freelancer.availabilityDetails.workHours.start} - {freelancer.availabilityDetails.workHours.end}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Available Date Range */}
+                {(freelancer.availabilityDetails?.availableFrom || freelancer.availabilityDetails?.availableUntil) && (
+                  <div className="flex items-center mt-1 text-sm">
+                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span>
+                      {freelancer.availabilityDetails.availableFrom && 
+                        `Available from ${new Date(freelancer.availabilityDetails.availableFrom).toLocaleDateString()}`}
+                      {freelancer.availabilityDetails.availableFrom && freelancer.availabilityDetails.availableUntil && ' to '}
+                      {freelancer.availabilityDetails.availableUntil && 
+                        `${new Date(freelancer.availabilityDetails.availableUntil).toLocaleDateString()}`}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Work Days */}
+                {freelancer.availabilityDetails?.workDays && freelancer.availabilityDetails.workDays.length > 0 && (
+                  <div className="mt-3">
+                    <div className="text-sm font-medium mb-2">Working Days</div>
+                    <div className="flex flex-wrap gap-1">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
+                        <Badge 
+                          key={index}
+                          variant={freelancer.availabilityDetails?.workDays?.includes(index) ? "default" : "outline"}
+                          className={freelancer.availabilityDetails?.workDays?.includes(index) 
+                            ? "bg-primary/15 text-primary border-primary/30 hover:bg-primary/20" 
+                            : "text-muted-foreground"
+                          }
+                        >
+                          {day}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Contact Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-xl">Contact This Freelancer</CardTitle>
@@ -364,10 +479,17 @@ export default function FreelancerDetail() {
                 <Button 
                   className="w-full"
                   onClick={handleHireClick}
+                  disabled={freelancer.availabilityDetails?.status === 'unavailable'}
                 >
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Message Now
                 </Button>
+                
+                {freelancer.availabilityDetails?.status === 'unavailable' && (
+                  <div className="text-sm text-red-600 mt-2">
+                    This freelancer is currently unavailable for new projects.
+                  </div>
+                )}
                 
                 <div className="text-xs text-muted-foreground mt-4 pt-4 border-t">
                   <p>By contacting this freelancer, you agree to our terms of service and privacy policy.</p>
