@@ -168,12 +168,41 @@ export function AIChat() {
           
           welcomeMessage += " How can I help you today? You can ask me to find freelancers for your project or help you understand how our marketplace works.";
           
+          // Fetch freelancers to show in welcome message
+          let topFreelancers = [];
+          try {
+            const res = await fetch('/api/freelancers?limit=3', {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include'
+            });
+            
+            if (res.ok) {
+              topFreelancers = await res.json();
+              // Sort by rating to get top freelancers
+              topFreelancers = [...topFreelancers]
+                .sort((a, b) => {
+                  const ratingA = a.rating !== undefined ? a.rating : 0;
+                  const ratingB = b.rating !== undefined ? b.rating : 0;
+                  return ratingB - ratingA;
+                })
+                .slice(0, 3);
+              console.log("Loaded top freelancers for welcome message:", topFreelancers);
+            }
+          } catch (error) {
+            console.error("Failed to load top freelancers:", error);
+          }
+          
           setMessages([
             {
               id: generateId(),
               content: welcomeMessage,
               isUser: false,
               timestamp: new Date(),
+              // Add top freelancers to the welcome message
+              freelancerMatches: topFreelancers.length > 0 ? topFreelancers : undefined
             },
           ]);
         }
@@ -474,10 +503,18 @@ export function AIChat() {
                 
                 {/* Render freelancer matches with chat buttons if present */}
                 {!message.isUser && message.freelancerMatches && message.freelancerMatches.length > 0 && (
-                  <div className="mt-4 space-y-3 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                  <div className={`mt-4 space-y-3 ${message.id === messages[0]?.id ? 'bg-gradient-to-r from-blue-50 to-indigo-50' : 'bg-blue-50'} p-4 rounded-lg border border-blue-100 shadow-sm`}>
                     <div className="flex flex-col">
-                      <h4 className="font-medium text-blue-800">Top Freelancers Found!</h4>
-                      <p className="text-sm text-blue-600 mb-3">Contact these freelancers directly:</p>
+                      <h4 className="font-medium text-blue-800">
+                        {message.id === messages[0]?.id 
+                          ? "Start Connecting with Top Freelancers!" 
+                          : "Top Freelancers Found!"}
+                      </h4>
+                      <p className="text-sm text-blue-600 mb-3">
+                        {message.id === messages[0]?.id
+                          ? "Message these experienced professionals directly:"
+                          : "Contact these freelancers directly:"}
+                      </p>
                       
                       <div className="flex flex-wrap gap-2">
                         {message.freelancerMatches.slice(0, 3).map((match, index) => {
