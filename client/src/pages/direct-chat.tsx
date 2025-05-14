@@ -164,7 +164,8 @@ export default function DirectChatPage() {
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Enter your message"
                     rows={4}
-                    className="dark:bg-muted/30 dark:border-muted"
+                    className="dark:bg-slate-800 dark:text-white dark:border-slate-700"
+                    style={{backgroundColor: 'var(--input)'}}
                   />
                   <div className="mt-2 text-xs text-muted-foreground">
                     <p>💡 Tip: Use specific details and clear requests to get better responses from the AI.</p>
