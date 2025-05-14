@@ -23,7 +23,6 @@ import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { AuthProvider } from "@/hooks/use-auth";
 import { RequireAuth } from "@/components/auth/RequireAuth";
-import { ThemeProvider } from "@/hooks/use-theme";
 
 function Router() {
   // Get the current location for logging purposes
@@ -148,20 +147,30 @@ function App() {
     );
   }
 
+  // Initialize theme based on user preference in localStorage
+  useEffect(() => {
+    // Check local storage for theme preference
+    const savedTheme = localStorage.getItem("kurdjobs-theme");
+    // Apply theme class if saved
+    if (savedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" storageKey="kurdjobs-theme">
-        <AuthProvider>
-          <div className="flex flex-col min-h-screen bg-background text-foreground transition-colors duration-300">
-            <Header />
-            <main className="flex-grow pt-16">
-              <Router />
-            </main>
-            <Footer />
-            <Toaster />
-          </div>
-        </AuthProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <div className="flex flex-col min-h-screen bg-background text-foreground transition-colors duration-300">
+          <Header />
+          <main className="flex-grow pt-16">
+            <Router />
+          </main>
+          <Footer />
+          <Toaster />
+        </div>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
