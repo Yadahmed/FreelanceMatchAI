@@ -23,6 +23,14 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   
+  // Get search parameters to check if we're trying to initiate a chat with a freelancer
+  const [location] = useLocation();
+  const searchParams = new URLSearchParams(location.split('?')[1] || '');
+  const targetFreelancerId = searchParams.get('freelancer');
+  
+  // Check if current user is a freelancer trying to message another freelancer
+  const isFreelancerMessagingFreelancer = !currentUser?.isClient && targetFreelancerId;
+  
   // Fetch chat basic information
   const {
     data: chatInfo,
@@ -105,6 +113,19 @@ export default function ChatPage() {
     refetchIntervalInBackground: true // Refresh even when tab is in background
   });
   
+  // Check if freelancer is trying to message another freelancer 
+  // and redirect them if that's the case
+  useEffect(() => {
+    if (isFreelancerMessagingFreelancer) {
+      toast({
+        title: "Access Restricted",
+        description: "Freelancers cannot message other freelancers. Only clients can initiate conversations with freelancers.",
+        variant: "destructive"
+      });
+      setLocation('/freelancer-dashboard');
+    }
+  }, [isFreelancerMessagingFreelancer, toast, setLocation]);
+
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
