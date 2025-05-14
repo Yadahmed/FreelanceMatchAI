@@ -535,9 +535,16 @@ export async function getChats(req: Request, res: Response) {
         if (freelancer) {
           // Log to debug
           console.log('Freelancer in getChats:', freelancer);
-          // Get the user associated with this freelancer for display name extraction
-          const user = await storage.getUserByFirebaseUid(freelancer.userId.toString());
-          const name = extractFreelancerName(freelancer, user);
+          // Get the user associated with this freelancer directly by userId
+          const user = await storage.getUser(freelancer.userId);
+          
+          // Log to help debug
+          console.log('User info for freelancer', freelancer.id, ':', user);
+          
+          // Generate a name
+          const name = user?.username || `Freelancer ${freelancer.id}`;
+          
+          // Add a real name to the freelancer object
           freelancerWithName = {
             ...freelancer,
             displayName: name

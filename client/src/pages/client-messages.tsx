@@ -197,13 +197,17 @@ export default function ClientMessagesPage() {
                     console.log('Chat data in list:', chat);
                     console.log('Freelancer data:', chat.freelancer);
                     
-                    // Check all possible sources for the data
-                    const displayName = chat.freelancer?.displayName || 'Unknown';
+                    // Check if we have a freelancer object
+                    if (!chat.freelancer) {
+                      return null; // Skip this chat if no freelancer
+                    }
                     
-                    // Make sure we have the profession
-                    const profession = chat.freelancer?.profession || '';
+                    // Extract freelancer information
+                    // If we don't have a displayName, use the user ID with fallback message
+                    const displayName = chat.freelancer.displayName || `Freelancer ${chat.freelancerId}`;
+                    const profession = chat.freelancer.profession || '';
 
-                    // Combine the display name and profession
+                    // Create the final freelancer name with profession
                     let freelancerName = displayName;
                     if (profession) {
                       freelancerName = `${displayName} (${profession})`;
