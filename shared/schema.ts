@@ -85,6 +85,15 @@ export const freelancers = pgTable("freelancers", {
   location: text("location").notNull(),
   timeZone: text("time_zone"),
   availability: boolean("availability").notNull().default(true),
+  availabilityDetails: json("availability_details").default({
+    status: "available",
+    message: "",
+    availableFrom: "",
+    availableUntil: "",
+    workHours: { start: "09:00", end: "17:00" },
+    workDays: [1, 2, 3, 4, 5], // Monday to Friday by default (0 = Sunday, 6 = Saturday)
+    lastUpdated: new Date().toISOString()
+  }),
   portfolioLinks: text("portfolio_links").array(),
   websiteUrl: text("website_url"),
   imageUrl: text("image_url"),
@@ -100,6 +109,7 @@ export const insertFreelancerSchema = createInsertSchema(freelancers).pick({
   location: true,
   timeZone: true,
   availability: true,
+  availabilityDetails: true,
   portfolioLinks: true,
   websiteUrl: true,
   imageUrl: true,
