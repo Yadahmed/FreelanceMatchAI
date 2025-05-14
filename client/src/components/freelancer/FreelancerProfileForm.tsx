@@ -200,225 +200,288 @@ export function FreelancerProfileForm() {
   };
 
   return (
-    <Card className="w-full max-w-3xl mx-auto">
-      <CardHeader>
-        <CardTitle className="text-2xl">
+    <div className="w-full max-w-4xl mx-auto">
+      <div className="bg-gradient-to-r from-indigo-500/10 to-indigo-600/10 rounded-lg p-6 mb-6">
+        <h1 className="text-3xl font-bold text-primary">
           {isEditMode ? 'Edit Your Freelancer Profile' : 'Create Your Freelancer Profile'}
-        </CardTitle>
-        <CardDescription>
+        </h1>
+        <p className="text-muted-foreground mt-2">
           {isEditMode 
-            ? 'Update your profile information to attract more clients' 
+            ? 'Update your profile information to attract more clients and improve your match score' 
             : 'Complete your profile to start receiving job requests and client matches'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="profession"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Profession</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Web Developer, Graphic Designer" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Your main professional title
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Location</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. New York, Remote" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Your current location or work preference
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+        </p>
+      </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="hourlyRate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Hourly Rate ($)</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="25" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Your hourly rate in USD
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="yearsOfExperience"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Years of Experience</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="3" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      How many years of experience you have
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+      <Card className="border-t-4 border-t-primary shadow-md">
+        <CardContent className="pt-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="profession"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">Profession</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g. Web Developer, Graphic Designer" 
+                            className="h-11"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Your main professional title
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="hourlyRate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">Hourly Rate ($)</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                            <Input 
+                              type="number" 
+                              placeholder="25" 
+                              className="pl-7 h-11"
+                              {...field} 
+                            />
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          Your hourly rate in USD
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="timeZone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">Time Zone (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. EST, GMT+1" className="h-11" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Your preferred time zone for work
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">Location</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g. New York, Remote" 
+                            className="h-11"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Your current location or work preference
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="yearsOfExperience"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">Years of Experience</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="3" 
+                            className="h-11"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          How many years of experience you have
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="websiteUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">Website/Portfolio URL (Optional)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="https://your-portfolio.com" 
+                            className="h-11"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Link to your personal website or portfolio
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
 
-            <FormField
-              control={form.control}
-              name="bio"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bio</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Tell clients about yourself, your expertise, and your work experience..."
-                      className="min-h-[120px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Minimum 30 characters
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div>
-              <FormField
-                control={form.control}
-                name="skills"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Skills</FormLabel>
-                    <div className="flex space-x-2">
+              <div className="bg-muted/30 p-5 rounded-lg">
+                <FormField
+                  control={form.control}
+                  name="bio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">Bio</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="Add a skill and press Enter"
-                          value={skillInput}
-                          onChange={(e) => setSkillInput(e.target.value)}
-                          onKeyDown={handleKeyPress}
+                        <Textarea 
+                          placeholder="Tell clients about yourself, your expertise, and your work experience..."
+                          className="min-h-[150px] bg-background"
+                          {...field}
                         />
                       </FormControl>
-                      <Button type="button" onClick={addSkill}>Add</Button>
-                    </div>
-                    <FormDescription>
-                      Add your skills one by one
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="flex flex-wrap gap-2 mt-2">
-                {skillsList.map((skill, index) => (
-                  <Badge key={index} variant="secondary" className="px-3 py-1">
-                    {skill}
-                    <button 
-                      type="button"
-                      className="ml-2 text-muted-foreground hover:text-destructive transition-colors"
-                      onClick={() => removeSkill(skill)}
-                    >
-                      ×
-                    </button>
-                  </Badge>
-                ))}
+                      <FormDescription>
+                        Minimum 30 characters - A detailed bio helps clients understand your expertise
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            </div>
 
-            <Separator />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="timeZone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Time Zone (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. EST, GMT+1" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Your preferred time zone for work
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="bg-muted/30 p-5 rounded-lg">
+                <FormField
+                  control={form.control}
+                  name="skills"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">Skills</FormLabel>
+                      <div className="flex gap-3">
+                        <FormControl className="flex-1">
+                          <Input 
+                            placeholder="Add a skill and press Enter"
+                            className="h-11 bg-background"
+                            value={skillInput}
+                            onChange={(e) => setSkillInput(e.target.value)}
+                            onKeyDown={handleKeyPress}
+                          />
+                        </FormControl>
+                        <Button 
+                          type="button" 
+                          onClick={addSkill}
+                          size="lg"
+                          className="px-4"
+                        >
+                          Add Skill
+                        </Button>
+                      </div>
+                      <FormDescription>
+                        Add your skills one by one - These are used for matching with client projects
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {skillsList.map((skill, index) => (
+                    <Badge 
+                      key={index} 
+                      variant="secondary" 
+                      className="px-3 py-2 text-sm bg-primary/10 hover:bg-primary/20 transition-colors"
+                    >
+                      {skill}
+                      <button 
+                        type="button"
+                        className="ml-2 text-muted-foreground hover:text-destructive transition-colors"
+                        onClick={() => removeSkill(skill)}
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  ))}
+                  {skillsList.length === 0 && (
+                    <p className="text-muted-foreground text-sm italic py-2">
+                      No skills added yet. Add skills to improve your match score.
+                    </p>
+                  )}
+                </div>
+              </div>
               
               <FormField
                 control={form.control}
-                name="websiteUrl"
+                name="imageUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Website/Portfolio URL (Optional)</FormLabel>
+                    <FormLabel className="text-base font-medium">Profile Image URL (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://your-portfolio.com" {...field} />
+                      <div className="flex gap-4 items-start">
+                        <div className="w-16 h-16 rounded-full overflow-hidden border bg-muted flex items-center justify-center">
+                          {field.value ? (
+                            <img src={field.value} alt="Profile preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="text-3xl text-muted-foreground">?</div>
+                          )}
+                        </div>
+                        <Input 
+                          placeholder="https://example.com/your-image.jpg" 
+                          className="flex-1 h-11"
+                          {...field} 
+                        />
+                      </div>
                     </FormControl>
                     <FormDescription>
-                      Link to your personal website or portfolio
+                      URL to your profile image - Profiles with images receive more client interest
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="imageUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Profile Image URL (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://example.com/your-image.jpg" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    URL to your profile image
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            <div className="flex justify-end">
-              <Button type="submit" disabled={isSubmitting || authLoading || profileLoading}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isEditMode ? 'Updating...' : 'Creating...'}
-                  </>
-                ) : (
-                  isEditMode ? 'Update Profile' : 'Create Profile'
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+              <div className="pt-4 flex justify-end">
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting || authLoading || profileLoading}
+                  size="lg"
+                  className="min-w-[150px]"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      {isEditMode ? 'Updating...' : 'Creating...'}
+                    </>
+                  ) : (
+                    isEditMode ? 'Update Profile' : 'Create Profile'
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
