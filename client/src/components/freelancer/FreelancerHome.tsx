@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/use-auth';
-import { ChevronRight, DollarSign, Briefcase, Star, LineChart, FileClock, Bell } from 'lucide-react';
+import { ChevronRight, DollarSign, Briefcase, Star, BarChart, FileSearch, Bell } from 'lucide-react';
 
 interface FreelancerProfile {
   id: number;
@@ -213,9 +213,12 @@ export function FreelancerHome() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col">
-                  <div className="text-2xl font-bold mb-1">{matchScore}%</div>
-                  <Progress value={matchScore} className="h-2" />
+                <div className="flex items-center">
+                  <BarChart className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <div className="text-2xl font-bold mb-1">{matchScore}%</div>
+                    <Progress value={matchScore} className="h-2" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -241,7 +244,7 @@ export function FreelancerHome() {
                 <div className="flex flex-col space-y-2">
                   {pendingRequests === 0 ? (
                     <div className="text-muted-foreground py-6 text-center">
-                      <FileClock className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                      <FileSearch className="mx-auto h-8 w-8 mb-2 opacity-50" />
                       <p>No job requests yet</p>
                     </div>
                   ) : (

@@ -104,12 +104,6 @@ export function Header() {
                 {isFreelancer && (
                   <>
                     <DropdownMenuItem className="cursor-pointer rounded-lg transition-colors focus:bg-accent/80 hover:bg-accent/80 my-1" asChild>
-                      <Link href="/freelancer-dashboard" className="flex items-center">
-                        <MessageSquare className="mr-2 h-4 w-4 text-primary/80" />
-                        <span>Freelancer Dashboard</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer rounded-lg transition-colors focus:bg-accent/80 hover:bg-accent/80 my-1" asChild>
                       <Link href="/freelancer-profile" className="flex items-center">
                         <User className="mr-2 h-4 w-4 text-primary/80" />
                         <span>Edit Freelancer Profile</span>
