@@ -1,5 +1,5 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,12 +9,35 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MessageSquare, User, Calendar, ArrowLeft } from 'lucide-react';
+import { MessageSquare, User, Calendar, ArrowLeft, Trash2, MoreVertical } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function ClientMessagesPage() {
   const [, setLocation] = useLocation();
   const { currentUser, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // State for delete confirmation dialog
+  const [chatToDelete, setChatToDelete] = useState<number | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   // Fetch client chats
   const { data, isLoading, error, refetch } = useQuery({
@@ -58,6 +81,68 @@ export default function ClientMessagesPage() {
     enabled: !!isAuthenticated && currentUser?.isClient === true,
     refetchOnWindowFocus: true // Refresh when user returns to this page
   });
+  
+  // Delete chat mutation
+  const deleteChatMutation = useMutation({
+    mutationFn: async (chatId: number) => {
+      // Import the token refresh function
+      const { refreshAuthToken } = await import('@/lib/auth');
+      
+      // Try to refresh the token first
+      const token = await refreshAuthToken();
+      
+      if (!token) {
+        throw new Error('Authentication token not available');
+      }
+      
+      const response = await fetch(`/api/client/chats/${chatId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete chat');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['/api/client/chats'] });
+      
+      toast({
+        title: "Chat deleted",
+        description: "The conversation has been deleted successfully."
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error deleting chat:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete chat",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Handle chat deletion
+  const handleDeleteChat = (chatId: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent clicking through to the chat view
+    setChatToDelete(chatId);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  // Confirm chat deletion
+  const confirmDeleteChat = () => {
+    if (chatToDelete) {
+      deleteChatMutation.mutate(chatToDelete);
+      setChatToDelete(null);
+    }
+    setIsDeleteDialogOpen(false);
+  };
   
   // Force a refresh of the data when the component mounts
   React.useEffect(() => {
@@ -178,6 +263,24 @@ export default function ClientMessagesPage() {
           <h1 className="text-2xl font-bold">My Messages</h1>
         </div>
         
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this conversation? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteChat} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        
         <Card>
           <CardHeader>
             <CardTitle>Messages</CardTitle>
@@ -261,36 +364,55 @@ export default function ClientMessagesPage() {
                       
                     return (
                       <div key={chat.id} className="group">
-                        <div 
-                          className="flex items-start space-x-4 p-3 rounded-lg transition-colors hover:bg-muted cursor-pointer"
-                          onClick={() => handleChatClick(chat.id)}
-                        >
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={chat.freelancer?.imageUrl} />
-                            <AvatarFallback>
-                              <User className="h-6 w-6" />
-                            </AvatarFallback>
-                          </Avatar>
-                          
-                          <div className="flex-1 space-y-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-medium text-sm">{freelancerName}</h4>
-                              {chat.type === 'direct' && (
-                                <Badge variant="outline" className="text-xs">Direct Message</Badge>
+                        <div className="flex items-start space-x-4 p-3 rounded-lg transition-colors hover:bg-muted">
+                          <div 
+                            className="flex items-start space-x-4 flex-1 cursor-pointer"
+                            onClick={() => handleChatClick(chat.id)}
+                          >
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage src={chat.freelancer?.imageUrl} />
+                              <AvatarFallback>
+                                <User className="h-6 w-6" />
+                              </AvatarFallback>
+                            </Avatar>
+                            
+                            <div className="flex-1 space-y-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-medium text-sm">{freelancerName}</h4>
+                                {chat.type === 'direct' && (
+                                  <Badge variant="outline" className="text-xs">Direct Message</Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground line-clamp-1">
+                                {latestMessage}
+                              </p>
+                              {timestamp && (
+                                <p className="text-xs text-muted-foreground flex items-center">
+                                  <Calendar className="h-3 w-3 mr-1 inline" />
+                                  {timestamp}
+                                </p>
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground line-clamp-1">
-                              {latestMessage}
-                            </p>
-                            {timestamp && (
-                              <p className="text-xs text-muted-foreground flex items-center">
-                                <Calendar className="h-3 w-3 mr-1 inline" />
-                                {timestamp}
-                              </p>
-                            )}
                           </div>
                           
-                          {/* Removed "View" button - entire row is now clickable */}
+                          {/* Actions Dropdown */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                                <MoreVertical className="h-4 w-4" />
+                                <span className="sr-only">Actions</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem 
+                                className="text-destructive focus:text-destructive"
+                                onClick={(e) => handleDeleteChat(chat.id, e)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete conversation
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                         <Separator className="my-2" />
                       </div>
