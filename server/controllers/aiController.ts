@@ -500,7 +500,16 @@ export async function processJobRequest(req: Request, res: Response) {
       });
     }
     
-    const { title, description, clientId } = validatedData.data;
+    // Extract data from the validated request
+    // Note: We're extending the schema with additional fields
+    const description = validatedData.data.description;
+    const title = req.body.title as string;  // Get these from the raw request
+    const clientId = req.body.clientId as number; // Get from the raw request
+    
+    if (!title || !clientId) {
+      return res.status(400).json({ message: 'Title and clientId are required fields' });
+    }
+    
     const jobRequest = `${title}. ${description}`;
     
     console.log(`Processing job request for client ${clientId}: "${title}" (${description.length} chars)`);
@@ -518,7 +527,9 @@ export async function processJobRequest(req: Request, res: Response) {
     
     if (isDeepSeekAvailable) {
       try {
-        const result = await deepseekService.processJobRequest(clientId, jobRequest, title, description);
+        // Extract any mentioned skills from the request (if present)
+        const skills = validatedData.data.skills || [];
+        const result = await deepseekService.processJobRequest(clientId, jobRequest, skills);
         return res.status(200).json({
           ...result,
           clientName: client.displayName || client.username,
@@ -532,7 +543,9 @@ export async function processJobRequest(req: Request, res: Response) {
     
     if (isAnthropicAvailable) {
       try {
-        const result = await deepseekService.processJobRequest(clientId, jobRequest, title, description);
+        // Extract any mentioned skills from the request (if present)
+        const skills = validatedData.data.skills || [];
+        const result = await deepseekService.processJobRequest(clientId, jobRequest, skills);
         return res.status(200).json({
           ...result,
           clientName: client.displayName || client.username,
