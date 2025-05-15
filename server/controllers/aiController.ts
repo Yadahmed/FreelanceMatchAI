@@ -17,10 +17,17 @@ function isFreelancerQuery(message: string): boolean {
     'web', 'mobile', 'need', 'looking for', 'find', 'hire', 
     'help with', 'skills', 'recommend', 'who can', 'available',
     'based in', 'similar to', 'top rated', 'best', 'marketer',
-    'marketing', 'digital marketing', 'social media', 'seo'
+    'marketing', 'digital marketing', 'social media', 'seo',
+    'content creator', 'video editor', 'photographer', 'data', 'scientist',
+    'analyst', 'consultant', 'instructor', 'coach', 'tutor', 'teacher'
   ];
   
-  return freelancerKeywords.some(keyword => lowerMsg.includes(keyword));
+  // Log the message for debugging
+  console.log('[isFreelancerQuery] Checking message:', lowerMsg.slice(0, 50) + '...');
+  const isFreelancer = freelancerKeywords.some(keyword => lowerMsg.includes(keyword));
+  console.log('[isFreelancerQuery] Result:', isFreelancer);
+  
+  return isFreelancer;
 }
 
 /**
@@ -91,6 +98,12 @@ async function getFilteredFreelancers(message: string): Promise<any[]> {
       score,
       matchReasons
     };
+  });
+  
+  // First log all freelancers with their scores
+  console.log(`[AI Matching] All ${scoredFreelancers.length} scored freelancers:`);
+  scoredFreelancers.forEach(match => {
+    console.log(`  ${match.freelancer.id} (${match.freelancer.profession}) - Score: ${match.score} - Reasons: ${match.matchReasons.join(' | ')}`);
   });
   
   // Sort by score and take top 3
