@@ -707,33 +707,5 @@ export function FreelancerHome() {
         </TabsContent>
       </Tabs>
     </div>
-    
-    {/* Delete chat confirmation dialog */}
-    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete this conversation? This action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => setChatToDelete(null)}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={confirmDeleteChat}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            {isDeleting ? (
-              <>
-                <span className="mr-2">Deleting...</span>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              </>
-            ) : (
-              "Delete"
-            )}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
   );
 }
