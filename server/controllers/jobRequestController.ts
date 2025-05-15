@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { db } from '../db';
 import { jobRequests, freelancers, users } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
+import { extractClientName } from '../utils/client';
 
 export async function createJobRequest(req: Request, res: Response) {
   try {
@@ -140,12 +141,15 @@ export async function getFreelancerJobRequests(req: Request, res: Response) {
     const formattedJobRequests = jobRequestsList.map(request => {
       const { client, ...jobRequest } = request;
       
+      // Use client utility to get consistent display name
+      const clientDisplayName = extractClientName(client);
+      
       const formattedRequest = {
         ...jobRequest,
         client: {
           id: client.id,
           username: client.username || `user_${client.id}`,
-          displayName: client.displayName || client.username || `Client ${client.id}`,
+          displayName: clientDisplayName,
         }
       };
       console.log('Formatted client info:', formattedRequest.client);

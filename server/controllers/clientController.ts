@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
 import { extractFreelancerName } from '../utils/freelancer';
+import { extractClientName } from '../utils/client';
 
 // Create a job request
 export async function createJobRequest(req: Request, res: Response) {
