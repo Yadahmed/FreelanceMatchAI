@@ -313,7 +313,7 @@ export default function MessagesPage() {
         </h1>
       </div>
       
-      <Card className="bg-white">
+      <Card>
         <CardContent className="p-0">
           <div className="p-4 border-b flex items-center space-x-4">
             <Avatar className="h-10 w-10">
