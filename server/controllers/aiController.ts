@@ -52,7 +52,16 @@ async function getFilteredFreelancers(message: string): Promise<any[]> {
     let professionMatch = false;
     
     for (const keyword of professionKeywords) {
-      if (freelancerProfession.includes(keyword)) {
+      // Check for exact profession match first (highest priority)
+      if (freelancerProfession === keyword.toLowerCase()) {
+        score += 200; // Exact match gets double score
+        professionMatch = true;
+        matchReasons.push(`Exact profession match: ${freelancer.profession}`);
+        console.log(`[AI Matching] Exact profession match found: ${freelancer.id} - ${freelancerProfession} === ${keyword}`);
+        break;
+      }
+      // Check for partial match
+      else if (freelancerProfession.includes(keyword)) {
         score += 100; // Much higher score for profession match (increased from 35)
         professionMatch = true;
         matchReasons.push(`Profession matches your request: ${freelancer.profession}`);
@@ -66,7 +75,8 @@ async function getFilteredFreelancers(message: string): Promise<any[]> {
       'marketer': ['seo', 'digital marketing', 'social media', 'content strategy', 'content marketing', 'growth'],
       'writer': ['seo', 'blog', 'content', 'copywriting'],
       'designer': ['ui', 'ux', 'user experience', 'user interface', 'figma', 'sketch'],
-      'developer': ['javascript', 'python', 'react', 'node', 'web development']
+      'developer': ['javascript', 'python', 'react', 'node', 'web development'],
+      'content creator': ['video', 'videography', 'cinematography', 'photography', 'editing', 'photoshop']
     };
 
     // Check skills regardless of profession match (but with different scoring)
@@ -185,11 +195,14 @@ function extractProfessionKeywords(message: string): string[] {
   // Define related professions for cross-referencing
   const relatedProfessions = {
     'marketer': ['writer', 'content creator'],
-    'writer': ['marketer'],
+    'writer': ['marketer', 'content creator'],
     'developer': ['designer'],
     'designer': ['developer'],
     'video': ['photographer', 'content creator'],
-    'photographer': ['video']
+    'photographer': ['video', 'content creator'],
+    'content creator': ['video editor', 'photographer', 'writer', 'designer'],
+    'content': ['content creator', 'writer'],
+    'creator': ['content creator', 'video editor']
   };
   
   // Check for profession mentions
