@@ -365,7 +365,7 @@ export default function MessagesPage() {
                             : 'bg-muted dark:text-foreground'
                         }`}
                       >
-                        <p className="text-sm">{message.content}</p>
+                        <p className={`text-sm ${message.isUserMessage ? 'dark:text-white' : ''}`}>{message.content}</p>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
                         {new Date(message.timestamp).toLocaleTimeString()}

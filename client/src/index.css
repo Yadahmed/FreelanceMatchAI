@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom styles for message bubbles */
+.dark .bg-primary {
+  color: white !important; /* Force white text in primary-colored bubbles in dark mode */
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
