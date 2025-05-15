@@ -42,11 +42,13 @@ export interface IStorage {
   getChat(id: number): Promise<Chat | undefined>;
   getChatsByUserId(userId: number): Promise<Chat[]>;
   createChat(chat: InsertChat): Promise<Chat>;
+  deleteChat(id: number): Promise<boolean>;
   
   // Message methods
   getMessage(id: number): Promise<Message | undefined>;
   getMessagesByChatId(chatId: number): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
+  deleteMessage(id: number): Promise<boolean>;
   
   // Job request methods
   getJobRequest(id: number): Promise<JobRequest | undefined>;
