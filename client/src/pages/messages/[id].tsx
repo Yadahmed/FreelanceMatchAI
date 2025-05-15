@@ -337,6 +337,7 @@ export default function MessagesPage() {
               {messages.map((message: any) => (
                 <div
                   key={message.id}
+                  // Client always sends isUserMessage=true
                   className={`flex ${message.isUserMessage ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
@@ -362,9 +363,9 @@ export default function MessagesPage() {
                     <div className="relative group">
                       <div
                         className={`rounded-lg p-3 ${
-                          // For client views: client's messages should have primary background
-                          // For freelancer views: client's messages should have primary background
-                          message.isUserMessage === currentUser?.isClient
+                          // When the user is a client, their messages (isUserMessage=true) should have primary background
+                          // We know the user is a client in this component
+                          message.isUserMessage
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-muted'
                         }`}
