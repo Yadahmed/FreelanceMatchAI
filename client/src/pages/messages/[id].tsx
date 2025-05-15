@@ -226,7 +226,7 @@ export default function MessagesPage() {
     },
     onSuccess: () => {
       // Invalidate chats and messages queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: [`/api/client/chats/${chatId}/messages`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/client/chats', chatId, 'messages'] });
       queryClient.invalidateQueries({ queryKey: ['/api/client/chats'] });
       
       toast({

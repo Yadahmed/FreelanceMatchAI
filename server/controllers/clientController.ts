@@ -362,9 +362,16 @@ export async function deleteClientMessage(req: Request, res: Response) {
       return res.status(404).json({ message: 'Message not found' });
     }
     
-    // Security check: clients can only delete their own messages
-    // Type guard to ensure message has userId property 
-    if (!('userId' in message) || message.userId !== req.user.id) {
+    // Security check: clients can only delete their own messages (isUserMessage = true)
+    // We check the chat to make sure it belongs to this client
+    const chat = await storage.getChat(message.chatId);
+    
+    if (!chat) {
+      return res.status(404).json({ message: 'Associated chat not found' });
+    }
+    
+    // Verify the chat belongs to this client and the message is from the client
+    if (chat.userId !== req.user.id || !message.isUserMessage) {
       return res.status(403).json({ message: 'Not authorized to delete this message' });
     }
     
