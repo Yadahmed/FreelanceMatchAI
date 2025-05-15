@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../db';
 import { jobRequests, freelancers, users } from '@shared/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import { extractClientName } from '../utils/client';
 
 export async function createJobRequest(req: Request, res: Response) {
@@ -130,54 +130,58 @@ export async function getFreelancerJobRequests(req: Request, res: Response) {
     
     console.log(`Found ${jobRequestsList.length} job requests`);
     
-    if (jobRequestsList.length > 0) {
-      console.log('First job request client ID:', jobRequestsList[0].clientId);
-    }
+    // Get the client details for each job request - but fetch ALL clients once to be more efficient
+    const clientIds = jobRequestsList.map(request => request.clientId);
+    console.log('Need to fetch clients with IDs:', clientIds);
     
-    // Get the client details for each job request
-    const formattedJobRequests = await Promise.all(jobRequestsList.map(async (request) => {
-      try {
-        console.log(`Looking up client with ID: ${request.clientId}`);
-        
-        // Get client data directly from users table
-        const [client] = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, request.clientId));
-        
-        console.log('Found client data:', client ? 'Yes' : 'No');
-        
-        // Use client utility to get consistent display name
-        const clientDisplayName = client ? (client.displayName || client.username || `Client ${request.clientId}`) : `Client ${request.clientId}`;
-        
-        const formattedRequest = {
-          ...request,
-          client: client ? {
-            id: client.id,
-            username: client.username,
-            displayName: clientDisplayName,
-          } : { 
-            id: request.clientId,
-            username: `user_${request.clientId}`,
-            displayName: `Client ${request.clientId}` 
-          }
-        };
-        
-        console.log('Formatted client info:', formattedRequest.client);
-        return formattedRequest;
-      } catch (error) {
-        console.error(`Error processing job request ${request.id}:`, error);
-        // Return request with a placeholder client if error occurs
+    // Fetch all clients at once - handle empty array case
+    let clientsData = [];
+    if (clientIds.length > 0) {
+      clientsData = await db
+        .select()
+        .from(users)
+        .where(inArray(users.id, clientIds));
+    }
+      
+    console.log(`Fetched ${clientsData.length} clients`);
+    
+    // Create a map for quick client lookup
+    const clientsMap = clientsData.reduce((map, client) => {
+      map[client.id] = client;
+      return map;
+    }, {} as Record<number, typeof clientsData[0]>);
+    
+    // Format job requests with client information
+    const formattedJobRequests = jobRequestsList.map(request => {
+      // Look up client in our map
+      const client = clientsMap[request.clientId];
+      
+      // Format client info if found
+      if (client) {
+        console.log(`Found client for job request ${request.id}:`, client.username);
         return {
           ...request,
-          client: { 
+          client: {
+            id: client.id,
+            username: client.username,
+            displayName: client.displayName || client.username,
+            email: client.email,
+            photoURL: client.photoURL
+          }
+        };
+      } else {
+        // Fallback for missing client
+        console.log(`No client found for job request ${request.id} with clientId ${request.clientId}`);
+        return {
+          ...request,
+          client: {
             id: request.clientId,
             username: `user_${request.clientId}`,
             displayName: `Client ${request.clientId}`
           }
         };
       }
-    }));
+    });
     
     return res.json({ jobRequests: formattedJobRequests });
     
