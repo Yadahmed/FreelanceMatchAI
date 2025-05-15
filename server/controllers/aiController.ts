@@ -78,10 +78,13 @@ async function getFilteredFreelancers(message: string): Promise<any[]> {
       (freelancer.fairnessScore * 0.15)
     );
     
-    // Weight baseline less when we have a good content match
+    // Give MUCH higher priority to profession/skill matches
     score = score > 0 ? 
-      Math.round(score * 0.7 + baselineScore * 0.3) : 
+      Math.round(score * 0.9 + baselineScore * 0.1) : 
       baselineScore;
+      
+    // Add debug logs
+    console.log(`[AI Matching Debug] Freelancer ${freelancer.id} (${freelancer.profession}): content match score=${score}, baseline=${baselineScore}, professionMatch=${professionMatch}`);
     
     return {
       freelancer,
