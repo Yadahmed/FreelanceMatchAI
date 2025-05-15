@@ -18,8 +18,20 @@ import {
   Bell,
   MessageSquare,
   Calendar,
-  Clock as ClockIcon
+  Clock as ClockIcon,
+  Trash2
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { apiRequest } from '@/lib/queryClient';
 
 // Define TypeScript interfaces for dashboard data
@@ -94,6 +106,10 @@ export function FreelancerHome() {
   const { currentUser } = useAuth();
   const [, setLocation] = useLocation();
   const [selectedTab, setSelectedTab] = useState("overview");
+  const [chatToDelete, setChatToDelete] = useState<number | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   
   // Fetch freelancer dashboard data
@@ -623,12 +639,25 @@ export function FreelancerHome() {
                                 </p>
                               </div>
                             </div>
-                            <Button 
-                              size="sm"
-                              onClick={() => setLocation(`/chat/${chat.id}`)}
-                            >
-                              Open Chat
-                            </Button>
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteChat(chat.id);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm"
+                                onClick={() => setLocation(`/chat/${chat.id}`)}
+                              >
+                                Open Chat
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </Card>
