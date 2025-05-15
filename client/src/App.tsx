@@ -8,7 +8,6 @@ import { app } from "./lib/firebase";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import FreelancerProfile from "@/pages/freelancer-profile";
-import FreelancerDashboard from "@/pages/freelancer-dashboard";
 import FreelancerAvailability from "@/pages/freelancer-availability";
 import ExploreFreelancers from "@/pages/explore-freelancers";
 import Freelancer from "@/pages/freelancer";
