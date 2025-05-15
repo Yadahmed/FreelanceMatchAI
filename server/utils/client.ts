@@ -7,6 +7,10 @@ import type { User } from '@shared/schema';
  * @returns A display name string
  */
 export function extractClientName(client: any): string {
+  if (!client) {
+    return "Unknown Client";
+  }
+  
   // First priority: use the client's display name
   if (client.displayName) {
     return client.displayName;
@@ -18,5 +22,5 @@ export function extractClientName(client: any): string {
   }
   
   // Last resort: use generic name with ID
-  return `Client ${client.id}`;
+  return client.id ? `Client ${client.id}` : "Unknown Client";
 }

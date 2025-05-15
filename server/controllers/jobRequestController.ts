@@ -130,32 +130,53 @@ export async function getFreelancerJobRequests(req: Request, res: Response) {
     
     console.log(`Found ${jobRequestsList.length} job requests`);
     
+    if (jobRequestsList.length > 0) {
+      console.log('First job request client ID:', jobRequestsList[0].clientId);
+    }
+    
     // Get the client details for each job request
     const formattedJobRequests = await Promise.all(jobRequestsList.map(async (request) => {
-      // Get client data directly from users table
-      const [client] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, request.clientId));
-      
-      // Use client utility to get consistent display name
-      const clientDisplayName = extractClientName(client || { id: request.clientId });
-      
-      const formattedRequest = {
-        ...request,
-        client: client ? {
-          id: client.id,
-          username: client.username,
-          displayName: clientDisplayName,
-        } : { 
-          id: request.clientId,
-          username: `user_${request.clientId}`,
-          displayName: `Client ${request.clientId}` 
-        }
-      };
-      
-      console.log('Formatted client info:', formattedRequest.client);
-      return formattedRequest;
+      try {
+        console.log(`Looking up client with ID: ${request.clientId}`);
+        
+        // Get client data directly from users table
+        const [client] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, request.clientId));
+        
+        console.log('Found client data:', client ? 'Yes' : 'No');
+        
+        // Use client utility to get consistent display name
+        const clientDisplayName = client ? (client.displayName || client.username || `Client ${request.clientId}`) : `Client ${request.clientId}`;
+        
+        const formattedRequest = {
+          ...request,
+          client: client ? {
+            id: client.id,
+            username: client.username,
+            displayName: clientDisplayName,
+          } : { 
+            id: request.clientId,
+            username: `user_${request.clientId}`,
+            displayName: `Client ${request.clientId}` 
+          }
+        };
+        
+        console.log('Formatted client info:', formattedRequest.client);
+        return formattedRequest;
+      } catch (error) {
+        console.error(`Error processing job request ${request.id}:`, error);
+        // Return request with a placeholder client if error occurs
+        return {
+          ...request,
+          client: { 
+            id: request.clientId,
+            username: `user_${request.clientId}`,
+            displayName: `Client ${request.clientId}`
+          }
+        };
+      }
     }));
     
     return res.json({ jobRequests: formattedJobRequests });
