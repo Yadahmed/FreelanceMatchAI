@@ -46,7 +46,7 @@ async function getFilteredFreelancers(message: string): Promise<any[]> {
     
     for (const keyword of professionKeywords) {
       if (freelancerProfession.includes(keyword)) {
-        score += 35; // High score for profession match
+        score += 100; // Much higher score for profession match (increased from 35)
         professionMatch = true;
         matchReasons.push(`Profession matches your request: ${freelancer.profession}`);
         console.log(`[AI Matching] Profession match found: ${freelancer.id} - ${freelancerProfession} matches ${keyword}`);
@@ -64,7 +64,7 @@ async function getFilteredFreelancers(message: string): Promise<any[]> {
       );
       
       if (matchingSkills.length > 0) {
-        score += 25;
+        score += 50;  // Increased from 25 to 50
         matchReasons.push(`Skills match: ${matchingSkills.join(', ')}`);
         console.log(`[AI Matching] Skills match found: ${freelancer.id} - ${matchingSkills.join(', ')}`);
       }
@@ -114,12 +114,13 @@ function extractProfessionKeywords(message: string): string[] {
     'designer': ['designer', 'design', 'ui', 'ux', 'graphic', 'illustrator', 'photoshop', 'figma'],
     'writer': ['writer', 'content', 'copywriter', 'blog', 'article', 'writing'],
     'translator': ['translator', 'translation', 'language', 'localization'],
-    'marketer': ['marketer', 'marketing', 'digital marketing', 'social media', 'seo', 'content marketing', 'ads'],
-    'video': ['video', 'editing', 'animation', 'motion graphics', 'filmmaker'],
+    'marketer': ['marketer', 'marketing', 'digital marketer', 'digital marketing', 'social media', 'seo', 'content marketing', 'ads', 'advertising', 'growth hacking', 'growth marketing', 'ppc', 'sem', 'email marketing', 'campaign', 'brand', 'branding', 'social media marketing'],
+    'video': ['video', 'editing', 'animation', 'motion graphics', 'filmmaker', 'videographer'],
     'photographer': ['photo', 'photographer', 'photography'],
     'consultant': ['consultant', 'advisor', 'strategy', 'business'],
     'teacher': ['teacher', 'tutor', 'instructor', 'trainer', 'coach'],
-    'assistant': ['assistant', 'virtual assistant', 'admin', 'secretary']
+    'assistant': ['assistant', 'virtual assistant', 'admin', 'secretary'],
+    'data': ['data scientist', 'data analyst', 'data engineer', 'analytics', 'machine learning', 'ml', 'ai', 'artificial intelligence', 'statistics']
   };
   
   const matchedKeywords: string[] = [];
