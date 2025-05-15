@@ -146,6 +146,9 @@ export default function FreelancerDashboard() {
   console.log("Freelancer Rating:", dashboardData?.freelancer?.rating);
   console.log("Stats Rating:", dashboardData?.stats?.averageRating);
   
+  // Debug chats data
+  console.log("Chats data:", chats);
+  
   // Default values with type safety
   const statsData = {
     earnings: {
@@ -488,7 +491,10 @@ export default function FreelancerDashboard() {
                 </div>
               ) : chats && Array.isArray(chats) && chats.length > 0 ? (
                 <div className="space-y-4">
-                  {chats.map((chat: any) => (
+                  {chats.map((chat: any) => {
+                    console.log("Processing chat in list:", chat);
+                    console.log("Client data for chat:", chat.client);
+                    return (
                     <div 
                       key={chat.id} 
                       className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
