@@ -122,7 +122,7 @@ export default function ChatPage() {
         description: "Freelancers cannot message other freelancers. Only clients can initiate conversations with freelancers.",
         variant: "destructive"
       });
-      setLocation('/freelancer-dashboard');
+      setLocation('/');
     }
   }, [isFreelancerMessagingFreelancer, toast, setLocation]);
 
@@ -136,7 +136,7 @@ export default function ChatPage() {
     if (currentUser?.isClient) {
       setLocation('/client-dashboard');
     } else {
-      setLocation('/freelancer-dashboard');
+      setLocation('/');
     }
   };
   
