@@ -362,7 +362,9 @@ export default function MessagesPage() {
                     <div className="relative group">
                       <div
                         className={`rounded-lg p-3 ${
-                          message.isUserMessage
+                          // For client views: client's messages should have primary background
+                          // For freelancer views: client's messages should have primary background
+                          message.isUserMessage === currentUser?.isClient
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-muted'
                         }`}
