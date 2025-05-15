@@ -218,6 +218,86 @@ export default function ChatPage() {
     }
   });
   
+  // Delete message mutation
+  const deleteMessageMutation = useMutation({
+    mutationFn: async (messageId: number) => {
+      if (!chatId) {
+        throw new Error('Chat ID is required');
+      }
+      
+      // Import the token refresh function
+      const { refreshAuthToken } = await import('@/lib/auth');
+      
+      // Try to refresh the token first
+      const token = await refreshAuthToken();
+      
+      if (!token) {
+        throw new Error('Authentication token not available');
+      }
+      
+      const endpoint = `/api/${currentUser?.isClient ? 'client' : 'freelancer'}/chats/${chatId}/messages/${messageId}`;
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        // Special handling for auth errors
+        if (response.status === 401) {
+          throw new Error('Your session has expired. Please sign in again.');
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete message');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      // Refetch chat messages after successful deletion
+      refetch();
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/${currentUser?.isClient ? 'client' : 'freelancer'}/chats`] 
+      });
+      
+      // Reset state
+      setMessageToDelete(null);
+      setIsDeleteDialogOpen(false);
+      
+      // Show success toast
+      toast({
+        title: "Message deleted",
+        description: "The message was deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      // Reset state
+      setMessageToDelete(null);
+      setIsDeleteDialogOpen(false);
+      
+      // Show error toast
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete message',
+        variant: 'destructive'
+      });
+    }
+  });
+  
+  // Handle message deletion
+  const handleDeleteMessage = (messageId: number) => {
+    setMessageToDelete(messageId);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  // Confirm message deletion
+  const confirmDeleteMessage = () => {
+    if (messageToDelete) {
+      deleteMessageMutation.mutate(messageToDelete);
+    }
+  };
+  
   const handleSendMessage = async () => {
     if (!message.trim() || isSending) return;
     
@@ -423,7 +503,7 @@ export default function ChatPage() {
                                    `C${chatData?.userId?.toString().substring(0, 1) || '?'}`))}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
+                      <div className="relative group">
                         <div
                           className={`rounded-lg p-3 ${
                             isCurrentUser
@@ -436,6 +516,33 @@ export default function ChatPage() {
                         <p className="text-xs text-muted-foreground mt-1">
                           {new Date(msg.timestamp).toLocaleTimeString()}
                         </p>
+                        
+                        {/* Only show message options for freelancer's own messages */}
+                        {!currentUser?.isClient && isCurrentUser && (
+                          <div className="absolute top-0 right-0 -mt-2 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-8 w-8 p-0 rounded-full hover:bg-muted"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                  <span className="sr-only">More options</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  className="text-destructive focus:text-destructive flex items-center cursor-pointer"
+                                  onClick={() => handleDeleteMessage(msg.id)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete message
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -462,6 +569,34 @@ export default function ChatPage() {
             </div>
           </CardFooter>
         </Card>
+        
+        {/* Message deletion confirmation dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Message</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this message? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setMessageToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDeleteMessage}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleteMessageMutation.isPending ? (
+                  <>
+                    <span className="mr-2">Deleting...</span>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  </>
+                ) : (
+                  "Delete"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
