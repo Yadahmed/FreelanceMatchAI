@@ -592,9 +592,10 @@ export function FreelancerHome() {
                         chat.latestMessage.content) : 
                       'No messages yet';
                     
-                    // Generate avatar initials
-                    const clientInitial = (chat.clientName && chat.clientName.length > 0) ? 
-                      chat.clientName.charAt(0).toUpperCase() : 'C';
+                    // Generate avatar initials from client name with priority order
+                    const clientName = chat.client?.displayName || chat.client?.username || chat.clientName || 'Client';
+                    const clientInitial = (clientName && clientName.length > 0) ? 
+                      clientName.charAt(0).toUpperCase() : 'C';
                       
                     return (
                       <Card key={chat.id} className="overflow-hidden">
@@ -602,12 +603,14 @@ export function FreelancerHome() {
                           <div className="flex justify-between items-start">
                             <div className="flex items-start space-x-3">
                               <Avatar className="h-10 w-10">
-                                <AvatarImage src={`https://ui-avatars.com/api/?name=${chat.clientName || "Client"}&background=random`} />
+                                {chat.client?.photoURL && (
+                                  <AvatarImage src={chat.client.photoURL} />
+                                )}
                                 <AvatarFallback>{clientInitial}</AvatarFallback>
                               </Avatar>
                               <div>
                                 <h3 className="font-medium">
-                                  {chat.clientName || "Client"} {chat.userId ? `(ID: ${chat.userId})` : ""}
+                                  {chat.client?.displayName || chat.client?.username || chat.clientName || "Client"}
                                 </h3>
                                 <div className="flex items-center text-sm text-muted-foreground mb-1">
                                   <ClockIcon className="h-3 w-3 mr-1" />
