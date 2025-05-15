@@ -570,6 +570,24 @@ export class MemStorage implements IStorage {
     this.chats.set(id, chat);
     return chat;
   }
+  
+  async deleteChat(id: number): Promise<boolean> {
+    try {
+      // First, delete all messages in this chat
+      const chatMessages = await this.getMessagesByChatId(id);
+      
+      for (const message of chatMessages) {
+        await this.deleteMessage(message.id);
+      }
+      
+      // Then delete the chat itself
+      const deleted = this.chats.delete(id);
+      return deleted;
+    } catch (error) {
+      console.error(`MemStorage: Error deleting chat ${id}:`, error);
+      return false;
+    }
+  }
 
   // Message methods
   async getMessage(id: number): Promise<Message | undefined> {
@@ -601,6 +619,17 @@ export class MemStorage implements IStorage {
     }
     
     return message;
+  }
+  
+  async deleteMessage(id: number): Promise<boolean> {
+    try {
+      // Simply remove the message from the messages Map
+      const deleted = this.messages.delete(id);
+      return deleted;
+    } catch (error) {
+      console.error(`MemStorage: Error deleting message ${id}:`, error);
+      return false;
+    }
   }
 
   // Initialize with sample freelancers for testing
