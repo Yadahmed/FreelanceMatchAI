@@ -11,7 +11,23 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Send, User, Bot, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, User, Bot, Loader2, Trash2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function MessagesPage() {
   const params = useParams();
@@ -24,6 +40,8 @@ export default function MessagesPage() {
   const [inputValue, setInputValue] = useState('');
   const [chatId, setChatId] = useState<number | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState<number | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   // Check if a chat already exists with this freelancer
   const { data: chatsData, isLoading: isLoadingChats } = useQuery({
@@ -179,6 +197,68 @@ export default function MessagesPage() {
     }
   };
   
+  // Delete message mutation
+  const deleteMessageMutation = useMutation({
+    mutationFn: async (messageId: number) => {
+      // Import the token refresh function
+      const { refreshAuthToken } = await import('@/lib/auth');
+      
+      // Try to refresh the token first
+      const token = await refreshAuthToken();
+      
+      if (!token) {
+        throw new Error('Authentication token not available');
+      }
+      
+      const response = await fetch(`/api/client/messages/${messageId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete message');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      // Invalidate chats and messages queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: [`/api/client/chats/${chatId}/messages`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/client/chats'] });
+      
+      toast({
+        title: "Message deleted",
+        description: "Your message was successfully deleted."
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error deleting message:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete message",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Handle message deletion
+  const handleDeleteMessage = (messageId: number) => {
+    setMessageToDelete(messageId);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  // Confirm message deletion
+  const confirmDeleteMessage = () => {
+    if (messageToDelete) {
+      deleteMessageMutation.mutate(messageToDelete);
+      setMessageToDelete(null);
+    }
+    setIsDeleteDialogOpen(false);
+  };
+  
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -277,7 +357,7 @@ export default function MessagesPage() {
                         </>
                       )}
                     </Avatar>
-                    <div>
+                    <div className="relative group">
                       <div
                         className={`rounded-lg p-3 ${
                           message.isUserMessage
@@ -290,6 +370,39 @@ export default function MessagesPage() {
                       <p className="text-xs text-muted-foreground mt-1">
                         {new Date(message.timestamp).toLocaleTimeString()}
                       </p>
+                      
+                      {/* Show message options for user's own messages */}
+                      {message.isUserMessage && (
+                        <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 w-8 p-0 rounded-full"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                                  <path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 8.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 14a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
+                                </svg>
+                                <span className="sr-only">More options</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent 
+                              align="end" 
+                              sideOffset={5} 
+                              className="w-32 p-1"
+                            >
+                              <DropdownMenuItem 
+                                className="text-destructive focus:text-destructive flex items-center cursor-pointer text-sm"
+                                onClick={() => handleDeleteMessage(message.id)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
