@@ -129,6 +129,7 @@ export const jobRequests = pgTable("job_requests", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   budget: integer("budget"),
+  skills: text("skills").array(),
   status: text("status").notNull().default("pending"), // pending, accepted, declined, completed
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -140,6 +141,7 @@ export const insertJobRequestSchema = createInsertSchema(jobRequests).pick({
   title: true,
   description: true,
   budget: true,
+  skills: true,
   status: true,
 });
 

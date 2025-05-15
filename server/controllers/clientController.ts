@@ -14,7 +14,7 @@ export async function createJobRequest(req: Request, res: Response) {
       return res.status(403).json({ message: 'Client access required' });
     }
     
-    const { freelancerId, title, description, budget } = req.body;
+    const { freelancerId, title, description, budget, skills } = req.body;
     
     if (!freelancerId || !title || !description) {
       return res.status(400).json({ message: 'Freelancer ID, title, and description are required' });
@@ -34,6 +34,7 @@ export async function createJobRequest(req: Request, res: Response) {
       title,
       description,
       budget: budget || null,
+      skills: skills || [],
       status: 'pending'
     });
     
