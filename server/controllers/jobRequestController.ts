@@ -122,39 +122,41 @@ export async function getFreelancerJobRequests(req: Request, res: Response) {
     
     console.log(`Getting job requests for freelancer ID: ${freelancerProfile.id}`);
     
-    // Get all job requests for this freelancer with client details
+    // Get all job requests for this freelancer
     const jobRequestsList = await db.query.jobRequests.findMany({
       where: eq(jobRequests.freelancerId, freelancerProfile.id),
-      with: {
-        client: true
-      },
       orderBy: (jobRequests, { desc }) => [desc(jobRequests.createdAt)]
     });
     
     console.log(`Found ${jobRequestsList.length} job requests`);
-    // Log the first job request to see what we're getting
-    if (jobRequestsList.length > 0) {
-      console.log('First job request client data:', jobRequestsList[0].client);
-    }
     
-    // Format the response
-    const formattedJobRequests = jobRequestsList.map(request => {
-      const { client, ...jobRequest } = request;
+    // Get the client details for each job request
+    const formattedJobRequests = await Promise.all(jobRequestsList.map(async (request) => {
+      // Get client data directly from users table
+      const [client] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, request.clientId));
       
       // Use client utility to get consistent display name
-      const clientDisplayName = extractClientName(client);
+      const clientDisplayName = extractClientName(client || { id: request.clientId });
       
       const formattedRequest = {
-        ...jobRequest,
-        client: {
+        ...request,
+        client: client ? {
           id: client.id,
-          username: client.username || `user_${client.id}`,
+          username: client.username,
           displayName: clientDisplayName,
+        } : { 
+          id: request.clientId,
+          username: `user_${request.clientId}`,
+          displayName: `Client ${request.clientId}` 
         }
       };
+      
       console.log('Formatted client info:', formattedRequest.client);
       return formattedRequest;
-    });
+    }));
     
     return res.json({ jobRequests: formattedJobRequests });
     

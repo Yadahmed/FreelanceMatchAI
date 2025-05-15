@@ -150,6 +150,14 @@ export function FreelancerHome() {
   // Extract the jobRequests array from the response
   const jobRequests = jobRequestsData?.jobRequests || [];
   
+  // Debug log the job requests data when it changes
+  useEffect(() => {
+    if (jobRequestsData && jobRequestsData.jobRequests && jobRequestsData.jobRequests.length > 0) {
+      console.log('Job requests data:', jobRequestsData);
+      console.log('First job request client data:', jobRequestsData.jobRequests[0].client);
+    }
+  }, [jobRequestsData]);
+  
   // Fetch notifications
   const { 
     data: notificationsData,
@@ -514,7 +522,7 @@ export function FreelancerHome() {
                             <h3 className="font-medium text-lg">{request.title}</h3>
                             <p className="text-muted-foreground text-sm">
                               From: {request.client ? 
-                                   (request.client.displayName || request.client.username) : 
+                                   (request.client.displayName || request.client.username || `Client ${request.client.id}`) : 
                                    "Unknown Client"}
                             </p>
                           </div>
