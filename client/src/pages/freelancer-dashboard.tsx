@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { ChevronRightIcon, LineChartIcon, MessageSquareIcon, ClockIcon, BriefcaseIcon, StarIcon, DollarSignIcon } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { Rating } from '@/components/ui/rating';
+import { FreelancerMessagesTab } from '@/components/freelancer/FreelancerMessagesTab';
 
 // Define TypeScript interfaces for dashboard data
 interface FreelancerProfile {
@@ -482,74 +483,8 @@ export default function FreelancerDashboard() {
         </TabsContent>
         
         <TabsContent value="messages" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Messages</CardTitle>
-              <CardDescription>
-                Manage your conversations with clients
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex justify-center p-4">
-                  <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
-                </div>
-              ) : chats && Array.isArray(chats) && chats.length > 0 ? (
-                <div className="space-y-4">
-                  {chats.map((chat: any) => {
-                    console.log("Processing chat in list:", chat);
-                    console.log("Client data for chat:", chat.client);
-                    
-                    // Carefully extract client information
-                    const clientName = chat.client?.displayName || chat.client?.username || "Client";
-                    const clientInitials = clientName.substring(0, 2) || "CL";
-                    
-                    return (
-                      <div 
-                        key={chat.id} 
-                        className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => {
-                          setLocation(`/chat/${chat.id}`);
-                        }}
-                      >
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback>
-                            {clientInitials}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start gap-2">
-                            <p className="font-medium truncate">
-                              {clientName}
-                            </p>
-                            <p className="text-xs text-muted-foreground whitespace-nowrap">
-                              {chat.latestMessage ? new Date(chat.latestMessage.timestamp).toLocaleDateString() : 'No messages'}
-                            </p>
-                          </div>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {chat.latestMessage?.content || 'No messages yet'}
-                          </p>
-                        </div>
-                        {chat.messageCount > 0 && (
-                          <div className="bg-primary text-primary-foreground text-xs rounded-full h-5 min-w-5 flex items-center justify-center px-1.5">
-                            {chat.messageCount}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <MessageSquareIcon className="h-10 w-10 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium">No Messages Yet</h3>
-                  <p className="text-muted-foreground max-w-md">
-                    You don't have any message threads at the moment. When clients contact you, conversations will appear here.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Use the dedicated FreelancerMessagesTab component */}
+          <FreelancerMessagesTab />
         </TabsContent>
       </Tabs>
     </div>
