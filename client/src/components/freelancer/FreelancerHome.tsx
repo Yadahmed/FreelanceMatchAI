@@ -541,13 +541,31 @@ export function FreelancerHome() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* We'll implement this when we have chat data */}
-                  <Button 
-                    className="w-full"
-                    onClick={() => setLocation("/messages")}
-                  >
-                    View All Messages
-                  </Button>
+                  {Array.isArray(chats) && chats.map((chat) => (
+                    <Card key={chat.id} className="overflow-hidden">
+                      <div className="p-4 border-b bg-muted/30">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-medium">
+                              {chat.clientName || "Client"}
+                            </h3>
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <ClockIcon className="h-3 w-3 mr-1" />
+                              <span>
+                                {new Date(chat.updatedAt || chat.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                          <Button 
+                            size="sm"
+                            onClick={() => setLocation(`/chat/${chat.id}`)}
+                          >
+                            Open Chat
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
               )}
             </CardContent>
