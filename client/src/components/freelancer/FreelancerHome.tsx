@@ -119,33 +119,42 @@ export function FreelancerHome() {
   
   // Fetch job requests
   const { 
-    data: jobRequests,
+    data: jobRequestsData,
     isLoading: jobRequestsLoading,
     error: jobRequestsError
-  } = useQuery({
+  } = useQuery<{jobRequests: JobRequest[]}>({
     queryKey: ['/api/freelancer/job-requests'],
     enabled: !!currentUser && !currentUser.isClient
   });
   
+  // Extract the jobRequests array from the response
+  const jobRequests = jobRequestsData?.jobRequests;
+  
   // Fetch notifications
   const { 
-    data: notifications,
+    data: notificationsData,
     isLoading: notificationsLoading,
     error: notificationsError
-  } = useQuery({
+  } = useQuery<{notifications: any[]}>({
     queryKey: ['/api/freelancer/notifications'],
     enabled: !!currentUser && !currentUser.isClient
   });
   
+  // Extract the notifications array from the response
+  const notifications = notificationsData?.notifications;
+  
   // Fetch chats (conversations with clients)
   const {
-    data: chats,
+    data: chatsData,
     isLoading: chatsLoading,
     error: chatsError
-  } = useQuery({
+  } = useQuery<{chats: any[]}>({
     queryKey: ['/api/freelancer/chats'],
     enabled: !!currentUser && !currentUser.isClient
   });
+  
+  // Extract the chats array from the response
+  const chats = chatsData?.chats;
 
   const handleAcceptRequest = async (requestId: number) => {
     try {
