@@ -510,11 +510,23 @@ export async function getChats(req: Request, res: Response) {
         )
       );
       
+      // Get client user information to include with the chat
+      let client = null;
+      if (chat.userId) {
+        client = await storage.getUser(chat.userId);
+      }
+      
       return {
         ...chat,
         latestMessage,
         relatedJobRequest: relatedJobRequest || null,
-        messageCount: messages.length
+        messageCount: messages.length,
+        client: client ? {
+          id: client.id,
+          username: client.username,
+          displayName: client.displayName,
+          photoURL: client.photoURL
+        } : null
       };
     }));
     
