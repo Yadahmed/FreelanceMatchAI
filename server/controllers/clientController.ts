@@ -269,14 +269,10 @@ export async function getChatMessages(req: Request, res: Response) {
     // Get messages for this chat
     const messages = await storage.getMessagesByChatId(parseInt(chatId));
     
-    // Transform messages to add isUserMessage flag to simplify frontend logic
-    const transformedMessages = messages.map(message => {
-      // Ensure message has userId property
-      return {
-        ...message,
-        isUserMessage: message.userId === req.user?.id
-      };
-    });
+    // Transform messages if needed, but we now use the isUserMessage flag already set in the database
+    // This flag signifies if the client (user) sent the message
+    // In direct messages, isUserMessage=true means the client sent it, isUserMessage=false means the freelancer sent it
+    const transformedMessages = messages;
     
     return res.status(200).json({
       messages: transformedMessages
