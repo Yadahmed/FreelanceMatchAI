@@ -130,8 +130,12 @@ export async function getFreelancerJobRequests(req: Request, res: Response) {
     console.log(`Found ${requestsList.length} job requests`);
     
     // Process and enhance job requests with client information
+    console.log(`About to process ${requestsList.length} job requests with client data`);
+    
     const enhancedRequests = await Promise.all(
       requestsList.map(async (request) => {
+        console.log(`Processing job request ID ${request.id} for client ID ${request.clientId}`);
+        
         // For each job request, get the client info
         const [client] = await db
           .select()
@@ -139,7 +143,7 @@ export async function getFreelancerJobRequests(req: Request, res: Response) {
           .where(eq(users.id, request.clientId));
           
         console.log(`Client lookup for job request ${request.id}:`, 
-          client ? `Found: ${client.username}` : 'Not found');
+          client ? `Found: ${client.username} (${client.id})` : `Not found for client ID ${request.clientId}`);
         
         // Return enhanced request with client data
         return {

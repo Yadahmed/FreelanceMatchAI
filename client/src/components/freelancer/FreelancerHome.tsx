@@ -152,9 +152,13 @@ export function FreelancerHome() {
   
   // Debug log the job requests data when it changes
   useEffect(() => {
-    if (jobRequestsData && jobRequestsData.jobRequests && jobRequestsData.jobRequests.length > 0) {
-      console.log('Job requests data:', jobRequestsData);
-      console.log('First job request client data:', jobRequestsData.jobRequests[0].client);
+    if (jobRequestsData && jobRequestsData.jobRequests) {
+      console.log('Job requests data:', JSON.stringify(jobRequestsData));
+      if (jobRequestsData.jobRequests.length > 0) {
+        console.log('First job request client data:', 
+          jobRequestsData.jobRequests[0].client || 
+          `Client not found - ID: ${jobRequestsData.jobRequests[0].clientId}`);
+      }
     }
   }, [jobRequestsData]);
   
