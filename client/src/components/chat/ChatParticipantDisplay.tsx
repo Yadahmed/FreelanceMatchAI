@@ -11,10 +11,14 @@ export function ChatParticipantDisplay({ chatData, className = '' }: ChatPartici
   const { currentUser } = useAuth();
   
   // Fetch users data to get client names
-  const { data: usersData } = useQuery<{users: any[]}>({
+  const { data: usersData } = useQuery<any[]>({
     queryKey: ['/api/users'],
     enabled: !currentUser?.isClient && !!chatData,
   });
+
+  if (!chatData) {
+    return <span className={className}>Loading...</span>;
+  }
 
   if (currentUser?.isClient) {
     // Client is viewing chat with freelancer
@@ -25,8 +29,8 @@ export function ChatParticipantDisplay({ chatData, className = '' }: ChatPartici
     );
   } else {
     // Freelancer is viewing chat with client
-    if (chatData && usersData?.users) {
-      const clientUser = usersData.users.find(user => user.id === chatData.userId);
+    if (usersData) {
+      const clientUser = usersData.find((user: any) => user.id === chatData.userId);
       if (clientUser) {
         return (
           <span className={className}>
@@ -35,24 +39,21 @@ export function ChatParticipantDisplay({ chatData, className = '' }: ChatPartici
         );
       }
     }
-    return <span className={className}>{chatData?.client?.displayName || 'Client'}</span>;
+    
+    // Fallback if we can't find the user
+    return <span className={className}>Client</span>;
   }
 }
 
-export function getParticipantInitials(chatData: any, currentUser: any, usersData?: {users: any[]}) {
+export function getParticipantInitials(chatData: any, currentUser: any): string {
+  if (!chatData) return 'NA';
+  
   if (currentUser?.isClient) {
     // Client viewing freelancer
     const name = chatData?.freelancer?.displayName || 'FR';
     return name.substring(0, 2).toUpperCase();
   } else {
-    // Freelancer viewing client
-    if (chatData && usersData?.users) {
-      const clientUser = usersData.users.find(user => user.id === chatData.userId);
-      if (clientUser) {
-        const name = clientUser.displayName || clientUser.username || 'CL';
-        return name.substring(0, 2).toUpperCase();
-      }
-    }
+    // Freelancer viewing client - simplified version without needing usersData
     return 'CL';
   }
 }
