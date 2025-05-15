@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Send, User, Loader2 } from 'lucide-react';
+import { ChatParticipantDisplay, getParticipantInitials } from '@/components/chat/ChatParticipantDisplay';
 
 export default function ChatPage() {
   const params = useParams<{ id: string }>();
@@ -75,11 +76,7 @@ export default function ChatPage() {
     refetchInterval: 5000 // Refresh chat info every 5 seconds
   });
 
-  // Fetch users data to get proper client names (moved up to maintain hooks order)
-  const { data: usersData } = useQuery<{users: any[]}>({
-    queryKey: ['/api/users'],
-    enabled: !currentUser?.isClient && !!chatId,
-  });
+  // We'll use a separate component for displaying participant names
 
   // Fetch chat messages
   const { 
@@ -346,23 +343,6 @@ export default function ChatPage() {
     );
   }
   
-  // Get other participant info
-  const otherParticipant = useMemo(() => {
-    if (currentUser?.isClient) {
-      // Client is viewing chat with freelancer
-      return chatData?.freelancer?.displayName || 'Freelancer';
-    } else {
-      // Freelancer is viewing chat with client
-      if (chatData && usersData?.users) {
-        const clientUser = usersData.users.find(user => user.id === chatData.userId);
-        if (clientUser) {
-          return clientUser.displayName || clientUser.username || `Client (ID: ${chatData.userId})`;
-        }
-      }
-      return chatData?.client?.displayName || 'Client';
-    }
-  }, [currentUser, chatData, usersData]);
-  
   const messages = chatData?.messages || [];
   
   return (
@@ -377,10 +357,16 @@ export default function ChatPage() {
               </Button>
               <div className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback>{otherParticipant.substring(0, 2)}</AvatarFallback>
+                  <AvatarFallback>
+                    {currentUser?.isClient 
+                      ? (chatData?.freelancer?.displayName?.substring(0, 2) || 'FR') 
+                      : 'CL'}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
-                  <CardTitle className="text-base">{otherParticipant}</CardTitle>
+                  <CardTitle className="text-base">
+                    <ChatParticipantDisplay chatData={chatData} />
+                  </CardTitle>
                   <CardDescription className="text-xs">
                     {messages.length} messages
                   </CardDescription>
@@ -408,7 +394,11 @@ export default function ChatPage() {
                     >
                       <Avatar className="h-8 w-8">
                         <AvatarFallback>
-                          {isCurrentUser ? (currentUser?.displayName?.substring(0, 2) || 'ME') : otherParticipant.substring(0, 2)}
+                          {isCurrentUser 
+                            ? (currentUser?.displayName?.substring(0, 2) || 'ME') 
+                            : (currentUser?.isClient 
+                                ? (chatData?.freelancer?.displayName?.substring(0, 2) || 'FR')
+                                : 'CL')}
                         </AvatarFallback>
                       </Avatar>
                       <div>
