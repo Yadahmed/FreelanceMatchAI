@@ -367,8 +367,8 @@ export default function MessagesPage() {
                         <div
                           className={`rounded-lg p-3 ${
                             isClientMessage
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
+                              ? 'chat-bubble-user bg-primary text-primary-foreground rounded-tr-none'
+                              : 'chat-bubble-bot bg-muted rounded-tl-none'
                           }`}
                         >
                           <p className="text-sm">{message.content}</p>
