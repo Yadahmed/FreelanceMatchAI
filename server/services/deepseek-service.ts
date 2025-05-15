@@ -375,8 +375,58 @@ Current date: ${new Date().toISOString().split('T')[0]}`
             // Format the freelancer information
             let freelancerInfo = '\n\nHere are some actual freelancers from our database who might be relevant to your request:\n\n';
             
-            // Add up to 5 freelancers
-            const relevantFreelancers = allFreelancers.slice(0, 5);
+            // Filter freelancers based on relevance to the message
+            const lowerMessage = message.toLowerCase();
+            
+            // Extract keywords from message
+            const keywords = lowerMessage.split(/\s+/).filter(word => 
+              word.length > 3 && 
+              !['with', 'this', 'that', 'have', 'from', 'they', 'will', 'what', 'when', 'where', 'your'].includes(word)
+            );
+            
+            console.log(`[DeepSeekService] Message keywords: ${keywords.join(', ')}`);
+            
+            // Score each freelancer based on profession and skill matches
+            const scoredFreelancers = allFreelancers.map(freelancer => {
+              let score = 0;
+              
+              // Check profession match
+              const profession = (freelancer.profession || '').toLowerCase();
+              if (keywords.some(keyword => profession.includes(keyword))) {
+                score += 40;
+                console.log(`[DeepSeekService] Profession match for ${freelancer.id}: ${freelancer.profession}`);
+              }
+              
+              // Check skill matches
+              const skills = Array.isArray(freelancer.skills) ? freelancer.skills : [];
+              const matchingSkills = skills.filter(skill => 
+                keywords.some(keyword => skill.toLowerCase().includes(keyword))
+              );
+              
+              if (matchingSkills.length > 0) {
+                score += matchingSkills.length * 10;
+                console.log(`[DeepSeekService] Skills match for ${freelancer.id}: ${matchingSkills.join(', ')}`);
+              }
+              
+              // Add baseline quality score
+              const qualityScore = Math.round(
+                (freelancer.jobPerformance * 0.5) +
+                (freelancer.skillsExperience * 0.2) +
+                (freelancer.responsiveness * 0.15) +
+                (freelancer.fairnessScore * 0.15)
+              );
+              
+              // Weight content match vs. quality
+              score = score > 0 ? 
+                Math.round(score * 0.7 + qualityScore * 0.3) : 
+                qualityScore;
+              
+              return { freelancer, score };
+            });
+            
+            // Sort by score and take the top 5
+            scoredFreelancers.sort((a, b) => b.score - a.score);
+            const relevantFreelancers = scoredFreelancers.slice(0, 5).map(item => item.freelancer);
             relevantFreelancers.forEach(f => {
               // Get the user associated with this freelancer for display name
               const freelancerUser = userMap.get(f.userId);
