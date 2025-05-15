@@ -708,10 +708,17 @@ export async function deleteFreelancerMessage(req: Request, res: Response) {
       return res.status(404).json({ message: 'Chat not found' });
     }
     
-    // Check if this chat belongs to this freelancer
+    // Check if this chat belongs to this freelancer and message isn't user-sent
     if (chat.freelancerId !== freelancer.id) {
       return res.status(403).json({ message: 'Not authorized to delete this message' });
     }
+    
+    // We should only let freelancers delete their own messages (non-user messages)
+    if (message.isUserMessage) {
+      return res.status(403).json({ message: 'Cannot delete client messages' });
+    }
+    
+    console.log('Authorization check passed for message:', messageId, 'Freelancer ID:', freelancer.id);
     
     // Delete the message
     const deleted = await storage.deleteMessage(parseInt(messageId));
