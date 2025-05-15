@@ -227,6 +227,43 @@ export function FreelancerHome() {
     }
   };
   
+  // Delete chat functionality
+  const handleDeleteChat = (chatId: number) => {
+    setChatToDelete(chatId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteChat = async () => {
+    if (!chatToDelete) return;
+    
+    try {
+      setIsDeleting(true);
+      
+      await apiRequest(`/api/freelancer/chats/${chatToDelete}`, {
+        method: 'DELETE',
+      });
+      
+      // Invalidate chat queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['/api/freelancer/chats'] });
+      
+      toast({
+        title: "Chat deleted",
+        description: "The conversation has been successfully deleted.",
+      });
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete the conversation. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+      setChatToDelete(null);
+    }
+  };
+  
   // Loading state
   const isLoading = dashboardLoading || jobRequestsLoading || notificationsLoading || chatsLoading;
   const hasError = dashboardError || jobRequestsError || notificationsError || chatsError;
@@ -277,43 +314,6 @@ export function FreelancerHome() {
     ((freelancer?.responsiveness || 0) * 15) + 
     ((freelancer?.fairnessScore || 0) * 15)
   );
-  
-  // Delete chat functionality
-  const handleDeleteChat = (chatId: number) => {
-    setChatToDelete(chatId);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const confirmDeleteChat = async () => {
-    if (!chatToDelete) return;
-    
-    try {
-      setIsDeleting(true);
-      
-      await apiRequest(`/api/chats/${chatToDelete}`, {
-        method: 'DELETE',
-      });
-      
-      // Invalidate chat queries to refresh the list
-      queryClient.invalidateQueries({ queryKey: ['/api/freelancer/chats'] });
-      
-      toast({
-        title: "Chat deleted",
-        description: "The conversation has been successfully deleted.",
-      });
-    } catch (error) {
-      console.error('Error deleting chat:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete the conversation. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-      setIsDeleteDialogOpen(false);
-      setChatToDelete(null);
-    }
-  };
   
   return (
     <div className="space-y-6">
@@ -467,31 +467,13 @@ export function FreelancerHome() {
               </CardHeader>
               <CardContent className="text-sm">
                 <div className="flex flex-col space-y-2">
-                  {(!notifications || !Array.isArray(notifications) || notifications.length === 0) ? (
+                  {notifications.length === 0 ? (
                     <div className="text-muted-foreground py-6 text-center">
                       <Bell className="mx-auto h-8 w-8 mb-2 opacity-50" />
-                      <p>No notifications</p>
+                      <p>No notifications yet</p>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {Array.isArray(notifications) && notifications.slice(0, 3).map((notification) => (
-                        <div key={notification.id} className="border-b pb-2 last:border-0 last:pb-0">
-                          <div className="flex items-center mb-1">
-                            <span className="h-2 w-2 rounded-full bg-primary mr-2 flex-shrink-0" />
-                            <span className="font-medium truncate">{notification.type}</span>
-                          </div>
-                          <p className="text-sm text-muted-foreground">{notification.message}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(notification.createdAt).toLocaleDateString()} {new Date(notification.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                          </p>
-                        </div>
-                      ))}
-                      {Array.isArray(notifications) && notifications.length > 0 && (
-                        <div className="text-right text-xs text-muted-foreground">
-                          {notifications.length} {notifications.length === 1 ? 'notification' : 'notifications'} total
-                        </div>
-                      )}
-                    </div>
+                    <p>{notifications.length} new notifications</p>
                   )}
                 </div>
               </CardContent>
@@ -499,97 +481,94 @@ export function FreelancerHome() {
           </div>
         </TabsContent>
         
-        <TabsContent value="job-requests" className="py-4">
+        <TabsContent value="job-requests" className="space-y-4 pt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Job Requests</CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle>Job Requests</CardTitle>
+                <Badge variant="outline" className="ml-2">
+                  {jobRequests.filter(req => req.status === 'pending').length} Pending
+                </Badge>
+              </div>
               <CardDescription>
-                View and manage incoming job requests from clients
+                View and manage job requests from clients
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {!jobRequests || !Array.isArray(jobRequests) || jobRequests.length === 0 ? (
-                <div className="py-12 text-center">
-                  <FileSearch className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">No job requests yet</h3>
+              {jobRequests.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileSearch className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Job Requests Yet</h3>
                   <p className="text-muted-foreground max-w-md mx-auto">
-                    When clients send you job requests, they will appear here. Keep your profile 
-                    updated to attract more clients.
+                    When clients send you job requests, they will appear here.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {Array.isArray(jobRequests) && jobRequests.map((request: JobRequest) => (
                     <Card key={request.id} className="overflow-hidden">
-                      <div className="p-4 border-b bg-muted/30">
-                        <div className="flex justify-between items-start">
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-2">
                           <div>
-                            <h3 className="font-medium">{request.title}</h3>
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <ClockIcon className="h-3 w-3 mr-1" />
-                              <span>
-                                {new Date(request.createdAt).toLocaleDateString()}
-                              </span>
-                              <Badge variant="outline" className="ml-2">
-                                {request.status}
-                              </Badge>
-                            </div>
+                            <h3 className="font-medium text-lg">{request.title}</h3>
+                            <p className="text-muted-foreground text-sm">
+                              From: {request.client?.displayName || `Client ID: ${request.clientId}`}
+                            </p>
                           </div>
-                          <div className="text-right">
-                            <div className="font-medium">${request.budget}</div>
-                            <div className="text-xs text-muted-foreground">Budget</div>
+                          <Badge 
+                            className={
+                              request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              request.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                              request.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                              'bg-red-100 text-red-800'
+                            }
+                          >
+                            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                          </Badge>
+                        </div>
+                        
+                        <p className="mb-2">{request.description}</p>
+                        
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {request.skills.map((skill, index) => (
+                            <Badge key={index} variant="secondary">{skill}</Badge>
+                          ))}
+                        </div>
+                        
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center">
+                            <DollarSign className="h-4 w-4 text-muted-foreground mr-1" />
+                            <span className="font-medium">${request.budget}</span>
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            {request.status === 'pending' && (
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => handleRejectRequest(request.id)}
+                                >
+                                  Decline
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => handleAcceptRequest(request.id)}
+                                >
+                                  Accept
+                                </Button>
+                              </>
+                            )}
+                            
+                            {request.status === 'accepted' && (
+                              <Button size="sm" variant="outline">
+                                Message Client
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
-                      <CardContent className="pt-4">
-                        <p className="text-sm mb-4 line-clamp-2">{request.description}</p>
-                        
-                        {request.skills && request.skills.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-4">
-                            {request.skills.map((skill, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {skill}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {request.client && (
-                          <div className="flex items-center mt-2">
-                            <Avatar className="h-6 w-6 mr-2">
-                              <AvatarImage src={request.client.photoURL || undefined} />
-                              <AvatarFallback>
-                                {request.client.displayName?.substring(0, 2) || 'CL'}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm">{request.client.displayName}</span>
-                          </div>
-                        )}
-                      </CardContent>
-                      <CardFooter className="border-t bg-muted/10 flex justify-end space-x-2 py-3">
-                        {request.status === 'pending' && (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleRejectRequest(request.id)}
-                            >
-                              Decline
-                            </Button>
-                            <Button 
-                              size="sm"
-                              onClick={() => handleAcceptRequest(request.id)}
-                            >
-                              Accept
-                            </Button>
-                          </>
-                        )}
-                        {request.status === 'accepted' && (
-                          <Button size="sm">
-                            Message Client
-                          </Button>
-                        )}
-                      </CardFooter>
                     </Card>
                   ))}
                 </div>
@@ -598,103 +577,103 @@ export function FreelancerHome() {
           </Card>
         </TabsContent>
         
-        <TabsContent value="bookings" className="py-4">
+        <TabsContent value="bookings" className="space-y-4 pt-4">
           <Card>
             <CardHeader>
               <CardTitle>Bookings</CardTitle>
               <CardDescription>
-                View and manage your upcoming work schedule
+                Your upcoming client appointments
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="py-12 text-center">
-                <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No bookings yet</h3>
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No Bookings Yet</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  When clients book time with you, your appointments will appear here.
+                  When clients book appointments with you, they will appear here.
                 </p>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
         
-        <TabsContent value="messages" className="py-4">
+        <TabsContent value="messages" className="space-y-4 pt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Messages</CardTitle>
+              <CardTitle>Recent Messages</CardTitle>
               <CardDescription>
-                Conversations with your clients
+                Your conversations with clients
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {!chats || !Array.isArray(chats) || chats.length === 0 ? (
-                <div className="py-12 text-center">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">No messages yet</h3>
+              {chatsLoading ? (
+                <div className="flex justify-center p-8">
+                  <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
+                </div>
+              ) : chats.length === 0 ? (
+                <div className="text-center py-8">
+                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Messages Yet</h3>
                   <p className="text-muted-foreground max-w-md mx-auto">
-                    When you start chatting with clients, your conversations will appear here.
+                    When clients message you, the conversations will appear here.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {Array.isArray(chats) && chats.map((chat) => {
+                  {chats.map((chat) => {
+                    // Determine the last message for preview and date
                     const lastMessageDate = chat.updated_at || chat.createdAt;
-                    const messagePreview = chat.latestMessage ? 
-                      (chat.latestMessage.content.length > 60 ? 
-                        chat.latestMessage.content.substring(0, 60) + '...' : 
-                        chat.latestMessage.content) : 
-                      'No messages yet';
+                    const messagePreview = chat.latestMessage?.content || "No messages yet";
                     
-                    // Generate avatar initials from client name with priority order
-                    const clientName = chat.client?.displayName || chat.client?.username || chat.clientName || 'Client';
-                    const clientInitial = (clientName && clientName.length > 0) ? 
-                      clientName.charAt(0).toUpperCase() : 'C';
-                      
+                    // Get client initials for avatar
+                    const clientName = chat.client?.displayName || chat.client?.username || chat.clientName || "Client";
+                    const clientInitial = clientName ? clientName.charAt(0).toUpperCase() : "C";
+                    
                     return (
                       <Card key={chat.id} className="overflow-hidden">
-                        <div className="p-4 border-b bg-muted/30">
-                          <div className="flex justify-between items-start">
-                            <div className="flex items-start space-x-3">
-                              <Avatar className="h-10 w-10">
-                                {chat.client?.photoURL && (
-                                  <AvatarImage src={chat.client.photoURL} />
-                                )}
+                        <div className="p-4">
+                          <div className="flex gap-4">
+                            <Avatar className="h-10 w-10">
+                              {chat.client?.photoURL ? (
+                                <AvatarImage src={chat.client.photoURL} alt={clientName} />
+                              ) : (
                                 <AvatarFallback>{clientInitial}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <h3 className="font-medium">
+                              )}
+                            </Avatar>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex justify-between">
+                                <p className="font-medium">
                                   {chat.client?.displayName || chat.client?.username || chat.clientName || "Client"}
-                                </h3>
-                                <div className="flex items-center text-sm text-muted-foreground mb-1">
-                                  <ClockIcon className="h-3 w-3 mr-1" />
-                                  <span>
-                                    {new Date(lastMessageDate).toLocaleDateString()}
-                                  </span>
-                                </div>
-                                <p className="text-sm text-muted-foreground">
-                                  {messagePreview}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(lastMessageDate).toLocaleDateString()}
                                 </p>
                               </div>
+                              <p className="text-sm text-muted-foreground truncate">
+                                {messagePreview}
+                              </p>
                             </div>
-                            <div className="flex space-x-2">
-                              <Button 
-                                variant="outline"
-                                size="sm"
-                                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteChat(chat.id);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm"
-                                onClick={() => setLocation(`/chat/${chat.id}`)}
-                              >
-                                Open Chat
-                              </Button>
-                            </div>
+                          </div>
+                          
+                          <div className="flex justify-end gap-2 mt-3">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteChat(chat.id);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="sm"
+                              onClick={() => setLocation(`/chat/${chat.id}`)}
+                            >
+                              Open Chat
+                            </Button>
                           </div>
                         </div>
                       </Card>
@@ -706,6 +685,34 @@ export function FreelancerHome() {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Delete chat confirmation dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this conversation? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setChatToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteChat}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <span className="mr-2">Deleting...</span>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
