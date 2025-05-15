@@ -525,34 +525,33 @@ export default function ChatPage() {
                           {new Date(msg.timestamp).toLocaleTimeString()}
                         </p>
                         
-                        {/* Only show message options for freelancer's own messages */}
-                        {!currentUser?.isClient && isCurrentUser && (
-                          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Show message options for both freelancer's and client's own messages */}
+                        {isCurrentUser && (
+                          <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                  className="h-8 w-8 p-0 rounded-full hover:bg-muted bg-background/80"
+                                  className="h-8 w-8 p-0 rounded-full"
                                 >
-                                  <MoreVertical className="h-4 w-4" />
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                                    <path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 8.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 14a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
+                                  </svg>
                                   <span className="sr-only">More options</span>
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent 
                                 align="end" 
-                                sideOffset={10} 
-                                alignOffset={10}
-                                avoidCollisions={true} 
-                                collisionPadding={20}
-                                className="z-[100]"
+                                sideOffset={5} 
+                                className="w-32 p-1"
                               >
                                 <DropdownMenuItem 
-                                  className="text-destructive focus:text-destructive flex items-center cursor-pointer"
+                                  className="text-destructive focus:text-destructive flex items-center cursor-pointer text-sm"
                                   onClick={() => handleDeleteMessage(msg.id)}
                                 >
                                   <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete message
+                                  Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
