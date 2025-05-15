@@ -503,7 +503,7 @@ export default function ChatPage() {
                                    `C${chatData?.userId?.toString().substring(0, 1) || '?'}`))}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="relative group">
+                      <div className={`relative group ${isCurrentUser ? 'pr-4' : 'pl-4'}`}>
                         <div
                           className={`rounded-lg p-3 ${
                             isCurrentUser
@@ -519,19 +519,26 @@ export default function ChatPage() {
                         
                         {/* Only show message options for freelancer's own messages */}
                         {!currentUser?.isClient && isCurrentUser && (
-                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                  className="h-8 w-8 p-0 rounded-full hover:bg-muted"
+                                  className="h-8 w-8 p-0 rounded-full hover:bg-muted bg-background/80"
                                 >
                                   <MoreVertical className="h-4 w-4" />
                                   <span className="sr-only">More options</span>
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" sideOffset={10} avoidCollisions className="z-[100]">
+                              <DropdownMenuContent 
+                                align="end" 
+                                sideOffset={10} 
+                                alignOffset={10}
+                                avoidCollisions={true} 
+                                collisionPadding={20}
+                                className="z-[100]"
+                              >
                                 <DropdownMenuItem 
                                   className="text-destructive focus:text-destructive flex items-center cursor-pointer"
                                   onClick={() => handleDeleteMessage(msg.id)}
