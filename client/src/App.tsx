@@ -82,7 +82,6 @@ function Router() {
         
         {/* Core freelancer routes */}
         <Route path="/freelancer-profile" component={FreelancerProfile} />
-        <Route path="/freelancer-dashboard" component={FreelancerDashboard} />
         <Route path="/freelancer-availability" component={FreelancerAvailability} />
         <Route path="/explore-freelancers" component={ExploreFreelancers} />
         <Route path="/freelancer/:id" component={Freelancer} />

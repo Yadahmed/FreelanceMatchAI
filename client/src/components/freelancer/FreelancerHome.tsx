@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,6 +58,7 @@ interface DashboardData {
 export function FreelancerHome() {
   const { currentUser } = useAuth();
   const [, setLocation] = useLocation();
+  const [selectedTab, setSelectedTab] = useState("overview");
   
   // Fetch freelancer dashboard data
   const { 
@@ -143,7 +144,7 @@ export function FreelancerHome() {
         </Button>
       </div>
       
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
         <TabsList className="grid w-full md:w-auto grid-cols-4 md:flex md:space-x-2">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="job-requests">Job Requests</TabsTrigger>
