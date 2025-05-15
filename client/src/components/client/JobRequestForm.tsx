@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/query-client';
+import { apiRequest } from '@/lib/queryClient';
+import { VisuallyHidden } from '@/components/ui/visually-hidden';
 
 import {
   Dialog,
@@ -148,6 +149,7 @@ export function JobRequestForm({ freelancerId, freelancerName, trigger }: JobReq
             Provide details about your project to help the freelancer understand your needs.
           </DialogDescription>
         </DialogHeader>
+        <VisuallyHidden>Send Job Request Dialog</VisuallyHidden>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

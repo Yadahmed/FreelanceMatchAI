@@ -477,7 +477,7 @@ export default function FreelancerDetail() {
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">Ready to discuss your project with {freelancer.displayName.split(' ')[0]}? Send a message or create a formal job request.</p>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex flex-col space-y-3">
                   <Button 
                     className="w-full"
                     onClick={handleHireClick}
