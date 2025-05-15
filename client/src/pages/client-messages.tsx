@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,32 +9,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MessageSquare, User, Calendar, ArrowLeft, Trash2, MoreVertical } from 'lucide-react';
+import { MessageSquare, User, Calendar, ArrowLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 export default function ClientMessagesPage() {
   const [, setLocation] = useLocation();
   const { currentUser, isAuthenticated } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [chatToDelete, setChatToDelete] = useState<number | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   // Fetch client chats
   const { data, isLoading, error, refetch } = useQuery({
@@ -98,80 +77,6 @@ export default function ClientMessagesPage() {
       setLocation(`/chat/${chatId}`);
     }
   };
-  
-  // Handle chat deletion
-  const handleDeleteChat = (e: React.MouseEvent, chatId: number) => {
-    e.stopPropagation(); // Prevent triggering the chat click event
-    setChatToDelete(chatId);
-    setIsDeleteDialogOpen(true);
-  };
-  
-  // Confirm chat deletion
-  const confirmDeleteChat = () => {
-    if (chatToDelete) {
-      deleteChatMutation.mutate(chatToDelete);
-    }
-  };
-  
-  // Delete chat mutation
-  const deleteChatMutation = useMutation({
-    mutationFn: async (chatId: number) => {
-      // Import the token refresh function
-      const { refreshAuthToken } = await import('@/lib/auth');
-      
-      // Try to refresh the token first
-      const token = await refreshAuthToken();
-      
-      if (!token) {
-        throw new Error('Authentication token not available');
-      }
-      
-      const response = await fetch(`/api/client/chats/${chatId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        // Special handling for auth errors
-        if (response.status === 401) {
-          throw new Error('Your session has expired. Please sign in again.');
-        }
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete chat');
-      }
-      
-      return await response.json();
-    },
-    onSuccess: () => {
-      // Refetch chat list after successful deletion
-      refetch();
-      queryClient.invalidateQueries({ queryKey: ['/api/client/chats'] });
-      
-      // Reset state
-      setChatToDelete(null);
-      setIsDeleteDialogOpen(false);
-      
-      // Show success toast
-      toast({
-        title: "Chat deleted",
-        description: "The conversation was deleted successfully",
-      });
-    },
-    onError: (error: any) => {
-      // Reset state
-      setChatToDelete(null);
-      setIsDeleteDialogOpen(false);
-      
-      // Show error toast
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete chat',
-        variant: 'destructive'
-      });
-    }
-  });
   
   // Protect route for clients only
   if (!isAuthenticated || !currentUser?.isClient) {
@@ -385,26 +290,7 @@ export default function ClientMessagesPage() {
                             )}
                           </div>
                           
-                          {/* Dropdown menu for chat actions */}
-                          <div onClick={(e) => e.stopPropagation()} className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreVertical className="h-4 w-4" />
-                                  <span className="sr-only">Actions</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem 
-                                  className="text-destructive focus:text-destructive" 
-                                  onClick={(e) => handleDeleteChat(e, chat.id)}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
+                          {/* Removed "View" button - entire row is now clickable */}
                         </div>
                         <Separator className="my-2" />
                       </div>
@@ -416,27 +302,6 @@ export default function ClientMessagesPage() {
           </CardContent>
         </Card>
       </div>
-      
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this conversation and all its messages. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDeleteChat}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
