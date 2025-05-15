@@ -10,8 +10,24 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Send, User, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, User, Loader2, Trash2, MoreVertical } from 'lucide-react';
 import { ChatParticipantDisplay, getParticipantInitials } from '@/components/chat/ChatParticipantDisplay';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function ChatPage() {
   const params = useParams<{ id: string }>();
@@ -21,6 +37,8 @@ export default function ChatPage() {
   const { toast } = useToast();
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState<number | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   
