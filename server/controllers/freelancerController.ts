@@ -637,17 +637,20 @@ export async function deleteFreelancerChat(req: Request, res: Response) {
       return res.status(404).json({ message: 'Freelancer profile not found' });
     }
     
-    // Get chat and verify it belongs to this freelancer
+    // Get chat and verify the freelancer is part of this chat
     const chat = await storage.getChat(parseInt(chatId));
     
     if (!chat) {
       return res.status(404).json({ message: 'Chat not found' });
     }
     
-    // Check if this chat belongs to this freelancer
-    if (chat.freelancerId !== freelancer.id) {
+    // Check if this freelancer is part of this chat
+    // Allow deletion if the chat has this freelancer's ID or if the user is the one who created the chat
+    if (chat.freelancerId !== freelancer.id && chat.userId !== req.user.id) {
       return res.status(403).json({ message: 'Not authorized to delete this chat' });
     }
+    
+    console.log('Authorization check passed for chat:', chatId, 'Freelancer ID:', freelancer.id);
     
     // Delete the chat (which will also delete all messages within it)
     const deleted = await storage.deleteChat(parseInt(chatId));
