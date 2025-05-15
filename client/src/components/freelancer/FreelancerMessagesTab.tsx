@@ -5,6 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquareIcon, Trash2Icon, XCircleIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -194,18 +200,35 @@ export function FreelancerMessagesTab() {
                         </div>
                       )}
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteChat(chat.id);
-                      }}
-                    >
-                      <Trash2Icon className="h-4 w-4" />
-                      <span className="sr-only">Delete conversation</span>
-                    </Button>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0 rounded-full"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                              <path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 8.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 14a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
+                            </svg>
+                            <span className="sr-only">More options</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent 
+                          align="end" 
+                          sideOffset={5}
+                          className="w-32 p-1"
+                        >
+                          <DropdownMenuItem 
+                            className="text-destructive focus:text-destructive flex items-center cursor-pointer text-sm"
+                            onClick={() => handleDeleteChat(chat.id)}
+                          >
+                            <Trash2Icon className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 );
               })}
