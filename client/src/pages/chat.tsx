@@ -235,7 +235,15 @@ export default function ChatPage() {
         throw new Error('Authentication token not available');
       }
       
-      const endpoint = `/api/${currentUser?.isClient ? 'client' : 'freelancer'}/chats/${chatId}/messages/${messageId}`;
+      // Use the correct endpoint for message deletion
+      // For freelancers, we use /api/freelancer/messages/:messageId
+      // For clients, we'll keep the existing endpoint format
+      const endpoint = currentUser?.isClient
+        ? `/api/client/chats/${chatId}/messages/${messageId}`  
+        : `/api/freelancer/messages/${messageId}`;
+      
+      console.log('Deleting message with endpoint:', endpoint);
+      
       const response = await fetch(endpoint, {
         method: 'DELETE',
         headers: {

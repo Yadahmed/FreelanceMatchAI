@@ -615,6 +615,9 @@ export async function getChatMessages(req: Request, res: Response) {
 // Delete a chat (for freelancers)
 export async function deleteFreelancerChat(req: Request, res: Response) {
   try {
+    console.log('deleteFreelancerChat called with params:', req.params);
+    console.log('User in request:', req.user ? `ID: ${req.user.id}, isClient: ${req.user.isClient}` : 'No user');
+    
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication required' });
     }
@@ -625,6 +628,7 @@ export async function deleteFreelancerChat(req: Request, res: Response) {
     }
     
     const { chatId } = req.params;
+    console.log('Chat ID from params:', chatId);
     
     if (!chatId) {
       return res.status(400).json({ message: 'Chat ID is required' });
@@ -632,6 +636,7 @@ export async function deleteFreelancerChat(req: Request, res: Response) {
     
     // Find freelancer profile
     const freelancer = await storage.getFreelancerByUserId(req.user.id);
+    console.log('Freelancer found:', freelancer ? `ID: ${freelancer.id}` : 'Not found');
     
     if (!freelancer) {
       return res.status(404).json({ message: 'Freelancer profile not found' });
@@ -672,6 +677,9 @@ export async function deleteFreelancerChat(req: Request, res: Response) {
 // Delete a message (for freelancers)
 export async function deleteFreelancerMessage(req: Request, res: Response) {
   try {
+    console.log('deleteFreelancerMessage called with params:', req.params);
+    console.log('User in request:', req.user ? `ID: ${req.user.id}, isClient: ${req.user.isClient}` : 'No user');
+    
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication required' });
     }
@@ -682,6 +690,7 @@ export async function deleteFreelancerMessage(req: Request, res: Response) {
     }
     
     const { messageId } = req.params;
+    console.log('Message ID from params:', messageId);
     
     if (!messageId) {
       return res.status(400).json({ message: 'Message ID is required' });
@@ -689,6 +698,7 @@ export async function deleteFreelancerMessage(req: Request, res: Response) {
     
     // Find freelancer profile
     const freelancer = await storage.getFreelancerByUserId(req.user.id);
+    console.log('Freelancer found:', freelancer ? `ID: ${freelancer.id}` : 'Not found');
     
     if (!freelancer) {
       return res.status(404).json({ message: 'Freelancer profile not found' });

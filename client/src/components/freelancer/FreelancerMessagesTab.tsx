@@ -70,9 +70,19 @@ export function FreelancerMessagesTab() {
   // Delete chat mutation
   const deleteChat = useMutation({
     mutationFn: async (chatId: number) => {
-      return apiRequest(`/api/freelancer/chats/${chatId}`, {
-        method: 'DELETE'
-      });
+      console.log('Attempting to delete chat with ID:', chatId);
+      
+      // Add manual error handling for better debugging
+      try {
+        const response = await apiRequest(`/api/freelancer/chats/${chatId}`, {
+          method: 'DELETE'
+        });
+        console.log('Delete chat response:', response);
+        return response;
+      } catch (error) {
+        console.error('Error deleting chat:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/freelancer/chats'] });
