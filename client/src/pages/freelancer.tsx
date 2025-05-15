@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Rating } from '@/components/ui/rating';
 import { ReviewsList } from '@/components/review/ReviewsList';
 import { ReviewForm } from '@/components/review/ReviewForm';
+import { JobRequestForm } from '@/components/client/JobRequestForm';
 import { 
   MapPin, 
   DollarSign, 
@@ -474,16 +475,44 @@ export default function FreelancerDetail() {
                 <CardTitle className="text-xl">Contact This Freelancer</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">Ready to discuss your project with {freelancer.displayName.split(' ')[0]}? Send a message to get started.</p>
+                <p className="text-sm text-muted-foreground">Ready to discuss your project with {freelancer.displayName.split(' ')[0]}? Send a message or create a formal job request.</p>
                 
-                <Button 
-                  className="w-full"
-                  onClick={handleHireClick}
-                  disabled={freelancer.availabilityDetails?.status === 'unavailable'}
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Message Now
-                </Button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <Button 
+                    className="w-full"
+                    onClick={handleHireClick}
+                    disabled={freelancer.availabilityDetails?.status === 'unavailable'}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Message Now
+                  </Button>
+                  
+                  {currentUser?.isClient && (
+                    <JobRequestForm 
+                      freelancerId={freelancer.id} 
+                      freelancerName={freelancer.displayName}
+                      trigger={
+                        <Button 
+                          className="w-full" 
+                          disabled={freelancer.availabilityDetails?.status === 'unavailable'}
+                          variant="outline"
+                        >
+                          <Briefcase className="h-4 w-4 mr-2" />
+                          Send Job Request
+                        </Button>
+                      }
+                    />
+                  )}
+                </div>
+                
+                {/* Show link to job requests page for clients */}
+                {currentUser?.isClient && (
+                  <div className="flex justify-center pt-2">
+                    <Button variant="link" size="sm" asChild>
+                      <a href="/job-requests">View Your Job Requests</a>
+                    </Button>
+                  </div>
+                )}
                 
                 {freelancer.availabilityDetails?.status === 'unavailable' && (
                   <div className="text-sm text-red-600 mt-2">
