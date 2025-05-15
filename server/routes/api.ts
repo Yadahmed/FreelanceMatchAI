@@ -58,7 +58,9 @@ import {
   getChatMessages,
   getUserPreferences,
   updateUserPreferences,
-  getChats as getClientChats
+  getChats as getClientChats,
+  deleteClientChat,
+  deleteClientMessage
 } from '../controllers/clientController';
 import { 
   authenticateUser, 
@@ -350,6 +352,8 @@ router.get('/client/availability', requireClient, checkFreelancerAvailability);
 router.post('/client/reviews', requireClient, createReview);
 router.get('/client/chats', requireClient, getClientChats);
 router.get('/client/chats/:chatId/messages', requireClient, getChatMessages);
+router.delete('/client/chats/:chatId', requireClient, deleteClientChat);
+router.delete('/client/messages/:messageId', requireClient, deleteClientMessage);
 router.get('/client/preferences', requireClient, getUserPreferences);
 router.post('/client/preferences', requireClient, updateUserPreferences);
 

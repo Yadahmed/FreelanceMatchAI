@@ -243,6 +243,11 @@ export async function getChatMessages(req: Request, res: Response) {
       return res.status(401).json({ message: 'Authentication required' });
     }
     
+    // Only clients can access this endpoint
+    if (!req.user.isClient) {
+      return res.status(403).json({ message: 'Client access required' });
+    }
+    
     const { chatId } = req.params;
     
     if (!chatId) {
@@ -261,12 +266,124 @@ export async function getChatMessages(req: Request, res: Response) {
       return res.status(403).json({ message: 'Not authorized to access this chat' });
     }
     
-    // Get messages
-    const messages = await storage.getMessagesByChatId(chat.id);
+    // Get messages for this chat
+    const messages = await storage.getMessagesByChatId(parseInt(chatId));
     
-    return res.status(200).json({ messages });
+    // Transform messages to add isUserMessage flag to simplify frontend logic
+    const transformedMessages = messages.map(message => {
+      // Ensure message has userId property
+      return {
+        ...message,
+        isUserMessage: message.userId === req.user?.id
+      };
+    });
+    
+    return res.status(200).json({
+      messages: transformedMessages
+    });
   } catch (error: any) {
     console.error('Get chat messages error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+}
+
+// Delete a chat (for clients)
+export async function deleteClientChat(req: Request, res: Response) {
+  try {
+    console.log('deleteClientChat called with params:', req.params);
+    console.log('User in request:', req.user ? `ID: ${req.user.id}, isClient: ${req.user.isClient}` : 'No user');
+    
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    // Only clients can delete their chats
+    if (!req.user.isClient) {
+      return res.status(403).json({ message: 'Client access required' });
+    }
+    
+    const { chatId } = req.params;
+    console.log('Chat ID from params:', chatId);
+    
+    if (!chatId) {
+      return res.status(400).json({ message: 'Chat ID is required' });
+    }
+    
+    // Get chat and verify the client is the owner of this chat
+    const chat = await storage.getChat(parseInt(chatId));
+    
+    if (!chat) {
+      return res.status(404).json({ message: 'Chat not found' });
+    }
+    
+    // Security check: only the owner can delete the chat
+    if (chat.userId !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to delete this chat' });
+    }
+    
+    console.log('Client authorized to delete chat:', chatId);
+    
+    // Delete the chat
+    const success = await storage.deleteChat(parseInt(chatId));
+    
+    if (!success) {
+      return res.status(500).json({ message: 'Failed to delete chat' });
+    }
+    
+    return res.status(200).json({ message: 'Chat deleted successfully' });
+  } catch (error: any) {
+    console.error('Delete client chat error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+}
+
+// Delete a message (for clients)
+export async function deleteClientMessage(req: Request, res: Response) {
+  try {
+    console.log('deleteClientMessage called with params:', req.params);
+    console.log('User in request:', req.user ? `ID: ${req.user.id}, isClient: ${req.user.isClient}` : 'No user');
+    
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    // Only clients can delete their messages
+    if (!req.user.isClient) {
+      return res.status(403).json({ message: 'Client access required' });
+    }
+    
+    const { messageId } = req.params;
+    console.log('Message ID from params:', messageId);
+    
+    if (!messageId) {
+      return res.status(400).json({ message: 'Message ID is required' });
+    }
+    
+    // Get the message
+    const message = await storage.getMessage(parseInt(messageId));
+    
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+    
+    // Security check: clients can only delete their own messages
+    // Type guard to ensure message has userId property 
+    if (!('userId' in message) || message.userId !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to delete this message' });
+    }
+    
+    console.log('Client authorized to delete message:', messageId);
+    
+    // Delete the message
+    const success = await storage.deleteMessage(parseInt(messageId));
+    
+    if (!success) {
+      return res.status(500).json({ message: 'Failed to delete message' });
+    }
+    
+    return res.status(200).json({ message: 'Message deleted successfully' });
+  } catch (error: any) {
+    console.error('Delete client message error:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 }
