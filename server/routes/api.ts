@@ -31,18 +31,14 @@ import {
   processJobRequest,
   checkAIStatus
 } from '../controllers/aiController';
-import {
-  getFreelancerJobRequests,
-  updateJobRequestStatus
-} from '../controllers/jobRequestController';
+// Import all job request controller functions
+import * as jobRequestController from '../controllers/jobRequestController';
 import ollamaRouter from './ollama';
 import testOllamaRouter from './test-ollama';
 import {
   getDashboard,
   updateProfile,
   updateAvailability,
-  getJobRequests as getFreelancerJobRequests,
-  updateJobRequestStatus,
   getBookings as getFreelancerBookings,
   getNotifications,
   markNotificationAsRead,
@@ -337,8 +333,8 @@ router.get('/freelancers/:id/reviews', async (req, res) => {
 router.get('/freelancer/dashboard', requireFreelancer, getDashboard);
 router.patch('/freelancer/profile', requireFreelancer, updateProfile);
 router.patch('/freelancer/availability', requireFreelancer, updateAvailability);
-router.get('/freelancer/job-requests', requireFreelancer, getFreelancerJobRequests);
-router.patch('/freelancer/job-requests/:id', requireFreelancer, updateJobRequestStatus);
+router.get('/freelancer/job-requests', requireFreelancer, jobRequestController.getFreelancerJobRequests);
+router.patch('/freelancer/job-requests/:id', requireFreelancer, jobRequestController.updateJobRequestStatus);
 router.get('/freelancer/bookings', requireFreelancer, getFreelancerBookings);
 router.get('/freelancer/notifications', requireFreelancer, getNotifications);
 router.patch('/freelancer/notifications/:id', requireFreelancer, markNotificationAsRead);
