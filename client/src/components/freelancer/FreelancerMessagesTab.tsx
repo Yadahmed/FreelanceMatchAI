@@ -5,6 +5,37 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquareIcon } from 'lucide-react';
 
+// Define interfaces for TypeScript
+interface ChatClient {
+  id: number;
+  username: string;
+  displayName: string | null;
+  photoURL: string | null;
+}
+
+interface ChatMessage {
+  id: number;
+  chatId: number;
+  userId: number | null;
+  freelancerId: number | null;
+  content: string;
+  timestamp: string;
+}
+
+interface Chat {
+  id: number;
+  userId: number;
+  freelancerId: number | null;
+  createdAt: string;
+  latestMessage: ChatMessage | null;
+  messageCount: number;
+  client: ChatClient | null;
+}
+
+interface ChatsResponse {
+  chats: Chat[];
+}
+
 export function FreelancerMessagesTab() {
   const [, setLocation] = useLocation();
   
@@ -13,7 +44,7 @@ export function FreelancerMessagesTab() {
     data: chatsData,
     isLoading,
     error
-  } = useQuery({
+  } = useQuery<ChatsResponse>({
     queryKey: ['/api/freelancer/chats'],
     refetchOnWindowFocus: true
   });
@@ -25,7 +56,7 @@ export function FreelancerMessagesTab() {
   useEffect(() => {
     if (chats && chats.length > 0) {
       console.log("Freelancer Messages - All chats:", chats);
-      chats.forEach((chat: any) => {
+      chats.forEach((chat: Chat) => {
         console.log(`Chat ID ${chat.id} client data:`, chat.client);
       });
     }
@@ -46,11 +77,21 @@ export function FreelancerMessagesTab() {
           </div>
         ) : chats && chats.length > 0 ? (
           <div className="space-y-4">
-            {chats.map((chat: any) => {
+            {chats.map((chat: Chat) => {
               // Extract client display name correctly
-              const client = chat.client || {};
-              const displayName = client.displayName || client.username || `Client (${chat.userId})`;
-              const initials = displayName.substring(0, 2) || "CL";
+              const client = chat.client || null;
+              
+              // Prioritize displayName, then username, then generic fallback
+              const displayName = 
+                client?.displayName || 
+                client?.username || 
+                `Client (${chat.userId})`;
+                
+              // Generate initials for avatar
+              const initials = 
+                (displayName && displayName.length > 0) 
+                  ? displayName.substring(0, 2).toUpperCase() 
+                  : "CL";
               
               return (
                 <div 
@@ -61,7 +102,9 @@ export function FreelancerMessagesTab() {
                   }}
                 >
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={client?.photoURL} />
+                    {client?.photoURL && (
+                      <AvatarImage src={client.photoURL} alt={displayName} />
+                    )}
                     <AvatarFallback>{initials}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
