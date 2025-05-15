@@ -31,6 +31,10 @@ import {
   processJobRequest,
   checkAIStatus
 } from '../controllers/aiController';
+import {
+  getFreelancerJobRequests,
+  updateJobRequestStatus
+} from '../controllers/jobRequestController';
 import ollamaRouter from './ollama';
 import testOllamaRouter from './test-ollama';
 import {
