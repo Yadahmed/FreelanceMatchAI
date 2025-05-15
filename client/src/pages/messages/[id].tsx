@@ -334,84 +334,86 @@ export default function MessagesPage() {
                 </div>
               )}
               
-              {messages.map((message: any) => (
-                <div
-                  key={message.id}
-                  // Client always sends isUserMessage=true
-                  className={`flex ${message.isUserMessage ? 'justify-end' : 'justify-start'}`}
-                >
+              {messages.map((message: any) => {
+                // For client view, isUserMessage = message was sent by the client
+                const isClientMessage = message.isUserMessage;
+                
+                return (
                   <div
-                    className={`flex gap-3 max-w-[80%] ${
-                      message.isUserMessage ? 'flex-row-reverse' : 'flex-row'
-                    }`}
+                    key={message.id}
+                    className={`flex ${isClientMessage ? 'justify-end' : 'justify-start'}`}
                   >
-                    <Avatar className="h-8 w-8">
-                      {/* For client views: isUserMessage means client's message */}
-                      {/* For freelancer views: isUserMessage means client's message (NOT freelancer's message) */}
-                      {message.isUserMessage !== currentUser?.isClient ? (
-                        <>
-                          <AvatarImage src={freelancer?.imageUrl || undefined} />
-                          <AvatarFallback>{initials}</AvatarFallback>
-                        </>
-                      ) : (
-                        <>
-                          <AvatarImage src={currentUser?.photoURL || undefined} />
-                          <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
-                        </>
-                      )}
-                    </Avatar>
-                    <div className="relative group">
-                      <div
-                        className={`rounded-lg p-3 ${
-                          // When the user is a client, their messages (isUserMessage=true) should have primary background
-                          // We know the user is a client in this component
-                          message.isUserMessage
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
-                        }`}
-                      >
-                        <p className="text-sm">{message.content}</p>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(message.timestamp).toLocaleTimeString()}
-                      </p>
-                      
-                      {/* Show message options for user's own messages */}
-                      {message.isUserMessage && (
-                        <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 w-8 p-0 rounded-full"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                                  <path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 8.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 14a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
-                                </svg>
-                                <span className="sr-only">More options</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent 
-                              align="end" 
-                              sideOffset={5} 
-                              className="w-32 p-1"
-                            >
-                              <DropdownMenuItem 
-                                className="text-destructive focus:text-destructive flex items-center cursor-pointer text-sm"
-                                onClick={() => handleDeleteMessage(message.id)}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                    <div
+                      className={`flex gap-3 max-w-[80%] ${
+                        isClientMessage ? 'flex-row-reverse' : 'flex-row'
+                      }`}
+                    >
+                      <Avatar className="h-8 w-8">
+                        {isClientMessage ? (
+                          // Client's own avatar
+                          <>
+                            <AvatarImage src={currentUser?.photoURL || undefined} />
+                            <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                          </>
+                        ) : (
+                          // Freelancer's avatar
+                          <>
+                            <AvatarImage src={freelancer?.imageUrl || undefined} />
+                            <AvatarFallback>{initials}</AvatarFallback>
+                          </>
+                        )}
+                      </Avatar>
+                      <div className="relative group">
+                        <div
+                          className={`rounded-lg p-3 ${
+                            isClientMessage
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted'
+                          }`}
+                        >
+                          <p className="text-sm">{message.content}</p>
                         </div>
-                      )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(message.timestamp).toLocaleTimeString()}
+                        </p>
+                        
+                        {/* Show message options for client's own messages only */}
+                        {isClientMessage && (
+                          <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-8 w-8 p-0 rounded-full"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                                    <path d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 8.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 14a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
+                                  </svg>
+                                  <span className="sr-only">More options</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent 
+                                align="end" 
+                                sideOffset={5} 
+                                className="w-32 p-1"
+                              >
+                                <DropdownMenuItem 
+                                  className="text-destructive focus:text-destructive flex items-center cursor-pointer text-sm"
+                                  onClick={() => handleDeleteMessage(message.id)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
           
