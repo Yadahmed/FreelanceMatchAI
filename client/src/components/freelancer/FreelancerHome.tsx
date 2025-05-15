@@ -514,8 +514,8 @@ export function FreelancerHome() {
                             <h3 className="font-medium text-lg">{request.title}</h3>
                             <p className="text-muted-foreground text-sm">
                               From: {request.client ? 
-                                   (request.client.displayName || request.client.username || `Client ${request.client.id}`) : 
-                                   `Client ${request.clientId}`}
+                                   request.client.displayName : 
+                                   "Unknown Client"}
                             </p>
                           </div>
                           <Badge 
