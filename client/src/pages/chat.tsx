@@ -75,6 +75,12 @@ export default function ChatPage() {
     refetchInterval: 5000 // Refresh chat info every 5 seconds
   });
 
+  // Fetch users data to get proper client names (moved up to maintain hooks order)
+  const { data: usersData } = useQuery<{users: any[]}>({
+    queryKey: ['/api/users'],
+    enabled: !currentUser?.isClient && !!chatId,
+  });
+
   // Fetch chat messages
   const { 
     data: chatData, 
@@ -340,12 +346,6 @@ export default function ChatPage() {
     );
   }
   
-  // Fetch users data to get proper client names
-  const { data: usersData } = useQuery<{users: any[]}>({
-    queryKey: ['/api/users'],
-    enabled: !currentUser?.isClient && !!chatData,
-  });
-
   // Get other participant info
   const otherParticipant = useMemo(() => {
     if (currentUser?.isClient) {
