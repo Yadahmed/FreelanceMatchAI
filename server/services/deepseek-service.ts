@@ -789,31 +789,66 @@ Fairness Score: ${f.fairnessScore || 0}/100
       const scoreFreelancer = (freelancer: any) => {
         let score = 0;
         
-        // Score based on skills match (most important)
+        // Extract key terms from the job description
+        const descriptionLower = description.toLowerCase();
+        const descriptionTerms = descriptionLower.split(/\s+/).filter(term => 
+          term.length > 3 && !['with', 'this', 'that', 'have', 'from', 'they', 'will', 'what', 'when', 'where', 'your'].includes(term)
+        );
+
+        // Get profession match (very important)
+        const professionLower = (freelancer.profession || '').toLowerCase();
+        const professionScore = descriptionTerms.some(term => professionLower.includes(term)) ? 30 : 0;
+        
+        // Extra points for exact profession match
+        if (descriptionLower.includes(professionLower)) {
+          score += 40; // Significant boost for profession directly mentioned
+          console.log(`[Matching] Exact profession match found for freelancer ${freelancer.id}: ${freelancer.profession}`);
+        } else {
+          score += professionScore;
+        }
+        
+        // Score based on skills match (also important)
         const freelancerSkills = Array.isArray(freelancer.skills) ? freelancer.skills : [];
         const requestedSkills = skills.map(s => s.toLowerCase());
         
-        // Count matching skills
-        const matchingSkills = freelancerSkills.filter((skill: string) => 
-          requestedSkills.some(reqSkill => 
-            skill.toLowerCase().includes(reqSkill) || reqSkill.includes(skill.toLowerCase())
-          )
-        );
+        // Count matching skills from both the requested skills array and description text
+        const matchingSkills = freelancerSkills.filter((skill: string) => {
+          const skillLower = skill.toLowerCase();
+          
+          // Check against explicitly requested skills
+          const matchesRequestedSkill = requestedSkills.some(reqSkill => 
+            skillLower.includes(reqSkill) || reqSkill.includes(skillLower)
+          );
+          
+          // Check against terms in the description
+          const matchesDescription = descriptionTerms.some(term => 
+            skillLower.includes(term) || term.includes(skillLower)
+          );
+          
+          return matchesRequestedSkill || matchesDescription;
+        });
         
         // Skills match provides a base score
-        score += (matchingSkills.length / Math.max(requestedSkills.length, 1)) * 30;
+        const skillMatchScore = (matchingSkills.length / Math.max(Math.max(freelancerSkills.length, 1), 1)) * 30;
+        score += skillMatchScore;
         
-        // Normalize rating (which is stored as an integer from 0-50) to a 0-100 scale
-        // Default is 45 (4.5 stars) which equals a 90 on the 100-point scale
-        const normalizedRating = (freelancer.rating / 50) * 100;
+        if (matchingSkills.length > 0) {
+          console.log(`[Matching] Skills match for freelancer ${freelancer.id}: ${matchingSkills.join(', ')}`);
+        }
         
         // Use our validated match score calculation with proper clamping
-        score = calculateMatchScore(
+        // But only as a baseline - our content-based matching is more important
+        const baseScore = calculateMatchScore(
           freelancer.jobPerformance,
           freelancer.skillsExperience,
           freelancer.responsiveness,
           freelancer.fairnessScore
         );
+        
+        // Apply the base score at a reduced weight
+        score = Math.round(score * 0.7 + baseScore * 0.3);
+        
+        console.log(`[Matching] Final score for freelancer ${freelancer.id} (${freelancer.profession}): ${score}`);
         
         return score;
       };
