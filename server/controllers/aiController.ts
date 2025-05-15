@@ -16,10 +16,157 @@ function isFreelancerQuery(message: string): boolean {
     'translator', 'writer', 'graphic', 'expert', 'professional',
     'web', 'mobile', 'need', 'looking for', 'find', 'hire', 
     'help with', 'skills', 'recommend', 'who can', 'available',
-    'based in', 'similar to', 'top rated', 'best'
+    'based in', 'similar to', 'top rated', 'best', 'marketer',
+    'marketing', 'digital marketing', 'social media', 'seo'
   ];
   
   return freelancerKeywords.some(keyword => lowerMsg.includes(keyword));
+}
+
+/**
+ * Filter and score freelancers based on the user's message
+ */
+async function getFilteredFreelancers(message: string): Promise<any[]> {
+  // Extract important profession and skill keywords from the message
+  const professionKeywords = extractProfessionKeywords(message);
+  
+  console.log(`[AI Matching] Extracted profession keywords: ${professionKeywords.join(', ')}`);
+  
+  // Get all freelancers to filter
+  const allFreelancers = await storage.getAllFreelancers();
+  
+  // Filter and score freelancers based on the message keywords
+  const scoredFreelancers = allFreelancers.map(freelancer => {
+    let score = 0;
+    const matchReasons = [];
+    
+    // Get profession match
+    const freelancerProfession = (freelancer.profession || '').toLowerCase();
+    let professionMatch = false;
+    
+    for (const keyword of professionKeywords) {
+      if (freelancerProfession.includes(keyword)) {
+        score += 35; // High score for profession match
+        professionMatch = true;
+        matchReasons.push(`Profession matches your request: ${freelancer.profession}`);
+        console.log(`[AI Matching] Profession match found: ${freelancer.id} - ${freelancerProfession} matches ${keyword}`);
+        break;
+      }
+    }
+    
+    // If no direct profession match, check skills
+    if (!professionMatch) {
+      const freelancerSkills = Array.isArray(freelancer.skills) ? freelancer.skills : [];
+      const matchingSkills = freelancerSkills.filter(skill => 
+        professionKeywords.some(keyword => 
+          skill.toLowerCase().includes(keyword) || keyword.includes(skill.toLowerCase())
+        )
+      );
+      
+      if (matchingSkills.length > 0) {
+        score += 25;
+        matchReasons.push(`Skills match: ${matchingSkills.join(', ')}`);
+        console.log(`[AI Matching] Skills match found: ${freelancer.id} - ${matchingSkills.join(', ')}`);
+      }
+    }
+    
+    // Add baseline ranking for general quality
+    const baselineScore = Math.round(
+      (freelancer.jobPerformance * 0.5) +
+      (freelancer.skillsExperience * 0.2) +
+      (freelancer.responsiveness * 0.15) +
+      (freelancer.fairnessScore * 0.15)
+    );
+    
+    // Weight baseline less when we have a good content match
+    score = score > 0 ? 
+      Math.round(score * 0.7 + baselineScore * 0.3) : 
+      baselineScore;
+    
+    return {
+      freelancer,
+      score,
+      matchReasons
+    };
+  });
+  
+  // Sort by score and take top 3
+  scoredFreelancers.sort((a, b) => b.score - a.score);
+  const topMatches = scoredFreelancers.slice(0, 3);
+  
+  console.log(`[AI Matching] Top 3 matches: ${topMatches.map(m => `${m.freelancer.id} (${m.freelancer.profession}) - Score: ${m.score}`).join(', ')}`);
+  
+  return topMatches;
+}
+
+/**
+ * Extract profession-related keywords from a message
+ */
+function extractProfessionKeywords(message: string): string[] {
+  const lowerMsg = message.toLowerCase();
+  
+  // Define key profession categories and related terms
+  const professionMap = {
+    'developer': ['developer', 'programmer', 'coder', 'software', 'web dev', 'mobile dev', 'app dev', 'coding'],
+    'designer': ['designer', 'design', 'ui', 'ux', 'graphic', 'illustrator', 'photoshop', 'figma'],
+    'writer': ['writer', 'content', 'copywriter', 'blog', 'article', 'writing'],
+    'translator': ['translator', 'translation', 'language', 'localization'],
+    'marketer': ['marketer', 'marketing', 'digital marketing', 'social media', 'seo', 'content marketing', 'ads'],
+    'video': ['video', 'editing', 'animation', 'motion graphics', 'filmmaker'],
+    'photographer': ['photo', 'photographer', 'photography'],
+    'consultant': ['consultant', 'advisor', 'strategy', 'business'],
+    'teacher': ['teacher', 'tutor', 'instructor', 'trainer', 'coach'],
+    'assistant': ['assistant', 'virtual assistant', 'admin', 'secretary']
+  };
+  
+  const matchedKeywords: string[] = [];
+  
+  // Check for profession mentions
+  for (const [category, terms] of Object.entries(professionMap)) {
+    for (const term of terms) {
+      if (lowerMsg.includes(term)) {
+        // Add both the specific term and the category
+        matchedKeywords.push(term);
+        if (!matchedKeywords.includes(category)) {
+          matchedKeywords.push(category);
+        }
+      }
+    }
+  }
+  
+  // Add common programming languages and technologies if mentioned
+  const techKeywords = [
+    'javascript', 'react', 'node', 'python', 'django', 'flask',
+    'java', 'php', 'laravel', 'wordpress', 'shopify', 'wix',
+    'css', 'html', 'typescript', 'angular', 'vue', 'next', 'nuxt',
+    'ruby', 'rails', 'golang', 'rust', 'c#', '.net', 'swift',
+    'kotlin', 'flutter', 'react native', 'ios', 'android', 'mobile'
+  ];
+  
+  for (const tech of techKeywords) {
+    if (lowerMsg.includes(tech)) {
+      matchedKeywords.push(tech);
+    }
+  }
+  
+  // If we have no matches, extract key nouns from the message
+  if (matchedKeywords.length === 0) {
+    const words = lowerMsg.split(/\s+/);
+    const potentialNouns = words.filter(word => 
+      word.length > 3 && 
+      !['with', 'this', 'that', 'have', 'from', 'they', 'will', 'what', 'when', 'where', 'your'].includes(word)
+    );
+    
+    // Add the longest words that might be profession-related
+    potentialNouns
+      .sort((a, b) => b.length - a.length)
+      .slice(0, 3)
+      .forEach(noun => matchedKeywords.push(noun));
+  }
+  
+  console.log(`[Keyword Extraction] Found keywords in message: ${matchedKeywords.join(', ')}`);
+  
+  return matchedKeywords;
 }
 
 /**
