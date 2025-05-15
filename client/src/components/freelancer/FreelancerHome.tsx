@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -162,8 +162,26 @@ export function FreelancerHome() {
     staleTime: 0
   });
   
-  // Extract the chats array from the response
-  const chats = chatsData?.chats || [];
+  // Fetch users to get client information
+  const { data: usersData } = useQuery<{users: any[]}>({
+    queryKey: ['/api/users'],
+    enabled: !!chatsData?.chats && chatsData.chats.length > 0,
+  });
+  
+  // Extract the chats array from the response and enrich with client data
+  const chats = useMemo(() => {
+    const chatsList = chatsData?.chats || [];
+    const users = usersData?.users || [];
+    
+    return chatsList.map(chat => {
+      const clientUser = users.find(user => user.id === chat.userId);
+      return {
+        ...chat,
+        clientName: clientUser?.username || clientUser?.displayName || `Client (ID: ${chat.userId})`,
+        clientInfo: clientUser || null
+      };
+    });
+  }, [chatsData?.chats, usersData?.users]);
 
   const handleAcceptRequest = async (requestId: number) => {
     try {
@@ -566,31 +584,53 @@ export function FreelancerHome() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {Array.isArray(chats) && chats.map((chat) => (
-                    <Card key={chat.id} className="overflow-hidden">
-                      <div className="p-4 border-b bg-muted/30">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium">
-                              {chat.clientName || "Client"}
-                            </h3>
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <ClockIcon className="h-3 w-3 mr-1" />
-                              <span>
-                                {new Date(chat.updatedAt || chat.createdAt).toLocaleDateString()}
-                              </span>
+                  {Array.isArray(chats) && chats.map((chat) => {
+                    const lastMessageDate = chat.updated_at || chat.createdAt;
+                    const messagePreview = chat.latestMessage ? 
+                      (chat.latestMessage.content.length > 60 ? 
+                        chat.latestMessage.content.substring(0, 60) + '...' : 
+                        chat.latestMessage.content) : 
+                      'No messages yet';
+                    
+                    // Generate avatar initials
+                    const clientInitial = (chat.clientName && chat.clientName.length > 0) ? 
+                      chat.clientName.charAt(0).toUpperCase() : 'C';
+                      
+                    return (
+                      <Card key={chat.id} className="overflow-hidden">
+                        <div className="p-4 border-b bg-muted/30">
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-start space-x-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={`https://ui-avatars.com/api/?name=${chat.clientName || "Client"}&background=random`} />
+                                <AvatarFallback>{clientInitial}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <h3 className="font-medium">
+                                  {chat.clientName || "Client"} {chat.userId ? `(ID: ${chat.userId})` : ""}
+                                </h3>
+                                <div className="flex items-center text-sm text-muted-foreground mb-1">
+                                  <ClockIcon className="h-3 w-3 mr-1" />
+                                  <span>
+                                    {new Date(lastMessageDate).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  {messagePreview}
+                                </p>
+                              </div>
                             </div>
+                            <Button 
+                              size="sm"
+                              onClick={() => setLocation(`/chat/${chat.id}`)}
+                            >
+                              Open Chat
+                            </Button>
                           </div>
-                          <Button 
-                            size="sm"
-                            onClick={() => setLocation(`/chat/${chat.id}`)}
-                          >
-                            Open Chat
-                          </Button>
                         </div>
-                      </div>
-                    </Card>
-                  ))}
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
