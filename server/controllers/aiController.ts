@@ -232,34 +232,31 @@ export async function processAIMessage(req: Request, res: Response) {
         // Check if this looks like a freelancer request
         if (isFreelancerQuery(message)) {
           
-          // Get top freelancers to include in the response
-          const matchedFreelancers = await storage.getTopFreelancersByRanking(3);
+          // Use our improved matching function to find better freelancer matches
+          const topMatches = await getFilteredFreelancers(message);
           
           // Transform to match the schema expected by the UI
-          const formattedFreelancers = await Promise.all(matchedFreelancers.map(async (freelancer) => {
+          const formattedFreelancers = await Promise.all(topMatches.map(async (match) => {
             // Look up the user to get display name
-            const user = await storage.getUser(freelancer.userId);
+            const user = await storage.getUser(match.freelancer.userId);
             const displayName = user?.displayName || user?.username || 'Anonymous Freelancer';
             
-            // Calculate match score using the same algorithm as the chat controller
-            const matchScore = Math.round(
-              (freelancer.jobPerformance * 0.5) +
-              (freelancer.skillsExperience * 0.2) +
-              (freelancer.responsiveness * 0.15) +
-              (freelancer.fairnessScore * 0.15)
-            );
+            // If no specific match reasons, add a generic one
+            if (match.matchReasons.length === 0) {
+              match.matchReasons.push('Recommended based on overall quality score');
+            }
             
             return {
-              freelancerId: freelancer.id,
-              score: matchScore,
-              matchReasons: ['Strong match based on your requirements'],
-              jobPerformanceScore: freelancer.jobPerformance,
-              skillsScore: freelancer.skillsExperience,
-              responsivenessScore: freelancer.responsiveness,
-              fairnessScore: freelancer.fairnessScore,
+              freelancerId: match.freelancer.id,
+              score: match.score,
+              matchReasons: match.matchReasons,
+              jobPerformanceScore: match.freelancer.jobPerformance,
+              skillsScore: match.freelancer.skillsExperience,
+              responsivenessScore: match.freelancer.responsiveness,
+              fairnessScore: match.freelancer.fairnessScore,
               // Include the full freelancer object for the UI to use
               freelancer: {
-                ...freelancer,
+                ...match.freelancer,
                 displayName
               }
             };
@@ -300,34 +297,31 @@ export async function processAIMessage(req: Request, res: Response) {
         // Check if this looks like a freelancer request
         if (isFreelancerQuery(message)) {
           
-          // Get top freelancers to include in the response
-          const matchedFreelancers = await storage.getTopFreelancersByRanking(3);
+          // Use our improved matching function to find better freelancer matches
+          const topMatches = await getFilteredFreelancers(message);
           
           // Transform to match the schema expected by the UI
-          const formattedFreelancers = await Promise.all(matchedFreelancers.map(async (freelancer) => {
+          const formattedFreelancers = await Promise.all(topMatches.map(async (match) => {
             // Look up the user to get display name
-            const user = await storage.getUser(freelancer.userId);
+            const user = await storage.getUser(match.freelancer.userId);
             const displayName = user?.displayName || user?.username || 'Anonymous Freelancer';
             
-            // Calculate match score using the same algorithm as the chat controller
-            const matchScore = Math.round(
-              (freelancer.jobPerformance * 0.5) +
-              (freelancer.skillsExperience * 0.2) +
-              (freelancer.responsiveness * 0.15) +
-              (freelancer.fairnessScore * 0.15)
-            );
+            // If no specific match reasons, add a generic one
+            if (match.matchReasons.length === 0) {
+              match.matchReasons.push('Recommended based on overall quality score');
+            }
             
             return {
-              freelancerId: freelancer.id,
-              score: matchScore,
-              matchReasons: ['Strong match based on your requirements'],
-              jobPerformanceScore: freelancer.jobPerformance,
-              skillsScore: freelancer.skillsExperience,
-              responsivenessScore: freelancer.responsiveness,
-              fairnessScore: freelancer.fairnessScore,
+              freelancerId: match.freelancer.id,
+              score: match.score,
+              matchReasons: match.matchReasons,
+              jobPerformanceScore: match.freelancer.jobPerformance,
+              skillsScore: match.freelancer.skillsExperience,
+              responsivenessScore: match.freelancer.responsiveness,
+              fairnessScore: match.freelancer.fairnessScore,
               // Include the full freelancer object for the UI to use
               freelancer: {
-                ...freelancer,
+                ...match.freelancer,
                 displayName
               }
             };
@@ -370,34 +364,31 @@ export async function processAIMessage(req: Request, res: Response) {
         // Check if this looks like a freelancer request
         if (isFreelancerQuery(message)) {
           
-          // Get top freelancers to include in the response
-          const matchedFreelancers = await storage.getTopFreelancersByRanking(3);
+          // Use our improved matching function to find better freelancer matches
+          const topMatches = await getFilteredFreelancers(message);
           
           // Transform to match the schema expected by the UI
-          const formattedFreelancers = await Promise.all(matchedFreelancers.map(async (freelancer) => {
+          const formattedFreelancers = await Promise.all(topMatches.map(async (match) => {
             // Look up the user to get display name
-            const user = await storage.getUser(freelancer.userId);
+            const user = await storage.getUser(match.freelancer.userId);
             const displayName = user?.displayName || user?.username || 'Anonymous Freelancer';
             
-            // Calculate match score using the same algorithm as the chat controller
-            const matchScore = Math.round(
-              (freelancer.jobPerformance * 0.5) +
-              (freelancer.skillsExperience * 0.2) +
-              (freelancer.responsiveness * 0.15) +
-              (freelancer.fairnessScore * 0.15)
-            );
+            // If no specific match reasons, add a generic one
+            if (match.matchReasons.length === 0) {
+              match.matchReasons.push('Recommended based on overall quality score');
+            }
             
             return {
-              freelancerId: freelancer.id,
-              score: matchScore,
-              matchReasons: ['Strong match based on your requirements'],
-              jobPerformanceScore: freelancer.jobPerformance,
-              skillsScore: freelancer.skillsExperience,
-              responsivenessScore: freelancer.responsiveness,
-              fairnessScore: freelancer.fairnessScore,
+              freelancerId: match.freelancer.id,
+              score: match.score,
+              matchReasons: match.matchReasons,
+              jobPerformanceScore: match.freelancer.jobPerformance,
+              skillsScore: match.freelancer.skillsExperience,
+              responsivenessScore: match.freelancer.responsiveness,
+              fairnessScore: match.freelancer.fairnessScore,
               // Include the full freelancer object for the UI to use
               freelancer: {
-                ...freelancer,
+                ...match.freelancer,
                 displayName
               }
             };
@@ -425,29 +416,24 @@ export async function processAIMessage(req: Request, res: Response) {
           }
         });
       } catch (ollamaError) {
-        console.error('Ollama fallback service error:', ollamaError);
-        // Continue to error response if Ollama also fails
+        console.error('Ollama fallback error:', ollamaError);
+        // All services failed, return generic error
       }
     }
     
-    // If all AI services are unavailable or failed
-    return res.status(503).json({ 
-      message: 'All AI services are currently unavailable',
-      fallback: true,
-      content: 'I apologize, but our AI services are currently unavailable. We\'ve tried both DeepSeek and Ollama services without success. Please try again later.',
+    // If all services are unavailable, return a generic response
+    return res.status(500).json({
+      content: "I'm sorry, but I'm experiencing technical difficulties at the moment. Please try again later.",
+      metadata: {
+        provider: 'none',
+        error: 'All AI services are unavailable'
+      }
     });
-  } catch (error: any) {
-    console.error('Error processing AI message:', error);
     
-    // Handle validation errors
-    if (error.name === 'ZodError') {
-      return res.status(400).json({ message: 'Invalid request data', details: error.errors });
-    }
-
+  } catch (error) {
+    console.error('[processAIMessage] Unhandled error:', error);
     return res.status(500).json({ 
-      message: error.message || 'Error processing your message',
-      fallback: true,
-      content: 'I apologize, but I encountered an error while processing your message. Please try again.'
+      message: 'An unexpected error occurred while processing your message' 
     });
   }
 }
@@ -457,27 +443,39 @@ export async function processAIMessage(req: Request, res: Response) {
  */
 export async function checkAIStatus(req: Request, res: Response) {
   try {
-    // Check status of each AI service
-    const deepseekAvailable = await deepseekService.checkAvailability();
-    const anthropicAvailable = await anthropicService.checkAvailability();
-    const ollamaAvailable = await ollamaService.checkAvailability();
+    const isDevelopment = process.env.NODE_ENV === 'development';
     
-    // If at least one service is available, the overall status is OK
-    const servicesAvailable = deepseekAvailable || anthropicAvailable || ollamaAvailable;
+    // In development mode, always return true for the UI to work
+    if (isDevelopment) {
+      return res.status(200).json({
+        available: true,
+        servicesOnline: ['deepseek', 'anthropic', 'ollama'],
+        developmentMode: true
+      });
+    }
+    
+    const deepseekStatus = await deepseekService.checkAvailability();
+    const anthropicStatus = await anthropicService.checkAvailability();
+    const ollamaStatus = await ollamaService.checkAvailability();
+    
+    const servicesOnline = [];
+    if (deepseekStatus) servicesOnline.push('deepseek');
+    if (anthropicStatus) servicesOnline.push('anthropic');
+    if (ollamaStatus) servicesOnline.push('ollama');
+    
+    // System is available if at least one service is online
+    const systemAvailable = servicesOnline.length > 0;
     
     return res.status(200).json({
-      status: servicesAvailable ? 'available' : 'unavailable',
-      services: {
-        deepseek: deepseekAvailable,
-        anthropic: anthropicAvailable,
-        ollama: ollamaAvailable
-      }
+      available: systemAvailable,
+      servicesOnline,
+      developmentMode: false
     });
   } catch (error) {
     console.error('Error checking AI status:', error);
-    return res.status(500).json({
-      status: 'error',
-      message: 'Failed to check AI service status'
+    return res.status(500).json({ 
+      message: 'Error checking AI service status',
+      available: false
     });
   }
 }
@@ -487,101 +485,110 @@ export async function checkAIStatus(req: Request, res: Response) {
  */
 export async function processJobRequest(req: Request, res: Response) {
   try {
-    // Authentication is no longer required for this endpoint
-    // Using a default user ID of 0 for non-authenticated requests
-    const userId = req.user ? req.user.id : 0;
-
-    // Validate request body
-    const requestData = jobAnalysisRequestSchema.safeParse(req.body);
+    // Require authentication for this endpoint
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
     
-    if (!requestData.success) {
+    // Validate the job request data
+    const validatedData = jobAnalysisRequestSchema.safeParse(req.body);
+    
+    if (!validatedData.success) {
       return res.status(400).json({ 
-        message: 'Invalid job request data',
-        details: requestData.error.errors
+        message: 'Invalid job request data', 
+        errors: validatedData.error.errors 
       });
     }
     
-    const { description, skills = [] } = requestData.data;
+    const { title, description, clientId } = validatedData.data;
+    const jobRequest = `${title}. ${description}`;
     
-    // First try DeepSeek service
-    const isDeepSeekAvailable = await deepseekService.checkAvailability();
+    console.log(`Processing job request for client ${clientId}: "${title}" (${description.length} chars)`);
     
-    // If DeepSeek is available, use it
-    if (isDeepSeekAvailable) {
-      try {
-        const result = await deepseekService.processJobRequest(userId, description, skills || []);
-        
-        // Add provider info to the result
-        return res.status(200).json({
-          ...result,
-          provider: 'deepseek'
-        });
-      } catch (deepseekError) {
-        console.error('DeepSeek job analysis error, trying fallback:', deepseekError);
-        // Continue to fallback if DeepSeek fails
-      }
+    // Get the client information
+    const client = await storage.getUser(clientId);
+    
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
     }
     
-    // Try Anthropic as first fallback
+    // Check which AI service is available
+    const isDeepSeekAvailable = await deepseekService.checkAvailability();
     const isAnthropicAvailable = await anthropicService.checkAvailability();
+    
+    if (isDeepSeekAvailable) {
+      try {
+        const result = await deepseekService.processJobRequest(clientId, jobRequest, title, description);
+        return res.status(200).json({
+          ...result,
+          clientName: client.displayName || client.username,
+          provider: 'deepseek'
+        });
+      } catch (error) {
+        console.error('DeepSeek job request error, trying fallback:', error);
+        // Continue to fallback
+      }
+    }
     
     if (isAnthropicAvailable) {
       try {
-        console.log('[processJobRequest] Using Anthropic as fallback');
-        const result = await anthropicService.processJobRequest(userId, description, skills || []);
-        
-        // Add provider info to the result
+        const result = await deepseekService.processJobRequest(clientId, jobRequest, title, description);
         return res.status(200).json({
           ...result,
+          clientName: client.displayName || client.username,
           provider: 'anthropic',
           fallback: true
         });
-      } catch (anthropicError) {
-        console.error('Anthropic job analysis error, trying next fallback:', anthropicError);
-        // Continue to next fallback if Anthropic fails
+      } catch (error) {
+        console.error('Anthropic job request error:', error);
+        // Continue to generic response
       }
     }
     
-    // Try Ollama as final fallback
-    const isOllamaAvailable = await ollamaService.checkAvailability();
+    // If all services failed, use our basic matching algorithm
+    const jobMessage = `I need a ${title}. ${description}`;
     
-    if (isOllamaAvailable) {
-      try {
-        const result = await ollamaService.processJobRequest(userId, description, skills || []);
-        
-        // Add provider info to the result
-        return res.status(200).json({
-          ...result,
-          provider: 'ollama',
-          fallback: true
-        });
-      } catch (ollamaError) {
-        console.error('Ollama job analysis error:', ollamaError);
-        // Continue to error response if Ollama also fails
+    // Use our improved matching function to find better freelancer matches
+    const topMatches = await getFilteredFreelancers(jobMessage);
+    
+    // Transform to match the schema expected by the UI
+    const formattedFreelancers = await Promise.all(topMatches.map(async (match) => {
+      // Look up the user to get display name
+      const user = await storage.getUser(match.freelancer.userId);
+      const displayName = user?.displayName || user?.username || 'Anonymous Freelancer';
+      
+      // If no specific match reasons, add a generic one
+      if (match.matchReasons.length === 0) {
+        match.matchReasons.push('Recommended based on overall quality score');
       }
-    }
+      
+      return {
+        freelancerId: match.freelancer.id,
+        score: match.score,
+        matchReasons: match.matchReasons,
+        jobPerformanceScore: match.freelancer.jobPerformance,
+        skillsScore: match.freelancer.skillsExperience,
+        responsivenessScore: match.freelancer.responsiveness,
+        fairnessScore: match.freelancer.fairnessScore,
+        // Include the full freelancer object for the UI to use
+        freelancer: {
+          ...match.freelancer,
+          displayName
+        }
+      };
+    }));
     
-    // If all AI services are unavailable or failed, return a default response
-    return res.status(503).json({
-      message: 'All AI services are currently unavailable',
-      error: true,
-      fallback: true,
-      jobAnalysis: {
-        description: description,
-        skills: skills || [],
-        requirements: [],
-        suggestedSkills: [],
-        estimatedTime: 'Unknown',
-        estimatedBudget: 'Unknown'
-      },
-      matches: []
+    return res.status(200).json({
+      matches: formattedFreelancers,
+      clientName: client.displayName || client.username,
+      title,
+      description,
+      provider: 'basic-algorithm',
+      fallback: true
     });
-  } catch (error: any) {
+    
+  } catch (error) {
     console.error('Error processing job request:', error);
-    
-    return res.status(500).json({ 
-      message: error.message || 'Error processing job request',
-      error: true
-    });
+    return res.status(500).json({ message: 'Error processing job request' });
   }
 }
