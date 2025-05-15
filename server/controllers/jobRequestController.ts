@@ -119,6 +119,8 @@ export async function getFreelancerJobRequests(req: Request, res: Response) {
       return res.status(403).json({ message: 'You do not have a freelancer profile' });
     }
     
+    console.log(`Getting job requests for freelancer ID: ${freelancerProfile.id}`);
+    
     // Get all job requests for this freelancer with client details
     const jobRequestsList = await db.query.jobRequests.findMany({
       where: eq(jobRequests.freelancerId, freelancerProfile.id),
@@ -128,18 +130,26 @@ export async function getFreelancerJobRequests(req: Request, res: Response) {
       orderBy: (jobRequests, { desc }) => [desc(jobRequests.createdAt)]
     });
     
+    console.log(`Found ${jobRequestsList.length} job requests`);
+    // Log the first job request to see what we're getting
+    if (jobRequestsList.length > 0) {
+      console.log('First job request client data:', jobRequestsList[0].client);
+    }
+    
     // Format the response
     const formattedJobRequests = jobRequestsList.map(request => {
       const { client, ...jobRequest } = request;
       
-      return {
+      const formattedRequest = {
         ...jobRequest,
         client: {
           id: client.id,
-          username: client.username,
-          displayName: client.displayName,
+          username: client.username || `user_${client.id}`,
+          displayName: client.displayName || client.username || `Client ${client.id}`,
         }
       };
+      console.log('Formatted client info:', formattedRequest.client);
+      return formattedRequest;
     });
     
     return res.json({ jobRequests: formattedJobRequests });
