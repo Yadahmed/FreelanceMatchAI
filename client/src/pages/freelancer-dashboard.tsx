@@ -506,7 +506,7 @@ export default function FreelancerDashboard() {
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start gap-2">
                           <p className="font-medium truncate">
-                            {chat.client?.displayName || chat.client?.username || `Client (ID: ${chat.userId})`}
+                            {chat.client?.displayName || chat.client?.username || `Client`}
                           </p>
                           <p className="text-xs text-muted-foreground whitespace-nowrap">
                             {chat.latestMessage ? new Date(chat.latestMessage.timestamp).toLocaleDateString() : 'No messages'}
