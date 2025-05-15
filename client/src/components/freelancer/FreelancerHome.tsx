@@ -121,40 +121,49 @@ export function FreelancerHome() {
   const { 
     data: jobRequestsData,
     isLoading: jobRequestsLoading,
-    error: jobRequestsError
+    error: jobRequestsError,
+    refetch: refetchJobRequests
   } = useQuery<{jobRequests: JobRequest[]}>({
     queryKey: ['/api/freelancer/job-requests'],
-    enabled: !!currentUser && !currentUser.isClient
+    enabled: !!currentUser && !currentUser.isClient,
+    refetchOnWindowFocus: true,
+    staleTime: 0
   });
   
   // Extract the jobRequests array from the response
-  const jobRequests = jobRequestsData?.jobRequests;
+  const jobRequests = jobRequestsData?.jobRequests || [];
   
   // Fetch notifications
   const { 
     data: notificationsData,
     isLoading: notificationsLoading,
-    error: notificationsError
+    error: notificationsError,
+    refetch: refetchNotifications
   } = useQuery<{notifications: any[]}>({
     queryKey: ['/api/freelancer/notifications'],
-    enabled: !!currentUser && !currentUser.isClient
+    enabled: !!currentUser && !currentUser.isClient,
+    refetchOnWindowFocus: true,
+    staleTime: 0
   });
   
   // Extract the notifications array from the response
-  const notifications = notificationsData?.notifications;
+  const notifications = notificationsData?.notifications || [];
   
   // Fetch chats (conversations with clients)
   const {
     data: chatsData,
     isLoading: chatsLoading,
-    error: chatsError
+    error: chatsError,
+    refetch: refetchChats
   } = useQuery<{chats: any[]}>({
     queryKey: ['/api/freelancer/chats'],
-    enabled: !!currentUser && !currentUser.isClient
+    enabled: !!currentUser && !currentUser.isClient,
+    refetchOnWindowFocus: true,
+    staleTime: 0
   });
   
   // Extract the chats array from the response
-  const chats = chatsData?.chats;
+  const chats = chatsData?.chats || [];
 
   const handleAcceptRequest = async (requestId: number) => {
     try {
@@ -393,8 +402,24 @@ export function FreelancerHome() {
                       <p>No notifications</p>
                     </div>
                   ) : (
-                    <div>
-                      {Array.isArray(notifications) ? notifications.length : 0} new notifications
+                    <div className="space-y-2">
+                      {Array.isArray(notifications) && notifications.slice(0, 3).map((notification) => (
+                        <div key={notification.id} className="border-b pb-2 last:border-0 last:pb-0">
+                          <div className="flex items-center mb-1">
+                            <span className="h-2 w-2 rounded-full bg-primary mr-2 flex-shrink-0" />
+                            <span className="font-medium truncate">{notification.type}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{notification.message}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(notification.createdAt).toLocaleDateString()} {new Date(notification.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </p>
+                        </div>
+                      ))}
+                      {Array.isArray(notifications) && notifications.length > 0 && (
+                        <div className="text-right text-xs text-muted-foreground">
+                          {notifications.length} {notifications.length === 1 ? 'notification' : 'notifications'} total
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
