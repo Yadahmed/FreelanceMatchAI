@@ -519,7 +519,7 @@ export default function ChatPage() {
                         
                         {/* Only show message options for freelancer's own messages */}
                         {!currentUser?.isClient && isCurrentUser && (
-                          <div className="absolute top-0 right-0 -mt-2 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button 
@@ -531,7 +531,7 @@ export default function ChatPage() {
                                   <span className="sr-only">More options</span>
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
+                              <DropdownMenuContent align="end" sideOffset={5} className="z-50">
                                 <DropdownMenuItem 
                                   className="text-destructive focus:text-destructive flex items-center cursor-pointer"
                                   onClick={() => handleDeleteMessage(msg.id)}

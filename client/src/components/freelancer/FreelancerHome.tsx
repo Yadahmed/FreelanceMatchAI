@@ -278,6 +278,43 @@ export function FreelancerHome() {
     ((freelancer?.fairnessScore || 0) * 15)
   );
   
+  // Delete chat functionality
+  const handleDeleteChat = (chatId: number) => {
+    setChatToDelete(chatId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteChat = async () => {
+    if (!chatToDelete) return;
+    
+    try {
+      setIsDeleting(true);
+      
+      await apiRequest(`/api/chats/${chatToDelete}`, {
+        method: 'DELETE',
+      });
+      
+      // Invalidate chat queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['/api/freelancer/chats'] });
+      
+      toast({
+        title: "Chat deleted",
+        description: "The conversation has been successfully deleted.",
+      });
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete the conversation. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+      setChatToDelete(null);
+    }
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -670,5 +707,33 @@ export function FreelancerHome() {
         </TabsContent>
       </Tabs>
     </div>
+    
+    {/* Delete chat confirmation dialog */}
+    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this conversation? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setChatToDelete(null)}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={confirmDeleteChat}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {isDeleting ? (
+              <>
+                <span className="mr-2">Deleting...</span>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              </>
+            ) : (
+              "Delete"
+            )}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
