@@ -345,15 +345,17 @@ export default function MessagesPage() {
                     }`}
                   >
                     <Avatar className="h-8 w-8">
-                      {message.isUserMessage ? (
-                        <>
-                          <AvatarImage src={currentUser?.photoURL || undefined} />
-                          <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
-                        </>
-                      ) : (
+                      {/* For client views: isUserMessage means client's message */}
+                      {/* For freelancer views: isUserMessage means client's message (NOT freelancer's message) */}
+                      {message.isUserMessage !== currentUser?.isClient ? (
                         <>
                           <AvatarImage src={freelancer?.imageUrl || undefined} />
                           <AvatarFallback>{initials}</AvatarFallback>
+                        </>
+                      ) : (
+                        <>
+                          <AvatarImage src={currentUser?.photoURL || undefined} />
+                          <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
                         </>
                       )}
                     </Avatar>
