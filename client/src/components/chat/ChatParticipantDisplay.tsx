@@ -29,6 +29,16 @@ export function ChatParticipantDisplay({ chatData, className = '' }: ChatPartici
     );
   } else {
     // Freelancer is viewing chat with client
+    // First check if client data is already provided with the chat
+    if (chatData.client) {
+      return (
+        <span className={className}>
+          {chatData.client.displayName || chatData.client.username || `Client (ID: ${chatData.userId})`}
+        </span>
+      );
+    }
+    
+    // Fallback to usersData if client not provided directly
     if (usersData) {
       const clientUser = usersData.find((user: any) => user.id === chatData.userId);
       if (clientUser) {
@@ -41,7 +51,7 @@ export function ChatParticipantDisplay({ chatData, className = '' }: ChatPartici
     }
     
     // Fallback if we can't find the user
-    return <span className={className}>Client</span>;
+    return <span className={className}>{`Client (ID: ${chatData.userId || 'Unknown'})`}</span>;
   }
 }
 
@@ -53,7 +63,16 @@ export function getParticipantInitials(chatData: any, currentUser: any): string 
     const name = chatData?.freelancer?.displayName || 'FR';
     return name.substring(0, 2).toUpperCase();
   } else {
-    // Freelancer viewing client - simplified version without needing usersData
-    return 'CL';
+    // Freelancer viewing client
+    if (chatData.client) {
+      // Use client data from chat if available
+      const clientName = chatData.client.displayName || chatData.client.username;
+      if (clientName) {
+        return clientName.substring(0, 2).toUpperCase();
+      }
+    }
+    
+    // Fallback if no client data available
+    return `C${chatData.userId?.toString().substring(0, 1) || '?'}`;
   }
 }

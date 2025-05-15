@@ -360,7 +360,9 @@ export default function ChatPage() {
                   <AvatarFallback>
                     {currentUser?.isClient 
                       ? (chatData?.freelancer?.displayName?.substring(0, 2) || 'FR') 
-                      : 'CL'}
+                      : (chatData?.client?.displayName?.substring(0, 2) || 
+                         chatData?.client?.username?.substring(0, 2) || 
+                         `C${chatData?.userId?.toString().substring(0, 1) || '?'}`)}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -398,7 +400,9 @@ export default function ChatPage() {
                             ? (currentUser?.displayName?.substring(0, 2) || 'ME') 
                             : (currentUser?.isClient 
                                 ? (chatData?.freelancer?.displayName?.substring(0, 2) || 'FR')
-                                : 'CL')}
+                                : (chatData?.client?.displayName?.substring(0, 2) || 
+                                   chatData?.client?.username?.substring(0, 2) || 
+                                   `C${chatData?.userId?.toString().substring(0, 1) || '?'}`))}
                         </AvatarFallback>
                       </Avatar>
                       <div>
