@@ -362,7 +362,7 @@ export default function MessagesPage() {
                         className={`rounded-lg p-3 ${
                           message.isUserMessage
                             ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
+                            : 'bg-muted dark:text-foreground'
                         }`}
                       >
                         <p className="text-sm">{message.content}</p>
