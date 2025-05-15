@@ -127,6 +127,8 @@ export default function FreelancerDashboard() {
 
   // Dashboard data type definition
   interface DashboardData {
+    freelancer: FreelancerProfile;
+    stats: FreelancerStats;
     earnings?: {
       total: number;
       thisMonth: number;
@@ -155,15 +157,15 @@ export default function FreelancerDashboard() {
   // Default values with type safety
   const statsData = {
     earnings: {
-      total: typedDashboardData?.earnings?.total || 0,
-      thisMonth: typedDashboardData?.earnings?.thisMonth || 0,
-      change: typedDashboardData?.earnings?.change || 0
+      total: typedDashboardData.earnings?.total || 0,
+      thisMonth: typedDashboardData.earnings?.thisMonth || 0,
+      change: typedDashboardData.earnings?.change || 0
     },
-    completedJobs: typedDashboardData?.stats?.completedJobsCount || typedDashboardData?.freelancer?.completedJobs || 0,
-    totalHours: typedDashboardData?.totalHours || 0,
-    rating: typedDashboardData?.stats?.averageRating !== null ? typedDashboardData.stats.averageRating : 
-            typedDashboardData?.freelancer?.rating !== null ? typedDashboardData.freelancer.rating : null,
-    matchScore: typedDashboardData?.matchScore || 85
+    completedJobs: typedDashboardData.stats.completedJobsCount || typedDashboardData.freelancer.completedJobs || 0,
+    totalHours: typedDashboardData.totalHours || 0,
+    rating: typedDashboardData.stats.averageRating !== null ? typedDashboardData.stats.averageRating : 
+            typedDashboardData.freelancer.rating !== null ? typedDashboardData.freelancer.rating : null,
+    matchScore: typedDashboardData.matchScore || 85
   };
 
   // Parse any responses to ensure type safety
@@ -503,38 +505,39 @@ export default function FreelancerDashboard() {
                     const clientInitials = clientName.substring(0, 2) || "CL";
                     
                     return (
-                    <div 
-                      key={chat.id} 
-                      className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={() => {
-                        setLocation(`/chat/${chat.id}`);
-                      }}
-                    >
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback>
-                          {clientInitials}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start gap-2">
-                          <p className="font-medium truncate">
-                            {clientName}
-                          </p>
-                          <p className="text-xs text-muted-foreground whitespace-nowrap">
-                            {chat.latestMessage ? new Date(chat.latestMessage.timestamp).toLocaleDateString() : 'No messages'}
+                      <div 
+                        key={chat.id} 
+                        className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setLocation(`/chat/${chat.id}`);
+                        }}
+                      >
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback>
+                            {clientInitials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start gap-2">
+                            <p className="font-medium truncate">
+                              {clientName}
+                            </p>
+                            <p className="text-xs text-muted-foreground whitespace-nowrap">
+                              {chat.latestMessage ? new Date(chat.latestMessage.timestamp).toLocaleDateString() : 'No messages'}
+                            </p>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {chat.latestMessage?.content || 'No messages yet'}
                           </p>
                         </div>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {chat.latestMessage?.content || 'No messages yet'}
-                        </p>
+                        {chat.messageCount > 0 && (
+                          <div className="bg-primary text-primary-foreground text-xs rounded-full h-5 min-w-5 flex items-center justify-center px-1.5">
+                            {chat.messageCount}
+                          </div>
+                        )}
                       </div>
-                      {chat.messageCount > 0 && (
-                        <div className="bg-primary text-primary-foreground text-xs rounded-full h-5 min-w-5 flex items-center justify-center px-1.5">
-                          {chat.messageCount}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
