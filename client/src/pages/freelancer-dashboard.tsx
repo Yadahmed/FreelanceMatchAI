@@ -493,24 +493,20 @@ export default function FreelancerDashboard() {
                       key={chat.id} 
                       className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => {
-                        // Get the client ID from the chat and use messages route if available
-                        const clientId = chat.relatedJobRequest?.client?.id;
-                        if (clientId) {
-                          setLocation(`/messages/${clientId}`);
-                        } else {
-                          setLocation(`/chat/${chat.id}`);
-                        }
+                        setLocation(`/chat/${chat.id}`);
                       }}
                     >
                       <Avatar className="h-10 w-10">
                         <AvatarFallback>
-                          {chat.relatedJobRequest?.client?.displayName?.substring(0, 2) || 'CL'}
+                          {chat.client?.displayName?.substring(0, 2) || 
+                           chat.client?.username?.substring(0, 2) || 
+                           `C${chat.userId?.toString().substring(0, 1)}`}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start gap-2">
                           <p className="font-medium truncate">
-                            {chat.relatedJobRequest?.client?.displayName || 'Client'}
+                            {chat.client?.displayName || chat.client?.username || `Client (ID: ${chat.userId})`}
                           </p>
                           <p className="text-xs text-muted-foreground whitespace-nowrap">
                             {chat.latestMessage ? new Date(chat.latestMessage.timestamp).toLocaleDateString() : 'No messages'}
