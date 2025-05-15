@@ -1071,6 +1071,27 @@ export class DatabaseStorage implements IStorage {
     const [chat] = await db.insert(schema.chats).values(insertChat).returning();
     return chat;
   }
+  
+  async deleteChat(id: number): Promise<boolean> {
+    try {
+      // First, delete all messages in this chat
+      const chatMessages = await this.getMessagesByChatId(id);
+      
+      return await db.transaction(async (tx) => {
+        // Delete all messages
+        for (const message of chatMessages) {
+          await tx.delete(schema.messages).where(eq(schema.messages.id, message.id));
+        }
+        
+        // Delete the chat itself
+        const result = await tx.delete(schema.chats).where(eq(schema.chats.id, id));
+        return result.rowCount ? result.rowCount > 0 : false;
+      });
+    } catch (error) {
+      console.error(`DatabaseStorage: Error deleting chat ${id}:`, error);
+      return false;
+    }
+  }
 
   // Message methods
   async getMessage(id: number): Promise<Message | undefined> {
@@ -1100,6 +1121,16 @@ export class DatabaseStorage implements IStorage {
 
       return message;
     });
+  }
+  
+  async deleteMessage(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(schema.messages).where(eq(schema.messages.id, id));
+      return result.rowCount ? result.rowCount > 0 : false;
+    } catch (error) {
+      console.error(`DatabaseStorage: Error deleting message ${id}:`, error);
+      return false;
+    }
   }
 
   // Job request methods
