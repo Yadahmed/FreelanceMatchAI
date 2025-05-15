@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
@@ -340,10 +340,28 @@ export default function ChatPage() {
     );
   }
   
+  // Fetch users data to get proper client names
+  const { data: usersData } = useQuery<{users: any[]}>({
+    queryKey: ['/api/users'],
+    enabled: !currentUser?.isClient && !!chatData,
+  });
+
   // Get other participant info
-  const otherParticipant = currentUser?.isClient 
-    ? chatData?.freelancer?.displayName || 'Freelancer'
-    : chatData?.client?.displayName || 'Client';
+  const otherParticipant = useMemo(() => {
+    if (currentUser?.isClient) {
+      // Client is viewing chat with freelancer
+      return chatData?.freelancer?.displayName || 'Freelancer';
+    } else {
+      // Freelancer is viewing chat with client
+      if (chatData && usersData?.users) {
+        const clientUser = usersData.users.find(user => user.id === chatData.userId);
+        if (clientUser) {
+          return clientUser.displayName || clientUser.username || `Client (ID: ${chatData.userId})`;
+        }
+      }
+      return chatData?.client?.displayName || 'Client';
+    }
+  }, [currentUser, chatData, usersData]);
   
   const messages = chatData?.messages || [];
   

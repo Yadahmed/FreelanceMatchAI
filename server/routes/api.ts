@@ -132,6 +132,31 @@ router.get('/admin/fix-role/:id', adminSessionAuth, async (req, res) => {
 // Apply authentication middleware to all other routes
 router.use(authenticateUser);
 
+// User data endpoint (for client names in chats)
+router.get('/users', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    const allUsers = await storage.getAllUsers();
+    
+    // Return only the necessary fields for display
+    const usersResponse = allUsers.map(user => ({
+      id: user.id,
+      username: user.username,
+      displayName: user.displayName || user.username || `User ${user.id}`,
+      photoURL: user.photoURL || null,
+      isClient: user.isClient
+    }));
+    
+    return res.json(usersResponse);
+  } catch (error) {
+    console.error('Error fetching all users:', error);
+    return res.status(500).json({ message: 'Error fetching user data' });
+  }
+});
+
 // Auth routes
 router.post('/auth/register', register);
 router.post('/auth/login', login);
