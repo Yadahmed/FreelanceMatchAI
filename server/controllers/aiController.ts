@@ -61,19 +61,63 @@ async function getFilteredFreelancers(message: string): Promise<any[]> {
       }
     }
     
-    // If no direct profession match, check skills
-    if (!professionMatch) {
-      const freelancerSkills = Array.isArray(freelancer.skills) ? freelancer.skills : [];
-      const matchingSkills = freelancerSkills.filter(skill => 
-        professionKeywords.some(keyword => 
-          skill.toLowerCase().includes(keyword) || keyword.includes(skill.toLowerCase())
-        )
-      );
+    // Define critical skills for certain professions
+    const criticalSkillsMap: Record<string, string[]> = {
+      'marketer': ['seo', 'digital marketing', 'social media', 'content strategy', 'content marketing', 'growth'],
+      'writer': ['seo', 'blog', 'content', 'copywriting'],
+      'designer': ['ui', 'ux', 'user experience', 'user interface', 'figma', 'sketch'],
+      'developer': ['javascript', 'python', 'react', 'node', 'web development']
+    };
+
+    // Check skills regardless of profession match (but with different scoring)
+    const freelancerSkills = Array.isArray(freelancer.skills) ? freelancer.skills : [];
+    const matchingSkills = freelancerSkills.filter(skill => 
+      professionKeywords.some(keyword => 
+        skill.toLowerCase().includes(keyword) || keyword.includes(skill.toLowerCase())
+      )
+    );
+    
+    if (matchingSkills.length > 0) {
+      // Determine if any skills are "critical" for the requested keywords
+      const professionMatches = professionKeywords.filter(kw => Object.keys(criticalSkillsMap).includes(kw));
       
-      if (matchingSkills.length > 0) {
-        score += 50;  // Increased from 25 to 50
-        matchReasons.push(`Skills match: ${matchingSkills.join(', ')}`);
-        console.log(`[AI Matching] Skills match found: ${freelancer.id} - ${matchingSkills.join(', ')}`);
+      let criticalMatch = false;
+      
+      for (const prof of professionMatches) {
+        if (criticalSkillsMap[prof]) {
+          const criticalSkills = criticalSkillsMap[prof];
+          const hasCriticalSkill = freelancerSkills.some(skill => 
+            criticalSkills.some((criticalSkill: string) => 
+              skill.toLowerCase().includes(criticalSkill.toLowerCase())
+            )
+          );
+          
+          if (hasCriticalSkill) {
+            criticalMatch = true;
+            break;
+          }
+        }
+      }
+      
+      // Assign higher points if freelancer has critical skills for the requested profession
+      if (criticalMatch) {
+        if (professionMatch) {
+          // Already matched profession, add a smaller bonus
+          score += 25;
+          matchReasons.push(`Has critical skills: ${matchingSkills.join(', ')}`);
+        } else {
+          // No profession match, but has critical skills - higher score
+          score += 80; // Almost as good as a profession match
+          matchReasons.push(`Specialty skills match: ${matchingSkills.join(', ')}`);
+        }
+        console.log(`[AI Matching] Critical skills match found: ${freelancer.id} - ${matchingSkills.join(', ')}`);
+      } else {
+        // Regular skill match
+        if (!professionMatch) {
+          score += 50;  // Regular skill match
+          matchReasons.push(`Skills match: ${matchingSkills.join(', ')}`);
+          console.log(`[AI Matching] Skills match found: ${freelancer.id} - ${matchingSkills.join(', ')}`);
+        }
       }
     }
     
@@ -127,8 +171,8 @@ function extractProfessionKeywords(message: string): string[] {
     'designer': ['designer', 'design', 'ui', 'ux', 'graphic', 'illustrator', 'photoshop', 'figma'],
     'writer': ['writer', 'content', 'copywriter', 'blog', 'article', 'writing'],
     'translator': ['translator', 'translation', 'language', 'localization'],
-    'marketer': ['marketer', 'marketing', 'digital marketer', 'digital marketing', 'social media', 'seo', 'content marketing', 'ads', 'advertising', 'growth hacking', 'growth marketing', 'ppc', 'sem', 'email marketing', 'campaign', 'brand', 'branding', 'social media marketing'],
-    'video': ['video', 'editing', 'animation', 'motion graphics', 'filmmaker', 'videographer'],
+    'marketer': ['marketer', 'marketing', 'digital marketer', 'digital marketing', 'social media', 'seo', 'content marketing', 'ads', 'advertising', 'growth hacking', 'growth marketing', 'ppc', 'sem', 'email marketing', 'campaign', 'brand', 'branding', 'social media marketing', 'promotion', 'audience', 'outreach', 'lead generation', 'conversions', 'google ads', 'facebook ads'],
+    'video': ['video', 'editing', 'animation', 'motion graphics', 'filmmaker', 'videographer', 'content creator'],
     'photographer': ['photo', 'photographer', 'photography'],
     'consultant': ['consultant', 'advisor', 'strategy', 'business'],
     'teacher': ['teacher', 'tutor', 'instructor', 'trainer', 'coach'],
@@ -138,6 +182,16 @@ function extractProfessionKeywords(message: string): string[] {
   
   const matchedKeywords: string[] = [];
   
+  // Define related professions for cross-referencing
+  const relatedProfessions = {
+    'marketer': ['writer', 'content creator'],
+    'writer': ['marketer'],
+    'developer': ['designer'],
+    'designer': ['developer'],
+    'video': ['photographer', 'content creator'],
+    'photographer': ['video']
+  };
+  
   // Check for profession mentions
   for (const [category, terms] of Object.entries(professionMap)) {
     for (const term of terms) {
@@ -146,6 +200,21 @@ function extractProfessionKeywords(message: string): string[] {
         matchedKeywords.push(term);
         if (!matchedKeywords.includes(category)) {
           matchedKeywords.push(category);
+        }
+      }
+    }
+  }
+  
+  // Add related professions for better cross-matching
+  const addedRelatedProfessions: string[] = [];
+  for (const keyword of [...matchedKeywords]) { // Create a copy to avoid modification during iteration
+    // Type safe check if the keyword is a valid profession
+    if (Object.keys(relatedProfessions).includes(keyword) && relatedProfessions[keyword as keyof typeof relatedProfessions]) {
+      for (const relatedProf of relatedProfessions[keyword as keyof typeof relatedProfessions]) {
+        if (!matchedKeywords.includes(relatedProf) && !addedRelatedProfessions.includes(relatedProf)) {
+          matchedKeywords.push(relatedProf);
+          addedRelatedProfessions.push(relatedProf);
+          console.log(`[Keyword Extraction] Added related profession: "${relatedProf}" for "${keyword}"`);
         }
       }
     }
