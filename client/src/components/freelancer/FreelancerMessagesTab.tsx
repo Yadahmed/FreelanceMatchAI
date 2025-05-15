@@ -1,9 +1,23 @@
-import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquareIcon } from 'lucide-react';
+import { MessageSquareIcon, Trash2Icon, XCircleIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { apiRequest } from '@/lib/queryClient';
 
 // Define interfaces for TypeScript
 interface ChatClient {
@@ -38,6 +52,10 @@ interface ChatsResponse {
 
 export function FreelancerMessagesTab() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [chatToDelete, setChatToDelete] = useState<number | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   // Fetch chats (conversations with clients)
   const {
@@ -48,6 +66,45 @@ export function FreelancerMessagesTab() {
     queryKey: ['/api/freelancer/chats'],
     refetchOnWindowFocus: true
   });
+  
+  // Delete chat mutation
+  const deleteChat = useMutation({
+    mutationFn: async (chatId: number) => {
+      return apiRequest(`/api/freelancer/chats/${chatId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/freelancer/chats'] });
+      toast({
+        title: "Chat deleted",
+        description: "The conversation has been successfully deleted.",
+        variant: "default"
+      });
+      setChatToDelete(null);
+      setIsDeleteDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete the chat. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Handle delete chat confirmation
+  const handleDeleteChat = (chatId: number) => {
+    setChatToDelete(chatId);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  // Handle confirm delete
+  const confirmDelete = () => {
+    if (chatToDelete) {
+      deleteChat.mutate(chatToDelete);
+    }
+  };
   
   // Extract the chats array from the response
   const chats = chatsData?.chats || [];
@@ -94,37 +151,50 @@ export function FreelancerMessagesTab() {
                   : "CL";
               
               return (
-                <div 
-                  key={chat.id} 
-                  className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => {
-                    setLocation(`/chat/${chat.id}`);
-                  }}
-                >
-                  <Avatar className="h-10 w-10">
-                    {client?.photoURL && (
-                      <AvatarImage src={client.photoURL} alt={displayName} />
+                <div key={chat.id} className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                  <div 
+                    className="flex items-center gap-4 flex-1 cursor-pointer"
+                    onClick={() => {
+                      setLocation(`/chat/${chat.id}`);
+                    }}
+                  >
+                    <Avatar className="h-10 w-10">
+                      {client?.photoURL && (
+                        <AvatarImage src={client.photoURL} alt={displayName} />
+                      )}
+                      <AvatarFallback>{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <p className="font-medium truncate">
+                          {displayName}
+                        </p>
+                        <p className="text-xs text-muted-foreground whitespace-nowrap">
+                          {chat.latestMessage ? new Date(chat.latestMessage.timestamp).toLocaleDateString() : 'No messages'}
+                        </p>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {chat.latestMessage?.content || 'No messages yet'}
+                      </p>
+                    </div>
+                    {chat.messageCount > 0 && (
+                      <div className="bg-primary text-primary-foreground text-xs rounded-full h-5 min-w-5 flex items-center justify-center px-1.5">
+                        {chat.messageCount}
+                      </div>
                     )}
-                    <AvatarFallback>{initials}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start gap-2">
-                      <p className="font-medium truncate">
-                        {displayName}
-                      </p>
-                      <p className="text-xs text-muted-foreground whitespace-nowrap">
-                        {chat.latestMessage ? new Date(chat.latestMessage.timestamp).toLocaleDateString() : 'No messages'}
-                      </p>
-                    </div>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {chat.latestMessage?.content || 'No messages yet'}
-                    </p>
                   </div>
-                  {chat.messageCount > 0 && (
-                    <div className="bg-primary text-primary-foreground text-xs rounded-full h-5 min-w-5 flex items-center justify-center px-1.5">
-                      {chat.messageCount}
-                    </div>
-                  )}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteChat(chat.id);
+                    }}
+                  >
+                    <Trash2Icon className="h-4 w-4" />
+                    <span className="sr-only">Delete conversation</span>
+                  </Button>
                 </div>
               );
             })}

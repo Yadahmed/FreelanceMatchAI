@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
 import { z } from "zod";
+import { eq } from 'drizzle-orm';
 
 // Get freelancer dashboard data
 export async function getDashboard(req: Request, res: Response) {
@@ -607,6 +608,121 @@ export async function getChatMessages(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error('Get freelancer chat messages error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+}
+
+// Delete a chat (for freelancers)
+export async function deleteFreelancerChat(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    // Only freelancers can delete their chats
+    if (req.user.isClient) {
+      return res.status(403).json({ message: 'Freelancer access required' });
+    }
+    
+    const { chatId } = req.params;
+    
+    if (!chatId) {
+      return res.status(400).json({ message: 'Chat ID is required' });
+    }
+    
+    // Find freelancer profile
+    const freelancer = await storage.getFreelancerByUserId(req.user.id);
+    
+    if (!freelancer) {
+      return res.status(404).json({ message: 'Freelancer profile not found' });
+    }
+    
+    // Get chat and verify it belongs to this freelancer
+    const chat = await storage.getChat(parseInt(chatId));
+    
+    if (!chat) {
+      return res.status(404).json({ message: 'Chat not found' });
+    }
+    
+    // Check if this chat belongs to this freelancer
+    if (chat.freelancerId !== freelancer.id) {
+      return res.status(403).json({ message: 'Not authorized to delete this chat' });
+    }
+    
+    // Delete the chat (which will also delete all messages within it)
+    const deleted = await storage.deleteChat(parseInt(chatId));
+    
+    if (!deleted) {
+      return res.status(500).json({ message: 'Failed to delete chat' });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Chat deleted successfully'
+    });
+  } catch (error: any) {
+    console.error('Delete freelancer chat error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+}
+
+// Delete a message (for freelancers)
+export async function deleteFreelancerMessage(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    // Only freelancers can delete their messages
+    if (req.user.isClient) {
+      return res.status(403).json({ message: 'Freelancer access required' });
+    }
+    
+    const { messageId } = req.params;
+    
+    if (!messageId) {
+      return res.status(400).json({ message: 'Message ID is required' });
+    }
+    
+    // Find freelancer profile
+    const freelancer = await storage.getFreelancerByUserId(req.user.id);
+    
+    if (!freelancer) {
+      return res.status(404).json({ message: 'Freelancer profile not found' });
+    }
+    
+    // Get the message
+    const message = await storage.getMessage(parseInt(messageId));
+    
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+    
+    // Get the chat to verify ownership
+    const chat = await storage.getChat(message.chatId);
+    
+    if (!chat) {
+      return res.status(404).json({ message: 'Chat not found' });
+    }
+    
+    // Check if this chat belongs to this freelancer
+    if (chat.freelancerId !== freelancer.id) {
+      return res.status(403).json({ message: 'Not authorized to delete this message' });
+    }
+    
+    // Delete the message
+    const deleted = await storage.deleteMessage(parseInt(messageId));
+    
+    if (!deleted) {
+      return res.status(500).json({ message: 'Failed to delete message' });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Message deleted successfully'
+    });
+  } catch (error: any) {
+    console.error('Delete freelancer message error:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 }

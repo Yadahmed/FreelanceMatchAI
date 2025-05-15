@@ -43,7 +43,9 @@ import {
   getNotifications,
   markNotificationAsRead,
   getChats as getFreelancerChats,
-  getChatMessages as getFreelancerChatMessages
+  getChatMessages as getFreelancerChatMessages,
+  deleteFreelancerChat,
+  deleteFreelancerMessage
 } from '../controllers/freelancerController';
 import {
   createJobRequest,
@@ -336,6 +338,8 @@ router.get('/freelancer/notifications', requireFreelancer, getNotifications);
 router.patch('/freelancer/notifications/:id', requireFreelancer, markNotificationAsRead);
 router.get('/freelancer/chats', requireFreelancer, getFreelancerChats);
 router.get('/freelancer/chats/:chatId/messages', requireFreelancer, getFreelancerChatMessages);
+router.delete('/freelancer/chats/:chatId', requireFreelancer, deleteFreelancerChat);
+router.delete('/freelancer/messages/:messageId', requireFreelancer, deleteFreelancerMessage);
 
 // Client routes
 router.post('/client/job-requests', requireClient, createJobRequest);
