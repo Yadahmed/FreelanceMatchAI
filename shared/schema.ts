@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, json, date, time, numeric } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -144,6 +145,18 @@ export const insertJobRequestSchema = createInsertSchema(jobRequests).pick({
   skills: true,
   status: true,
 });
+
+// Define relations for job requests
+export const jobRequestsRelations = relations(jobRequests, ({ one }) => ({
+  client: one(users, {
+    fields: [jobRequests.clientId],
+    references: [users.id],
+  }),
+  freelancer: one(freelancers, {
+    fields: [jobRequests.freelancerId],
+    references: [freelancers.id],
+  })
+}))
 
 // Calendar bookings for freelancers
 export const bookings = pgTable("bookings", {
