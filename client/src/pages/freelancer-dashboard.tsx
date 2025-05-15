@@ -139,12 +139,15 @@ export default function FreelancerDashboard() {
   }
   
   // Typed dashboard data
-  const typedDashboardData = dashboardData as DashboardData || {};
+  const typedDashboardData = dashboardData as DashboardData || { 
+    freelancer: {} as FreelancerProfile, 
+    stats: {} as FreelancerStats 
+  };
   
   // Debug rating information
   console.log("Freelancer Dashboard Data:", dashboardData);
-  console.log("Freelancer Rating:", dashboardData?.freelancer?.rating);
-  console.log("Stats Rating:", dashboardData?.stats?.averageRating);
+  console.log("Freelancer Rating:", typedDashboardData?.freelancer?.rating);
+  console.log("Stats Rating:", typedDashboardData?.stats?.averageRating);
   
   // Debug chats data
   console.log("Chats data:", chats);
@@ -156,10 +159,10 @@ export default function FreelancerDashboard() {
       thisMonth: typedDashboardData?.earnings?.thisMonth || 0,
       change: typedDashboardData?.earnings?.change || 0
     },
-    completedJobs: dashboardData?.stats?.completedJobsCount || dashboardData?.freelancer?.completedJobs || 0,
+    completedJobs: typedDashboardData?.stats?.completedJobsCount || typedDashboardData?.freelancer?.completedJobs || 0,
     totalHours: typedDashboardData?.totalHours || 0,
-    rating: dashboardData?.stats?.averageRating !== undefined ? dashboardData.stats.averageRating : 
-            dashboardData?.freelancer?.rating !== undefined ? dashboardData.freelancer.rating : null,
+    rating: typedDashboardData?.stats?.averageRating !== null ? typedDashboardData.stats.averageRating : 
+            typedDashboardData?.freelancer?.rating !== null ? typedDashboardData.freelancer.rating : null,
     matchScore: typedDashboardData?.matchScore || 85
   };
 
@@ -494,6 +497,11 @@ export default function FreelancerDashboard() {
                   {chats.map((chat: any) => {
                     console.log("Processing chat in list:", chat);
                     console.log("Client data for chat:", chat.client);
+                    
+                    // Carefully extract client information
+                    const clientName = chat.client?.displayName || chat.client?.username || "Client";
+                    const clientInitials = clientName.substring(0, 2) || "CL";
+                    
                     return (
                     <div 
                       key={chat.id} 
@@ -504,15 +512,13 @@ export default function FreelancerDashboard() {
                     >
                       <Avatar className="h-10 w-10">
                         <AvatarFallback>
-                          {chat.client?.displayName?.substring(0, 2) || 
-                           chat.client?.username?.substring(0, 2) || 
-                           `C${chat.userId?.toString().substring(0, 1)}`}
+                          {clientInitials}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start gap-2">
                           <p className="font-medium truncate">
-                            {chat.client?.displayName || chat.client?.username || `Client`}
+                            {clientName}
                           </p>
                           <p className="text-xs text-muted-foreground whitespace-nowrap">
                             {chat.latestMessage ? new Date(chat.latestMessage.timestamp).toLocaleDateString() : 'No messages'}
