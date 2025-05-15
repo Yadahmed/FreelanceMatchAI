@@ -102,7 +102,7 @@ export function FreelancerHome() {
     isLoading: dashboardLoading,
     error: dashboardError,
     refetch: refetchDashboard
-  } = useQuery({
+  } = useQuery<DashboardData>({
     queryKey: ['/api/freelancer/dashboard'],
     enabled: !!currentUser && !currentUser.isClient,
     refetchOnWindowFocus: true
@@ -206,8 +206,9 @@ export function FreelancerHome() {
     );
   }
 
-  const freelancer = dashboardData?.freelancer;
-  const stats = dashboardData?.stats;
+  const typedDashboardData = dashboardData as DashboardData | undefined;
+  const freelancer = typedDashboardData?.freelancer;
+  const stats = typedDashboardData?.stats;
   
   // Format stats with defaults
   const totalEarnings = stats?.totalEarnings || 0;
@@ -377,14 +378,14 @@ export function FreelancerHome() {
               </CardHeader>
               <CardContent className="text-sm">
                 <div className="flex flex-col space-y-2">
-                  {(!notifications || notifications.length === 0) ? (
+                  {(!notifications || !Array.isArray(notifications) || notifications.length === 0) ? (
                     <div className="text-muted-foreground py-6 text-center">
                       <Bell className="mx-auto h-8 w-8 mb-2 opacity-50" />
                       <p>No notifications</p>
                     </div>
                   ) : (
                     <div>
-                      {notifications.length} new notifications
+                      {Array.isArray(notifications) ? notifications.length : 0} new notifications
                     </div>
                   )}
                 </div>
@@ -402,7 +403,7 @@ export function FreelancerHome() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {!jobRequests || jobRequests.length === 0 ? (
+              {!jobRequests || !Array.isArray(jobRequests) || jobRequests.length === 0 ? (
                 <div className="py-12 text-center">
                   <FileSearch className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                   <h3 className="text-lg font-medium mb-2">No job requests yet</h3>
@@ -413,7 +414,7 @@ export function FreelancerHome() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {jobRequests.map((request: JobRequest) => (
+                  {Array.isArray(jobRequests) && jobRequests.map((request: JobRequest) => (
                     <Card key={request.id} className="overflow-hidden">
                       <div className="p-4 border-b bg-muted/30">
                         <div className="flex justify-between items-start">
@@ -521,7 +522,7 @@ export function FreelancerHome() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {!chats || chats.length === 0 ? (
+              {!chats || !Array.isArray(chats) || chats.length === 0 ? (
                 <div className="py-12 text-center">
                   <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                   <h3 className="text-lg font-medium mb-2">No messages yet</h3>
