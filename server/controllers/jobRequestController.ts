@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../db';
 import { jobRequests, freelancers, users } from '@shared/schema';
-import { eq, and, inArray } from 'drizzle-orm';
-import { extractClientName } from '../utils/client';
+import { eq, and } from 'drizzle-orm';
 
 export async function createJobRequest(req: Request, res: Response) {
   try {
@@ -84,7 +83,6 @@ export async function getClientJobRequests(req: Request, res: Response) {
         freelancer: {
           id: freelancer.id,
           userId: freelancer.userId,
-          displayName: freelancer.displayName,
           profession: freelancer.profession,
           skills: freelancer.skills,
           location: freelancer.location,
@@ -123,68 +121,44 @@ export async function getFreelancerJobRequests(req: Request, res: Response) {
     console.log(`Getting job requests for freelancer ID: ${freelancerProfile.id}`);
     
     // Get all job requests for this freelancer
-    const jobRequestsList = await db.query.jobRequests.findMany({
-      where: eq(jobRequests.freelancerId, freelancerProfile.id),
-      orderBy: (jobRequests, { desc }) => [desc(jobRequests.createdAt)]
-    });
+    const requestsList = await db
+      .select()
+      .from(jobRequests)
+      .where(eq(jobRequests.freelancerId, freelancerProfile.id))
+      .orderBy(jobRequests.createdAt);
     
-    console.log(`Found ${jobRequestsList.length} job requests`);
+    console.log(`Found ${requestsList.length} job requests`);
     
-    // Get the client details for each job request - but fetch ALL clients once to be more efficient
-    const clientIds = jobRequestsList.map(request => request.clientId);
-    console.log('Need to fetch clients with IDs:', clientIds);
-    
-    // Fetch all clients at once - handle empty array case
-    let clientsData = [];
-    if (clientIds.length > 0) {
-      clientsData = await db
-        .select()
-        .from(users)
-        .where(inArray(users.id, clientIds));
-    }
-      
-    console.log(`Fetched ${clientsData.length} clients`);
-    
-    // Create a map for quick client lookup
-    const clientsMap = clientsData.reduce((map, client) => {
-      map[client.id] = client;
-      return map;
-    }, {} as Record<number, typeof clientsData[0]>);
-    
-    // Format job requests with client information
-    const formattedJobRequests = jobRequestsList.map(request => {
-      // Look up client in our map
-      const client = clientsMap[request.clientId];
-      
-      // Format client info if found
-      if (client) {
-        console.log(`Found client for job request ${request.id}:`, client.username);
+    // Process and enhance job requests with client information
+    const enhancedRequests = await Promise.all(
+      requestsList.map(async (request) => {
+        // For each job request, get the client info
+        const [client] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, request.clientId));
+          
+        console.log(`Client lookup for job request ${request.id}:`, 
+          client ? `Found: ${client.username}` : 'Not found');
+        
+        // Return enhanced request with client data
         return {
           ...request,
-          client: {
+          client: client ? {
             id: client.id,
             username: client.username,
             displayName: client.displayName || client.username,
-            email: client.email,
-            photoURL: client.photoURL
-          }
-        };
-      } else {
-        // Fallback for missing client
-        console.log(`No client found for job request ${request.id} with clientId ${request.clientId}`);
-        return {
-          ...request,
-          client: {
+            email: client.email
+          } : {
             id: request.clientId,
             username: `user_${request.clientId}`,
             displayName: `Client ${request.clientId}`
           }
         };
-      }
-    });
+      })
+    );
     
-    return res.json({ jobRequests: formattedJobRequests });
-    
+    return res.json({ jobRequests: enhancedRequests });
   } catch (error) {
     console.error('Error fetching freelancer job requests:', error);
     return res.status(500).json({ message: 'Internal server error' });
