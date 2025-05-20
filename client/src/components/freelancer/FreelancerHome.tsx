@@ -351,6 +351,54 @@ export function FreelancerHome() {
     }
   };
   
+  // Handle messaging a client (either open existing chat or create a new one)
+  const handleMessageClient = async (clientId: number, clientName?: string) => {
+    try {
+      // First check if a chat already exists with this client
+      const existingChat = chats.find(chat => 
+        chat.clientId === clientId || chat.userId === clientId
+      );
+      
+      if (existingChat) {
+        // If chat exists, navigate to it
+        setLocation(`/chat/${existingChat.id}`);
+        return;
+      }
+      
+      // Otherwise create a new chat
+      const response = await apiRequest('/api/chats', {
+        method: 'POST',
+        body: JSON.stringify({
+          clientId,
+          clientName: clientName || `Client ${clientId}`
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create chat');
+      }
+      
+      const chatData = await response.json();
+      
+      // Navigate to the new chat
+      setLocation(`/chat/${chatData.chat.id}`);
+      
+      // Show toast
+      toast({
+        title: "Chat created",
+        description: `You can now message ${clientName || 'the client'}`
+      });
+      
+    } catch (error) {
+      console.error('Error creating chat:', error);
+      toast({
+        title: "Error creating chat",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive"
+      });
+    }
+  };
+  
   // Delete chat functionality
   const handleDeleteChat = (chatId: number) => {
     setChatToDelete(chatId);
@@ -688,7 +736,11 @@ export function FreelancerHome() {
                             )}
                             
                             {request.status === 'accepted' && (
-                              <Button size="sm" variant="outline">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => handleMessageClient(request.clientId, request.client?.displayName || request.client?.username)}
+                              >
                                 Message Client
                               </Button>
                             )}
@@ -750,6 +802,13 @@ export function FreelancerHome() {
                             </div>
                             
                             <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm" 
+                                onClick={() => handleMessageClient(job.clientId, job.client?.displayName || job.client?.username)}
+                              >
+                                Message Client
+                              </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
