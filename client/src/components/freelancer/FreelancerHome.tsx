@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
+
 import { 
   ChevronRight, 
   DollarSign, 
@@ -584,8 +585,29 @@ export function FreelancerHome() {
                 <div className="flex items-center">
                   <BarChart className="mr-2 h-4 w-4 text-muted-foreground" />
                   <div>
-                    <div className="text-2xl font-bold mb-1">{matchScore}%</div>
-                    <Progress value={matchScore} className="h-2" />
+                    {/* Calculate match score based on performance metrics */}
+                    {(() => {
+                      // Get performance metrics (all metrics are on 0-100 scale)
+                      const jobPerf = dashboardData?.freelancer?.jobPerformance || 0;
+                      const skillsExp = dashboardData?.freelancer?.skillsExperience || 0;
+                      const responsive = dashboardData?.freelancer?.responsiveness || 0; 
+                      const fairness = dashboardData?.freelancer?.fairnessScore || 0;
+                      
+                      // Calculate weighted score
+                      const score = Math.round(
+                        jobPerf * 0.40 +       // 40% weight
+                        skillsExp * 0.30 +     // 30% weight
+                        responsive * 0.20 +    // 20% weight
+                        fairness * 0.10        // 10% weight
+                      );
+                      
+                      return (
+                        <>
+                          <div className="text-2xl font-bold mb-1">{score}%</div>
+                          <Progress value={score} className="h-2" />
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </CardContent>
