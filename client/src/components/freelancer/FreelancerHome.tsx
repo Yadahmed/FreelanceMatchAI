@@ -708,9 +708,13 @@ export function FreelancerHome() {
                         <p className="mb-2">{request.description}</p>
                         
                         <div className="flex flex-wrap gap-1 mb-3">
-                          {request.skills.map((skill, index) => (
-                            <Badge key={index} variant="secondary">{skill}</Badge>
-                          ))}
+                          {request.skills && request.skills.length > 0 ? (
+                            request.skills.map((skill, index) => (
+                              <Badge key={index} variant="secondary">{skill}</Badge>
+                            ))
+                          ) : (
+                            <span className="text-muted-foreground text-sm">No specific skills required</span>
+                          )}
                         </div>
                         
                         <div className="flex justify-between items-center">
