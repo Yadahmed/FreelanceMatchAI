@@ -819,7 +819,15 @@ export function FreelancerHome() {
                               </Button>
                               <Button
                                 size="sm"
-                                onClick={() => setConfirmJobAction({ id: job.id, action: 'complete' })}
+                                onClick={() => {
+                                  // Call the completion handler directly
+                                  handleCompleteJob(job.id);
+                                  // Show success toast
+                                  toast({
+                                    title: "Job marked as completed",
+                                    description: "Great work! Your match score has been increased.",
+                                  });
+                                }}
                               >
                                 Mark Complete
                               </Button>
