@@ -473,7 +473,9 @@ export default function ChatPage() {
                 </Avatar>
                 <div>
                   <CardTitle className="text-base">
-                    <ChatParticipantDisplay chatData={chatData} />
+                    {currentUser?.isClient
+                      ? chatData?.freelancer?.displayName || 'Freelancer'
+                      : chatData?.client?.displayName || chatData?.client?.username || `Client (ID: ${chatData?.userId})`}
                   </CardTitle>
                   <CardDescription className="text-xs">
                     {messages.length} messages
