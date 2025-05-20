@@ -480,13 +480,8 @@ export function FreelancerHome() {
   const rating = stats?.averageRating || 0;
   const pendingRequests = stats?.pendingRequests || 0;
   
-  // Calculate match score as 0-100 percentage
-  const matchScore = Math.round(
-    ((freelancer?.jobPerformance || 0) * 50) + 
-    ((freelancer?.skillsExperience || 0) * 20) + 
-    ((freelancer?.responsiveness || 0) * 15) + 
-    ((freelancer?.fairnessScore || 0) * 15)
-  );
+  // Get match score from server (already calculated)
+  const matchScore = stats?.matchScore || 0;
   
   return (
     <div className="space-y-6">
