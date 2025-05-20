@@ -242,21 +242,11 @@ export function FreelancerHome() {
   // Accept a job request
   const handleAcceptRequest = async (requestId: number) => {
     try {
-      const response = await fetch(`/api/freelancer/job-requests/${requestId}/status`, {
+      // Use the API request function from lib/queryClient which automatically handles auth
+      await apiRequest(`/api/freelancer/job-requests/${requestId}/status`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(localStorage.getItem('authToken') ? {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-          } : {})
-        },
         body: JSON.stringify({ status: 'accepted' })
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to accept job request');
-      }
       
       toast({
         title: "Job request accepted",
@@ -283,21 +273,10 @@ export function FreelancerHome() {
   // Decline a job request
   const handleRejectRequest = async (requestId: number) => {
     try {
-      const response = await fetch(`/api/freelancer/job-requests/${requestId}/status`, {
+      await apiRequest(`/api/freelancer/job-requests/${requestId}/status`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(localStorage.getItem('authToken') ? {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-          } : {})
-        },
         body: JSON.stringify({ status: 'declined' })
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to decline job request');
-      }
       
       toast({
         title: "Job request declined",
@@ -319,21 +298,10 @@ export function FreelancerHome() {
   // Mark a job as completed
   const handleCompleteJob = async (jobRequestId: number) => {
     try {
-      const response = await fetch(`/api/freelancer/job-requests/${jobRequestId}/status`, {
+      await apiRequest(`/api/freelancer/job-requests/${jobRequestId}/status`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(localStorage.getItem('authToken') ? {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-          } : {})
-        },
         body: JSON.stringify({ status: 'completed' })
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to complete job');
-      }
       
       toast({
         title: "Job marked as completed",
@@ -358,20 +326,9 @@ export function FreelancerHome() {
   // Quit a job (this will penalize the freelancer)
   const handleQuitJob = async (jobRequestId: number) => {
     try {
-      const response = await fetch(`/api/freelancer/job-requests/${jobRequestId}/quit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(localStorage.getItem('authToken') ? {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-          } : {})
-        }
+      await apiRequest(`/api/freelancer/job-requests/${jobRequestId}/quit`, {
+        method: 'POST'
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to quit job');
-      }
       
       toast({
         title: "Job cancelled",
