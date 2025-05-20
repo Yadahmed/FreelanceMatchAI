@@ -853,18 +853,19 @@ export function FreelancerHome() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
+                <Button
                   onClick={() => {
                     if (confirmJobAction?.action === 'complete') {
                       handleCompleteJob(confirmJobAction.id);
                     } else if (confirmJobAction) {
                       handleQuitJob(confirmJobAction.id);
                     }
+                    setConfirmJobAction(null);
                   }}
-                  className={confirmJobAction?.action === 'complete' ? 'bg-primary' : 'bg-destructive'}
+                  variant={confirmJobAction?.action === 'complete' ? 'default' : 'destructive'}
                 >
                   {confirmJobAction?.action === 'complete' ? 'Complete Job' : 'Quit Job'}
-                </AlertDialogAction>
+                </Button>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
