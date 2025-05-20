@@ -225,9 +225,9 @@ export async function updateJobRequestStatus(req: Request, res: Response) {
         .set({ 
           completedJobs: freelancerProfile.completedJobs + 1,
           // Increase job performance score (0-10 scale)
-          jobPerformance: Math.min(10, (freelancerProfile.jobPerformance || 0) + 1),
-          // Also slightly increase responsiveness when completing jobs
-          responsiveness: Math.min(10, (freelancerProfile.responsiveness || 0) + 0.5)
+          jobPerformance: Math.min(10, Math.round((freelancerProfile.jobPerformance || 0) + 1)),
+          // Also slightly increase responsiveness when completing jobs - ensure integer value
+          responsiveness: Math.min(10, Math.round((freelancerProfile.responsiveness || 0) + 1))
         })
         .where(eq(freelancers.id, freelancerProfile.id));
     }
@@ -301,11 +301,11 @@ export async function quitJobRequest(req: Request, res: Response) {
       .update(freelancers)
       .set({ 
         // Decrease job performance score (0-10 scale)
-        jobPerformance: Math.max(0, (freelancerProfile.jobPerformance || 0) - 2),
+        jobPerformance: Math.max(0, Math.round((freelancerProfile.jobPerformance || 0) - 2)),
         // Decrease fairness score
-        fairnessScore: Math.max(0, (freelancerProfile.fairnessScore || 0) - 1),
-        // Also decrease responsiveness slightly
-        responsiveness: Math.max(0, (freelancerProfile.responsiveness || 0) - 0.5)
+        fairnessScore: Math.max(0, Math.round((freelancerProfile.fairnessScore || 0) - 1)),
+        // Also decrease responsiveness slightly - ensure integer value
+        responsiveness: Math.max(0, Math.round((freelancerProfile.responsiveness || 0) - 1))
       })
       .where(eq(freelancers.id, freelancerProfile.id));
     
