@@ -825,14 +825,30 @@ export function FreelancerHome() {
                               </Button>
                               <Button
                                 size="sm"
-                                onClick={() => {
-                                  // Call the completion handler directly
-                                  handleCompleteJob(job.id);
-                                  // Show success toast
-                                  toast({
-                                    title: "Job marked as completed",
-                                    description: "Great work! Your match score has been increased.",
-                                  });
+                                onClick={async () => {
+                                  try {
+                                    // Use apiRequest directly to complete the job
+                                    await apiRequest(`/api/freelancer/job-requests/${job.id}/complete`, {
+                                      method: 'POST'
+                                    });
+                                    
+                                    // Show success toast
+                                    toast({
+                                      title: "Job marked as completed",
+                                      description: "Great work! Your match score has been increased.",
+                                    });
+                                    
+                                    // Refresh data
+                                    queryClient.invalidateQueries({ queryKey: ['/api/freelancer/job-requests'] });
+                                    queryClient.invalidateQueries({ queryKey: ['/api/freelancer/dashboard'] });
+                                  } catch (error) {
+                                    console.error("Error completing job:", error);
+                                    toast({
+                                      title: "Error completing job",
+                                      description: "There was a problem completing this job. Please try again.",
+                                      variant: "destructive",
+                                    });
+                                  }
                                 }}
                               >
                                 Mark Complete

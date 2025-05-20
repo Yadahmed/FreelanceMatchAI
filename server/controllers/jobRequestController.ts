@@ -304,8 +304,7 @@ export async function completeJobRequest(req: Request, res: Response) {
         completedJobs: updatedCompletedJobs,
         jobPerformance: updatedJobPerformance,
         responsiveness: updatedResponsiveness,
-        consecutiveCompletions: currentStreak,
-        updatedAt: new Date()
+        consecutiveCompletions: currentStreak
       })
       .where(eq(freelancers.id, freelancerProfile.id));
     
@@ -392,8 +391,7 @@ export async function quitJobRequest(req: Request, res: Response) {
         // Also decrease responsiveness slightly
         responsiveness: Math.max(0, (freelancerProfile.responsiveness || 0) - 0.05),
         // Reset the consecutive completions streak to 0
-        consecutiveCompletions: 0,
-        updatedAt: new Date()
+        consecutiveCompletions: 0
       })
       .where(eq(freelancers.id, freelancerProfile.id));
     
