@@ -249,21 +249,34 @@ export async function completeJobRequest(req: Request, res: Response) {
       return res.status(403).json({ message: 'You do not have a freelancer profile' });
     }
     
-    // Check if the job request exists, is accepted, and belongs to this freelancer
+    // Check if the job request exists and belongs to this freelancer
     const [jobRequest] = await db
       .select()
       .from(jobRequests)
       .where(
         and(
           eq(jobRequests.id, parseInt(id)),
-          eq(jobRequests.freelancerId, freelancerProfile.id),
-          eq(jobRequests.status, 'accepted')
+          eq(jobRequests.freelancerId, freelancerProfile.id)
         )
       );
     
     if (!jobRequest) {
       return res.status(404).json({ 
-        message: 'Job request not found, does not belong to you, or cannot be completed in its current state' 
+        message: 'Job request not found or does not belong to you' 
+      });
+    }
+    
+    // Check if the job is in a state that allows completion (should not be declined)
+    if (jobRequest.status === 'declined') {
+      return res.status(400).json({
+        message: 'This job cannot be completed because it was declined'
+      });
+    }
+    
+    // Check if job is already completed
+    if (jobRequest.status === 'completed') {
+      return res.status(400).json({
+        message: 'This job is already marked as completed'
       });
     }
     
