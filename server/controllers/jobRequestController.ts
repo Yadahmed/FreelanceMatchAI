@@ -292,14 +292,10 @@ export async function completeJobRequest(req: Request, res: Response) {
       })
       .where(eq(freelancers.id, freelancerProfile.id));
     
-    return res.json({ 
-      message: 'Job completed successfully',
-      jobRequest: updatedJobRequest,
-      metrics: {
-        completedJobs: updatedCompletedJobs,
-        jobPerformance: updatedJobPerformance,
-        responsiveness: updatedResponsiveness
-      }
+    // Return a simple plain response without complex objects
+    return res.status(200).send({
+      success: true,
+      message: 'Job completed successfully'
     });
     
   } catch (error) {
