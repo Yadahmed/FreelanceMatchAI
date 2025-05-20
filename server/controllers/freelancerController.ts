@@ -37,6 +37,24 @@ export async function getDashboard(req: Request, res: Response) {
     const completedRequests = jobRequests.filter(job => job.status === 'completed').length;
     const totalRequests = jobRequests.length;
     
+    // Calculate total earnings from completed jobs
+    const completedJobs = jobRequests.filter(job => job.status === 'completed');
+    const totalEarnings = completedJobs.reduce((sum, job) => {
+      // Make sure to only add valid numeric budget amounts
+      return sum + (typeof job.budget === 'number' ? job.budget : 0);
+    }, 0);
+    
+    // Calculate this month's earnings
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const thisMonthJobs = completedJobs.filter(job => {
+      const completedDate = new Date(job.updatedAt);
+      return completedDate >= startOfMonth;
+    });
+    const thisMonthEarnings = thisMonthJobs.reduce((sum, job) => {
+      return sum + (typeof job.budget === 'number' ? job.budget : 0);
+    }, 0);
+    
     // Get reviews
     const reviews = await storage.getReviewsByFreelancerId(freelancer.id);
     
@@ -74,7 +92,9 @@ export async function getDashboard(req: Request, res: Response) {
         totalRequests,
         averageRating,
         completedJobsCount: freelancer.completedJobs,
-        matchScore: matchScore
+        matchScore: matchScore,
+        totalEarnings,
+        thisMonthEarnings
       },
       jobRequests,
       bookings,
