@@ -45,15 +45,36 @@ export async function getDashboard(req: Request, res: Response) {
       ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length 
       : 0;
     
+    // Calculate match score from performance metrics
+    const jobPerformance = freelancer.jobPerformance || 0;
+    const skillsExperience = freelancer.skillsExperience || 0;
+    const responsiveness = freelancer.responsiveness || 0;
+    const fairnessScore = freelancer.fairnessScore || 0;
+    
+    // Calculate weighted match score (0-100)
+    const matchScore = Math.round(
+      jobPerformance * 0.40 +       // 40% weight
+      skillsExperience * 0.30 +     // 30% weight  
+      responsiveness * 0.20 +       // 20% weight
+      fairnessScore * 0.10          // 10% weight
+    );
+    
+    // Add match score to freelancer object for frontend to use
+    const enhancedFreelancer = {
+      ...freelancer,
+      calculatedMatchScore: matchScore
+    };
+    
     return res.status(200).json({
-      freelancer,
+      freelancer: enhancedFreelancer,
       stats: {
         pendingRequests,
         acceptedRequests,
         completedRequests,
         totalRequests,
         averageRating,
-        completedJobsCount: freelancer.completedJobs
+        completedJobsCount: freelancer.completedJobs,
+        matchScore: matchScore
       },
       jobRequests,
       bookings,

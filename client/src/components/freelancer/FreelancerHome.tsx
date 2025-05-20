@@ -585,29 +585,14 @@ export function FreelancerHome() {
                 <div className="flex items-center">
                   <BarChart className="mr-2 h-4 w-4 text-muted-foreground" />
                   <div>
-                    {/* Calculate match score based on performance metrics */}
-                    {(() => {
-                      // Get performance metrics (all metrics are on 0-100 scale)
-                      const jobPerf = dashboardData?.freelancer?.jobPerformance || 0;
-                      const skillsExp = dashboardData?.freelancer?.skillsExperience || 0;
-                      const responsive = dashboardData?.freelancer?.responsiveness || 0; 
-                      const fairness = dashboardData?.freelancer?.fairnessScore || 0;
-                      
-                      // Calculate weighted score
-                      const score = Math.round(
-                        jobPerf * 0.40 +       // 40% weight
-                        skillsExp * 0.30 +     // 30% weight
-                        responsive * 0.20 +    // 20% weight
-                        fairness * 0.10        // 10% weight
-                      );
-                      
-                      return (
-                        <>
-                          <div className="text-2xl font-bold mb-1">{score}%</div>
-                          <Progress value={score} className="h-2" />
-                        </>
-                      );
-                    })()}
+                    {/* Display match score from server */}
+                    <div className="text-2xl font-bold mb-1">
+                      {dashboardData?.stats?.matchScore || dashboardData?.freelancer?.calculatedMatchScore || 0}%
+                    </div>
+                    <Progress 
+                      value={dashboardData?.stats?.matchScore || dashboardData?.freelancer?.calculatedMatchScore || 0} 
+                      className="h-2" 
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -875,9 +860,14 @@ export function FreelancerHome() {
                                       });
                                     }
                                     
-                                    // Refresh data
-                                    queryClient.invalidateQueries({ queryKey: ['/api/freelancer/job-requests'] });
-                                    queryClient.invalidateQueries({ queryKey: ['/api/freelancer/dashboard'] });
+                                    // Refresh data with forced refetch to ensure we get latest metrics
+                                    await Promise.all([
+                                      queryClient.invalidateQueries({ queryKey: ['/api/freelancer/job-requests'] }),
+                                      queryClient.invalidateQueries({ queryKey: ['/api/freelancer/dashboard'] })
+                                    ]);
+                                    
+                                    // Force immediate refetch of dashboard data to update metrics
+                                    refetchDashboard();
                                   } catch (error) {
                                     console.error("Error completing job:", error);
                                     
