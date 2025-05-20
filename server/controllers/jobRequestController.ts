@@ -171,7 +171,7 @@ export async function getFreelancerJobRequests(req: Request, res: Response) {
 
 export async function updateJobRequestStatus(req: Request, res: Response) {
   try {
-    const { jobRequestId } = req.params;
+    const { id } = req.params;
     const { status } = req.body;
     
     if (!req.user) {
@@ -198,7 +198,7 @@ export async function updateJobRequestStatus(req: Request, res: Response) {
       .from(jobRequests)
       .where(
         and(
-          eq(jobRequests.id, parseInt(jobRequestId)),
+          eq(jobRequests.id, parseInt(id)),
           eq(jobRequests.freelancerId, freelancerProfile.id)
         )
       );
@@ -214,8 +214,23 @@ export async function updateJobRequestStatus(req: Request, res: Response) {
         status,
         updatedAt: new Date()
       })
-      .where(eq(jobRequests.id, parseInt(jobRequestId)))
+      .where(eq(jobRequests.id, parseInt(id)))
       .returning();
+    
+    // If the status is 'completed', update the freelancer's match score metrics
+    if (status === 'completed') {
+      // Increment completed jobs count
+      await db
+        .update(freelancers)
+        .set({ 
+          completedJobs: freelancerProfile.completedJobs + 1,
+          // Increase job performance score (0-10 scale)
+          jobPerformance: Math.min(10, (freelancerProfile.jobPerformance || 0) + 1),
+          // Also slightly increase responsiveness when completing jobs
+          responsiveness: Math.min(10, (freelancerProfile.responsiveness || 0) + 0.5)
+        })
+        .where(eq(freelancers.id, freelancerProfile.id));
+    }
     
     return res.json({ 
       message: `Job request ${status} successfully`, 
@@ -224,6 +239,83 @@ export async function updateJobRequestStatus(req: Request, res: Response) {
     
   } catch (error) {
     console.error('Error updating job request status:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+/**
+ * Handle a freelancer quitting a job (with penalties to their match score)
+ */
+/**
+ * Handle a freelancer quitting a job (with penalties to their match score)
+ */
+export async function quitJobRequest(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    
+    if (!req.user) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
+    // Find the freelancer profile associated with this user
+    const [freelancerProfile] = await db
+      .select()
+      .from(freelancers)
+      .where(eq(freelancers.userId, req.user.id));
+    
+    if (!freelancerProfile) {
+      return res.status(403).json({ message: 'You do not have a freelancer profile' });
+    }
+    
+    // Check if the job request exists, is accepted, and belongs to this freelancer
+    const [jobRequest] = await db
+      .select()
+      .from(jobRequests)
+      .where(
+        and(
+          eq(jobRequests.id, parseInt(id)),
+          eq(jobRequests.freelancerId, freelancerProfile.id)
+        )
+      );
+    
+    if (!jobRequest) {
+      return res.status(404).json({ message: 'Job request not found or does not belong to you' });
+    }
+    
+    if (jobRequest.status !== 'accepted') {
+      return res.status(400).json({ message: 'You can only quit jobs that you have accepted' });
+    }
+    
+    // Update the job request status to declined (since it was quit)
+    const [updatedJobRequest] = await db
+      .update(jobRequests)
+      .set({ 
+        status: 'declined',
+        updatedAt: new Date()
+      })
+      .where(eq(jobRequests.id, parseInt(id)))
+      .returning();
+    
+    // Penalize the freelancer's match score metrics for quitting
+    await db
+      .update(freelancers)
+      .set({ 
+        // Decrease job performance score (0-10 scale)
+        jobPerformance: Math.max(0, (freelancerProfile.jobPerformance || 0) - 2),
+        // Decrease fairness score
+        fairnessScore: Math.max(0, (freelancerProfile.fairnessScore || 0) - 1),
+        // Also decrease responsiveness slightly
+        responsiveness: Math.max(0, (freelancerProfile.responsiveness || 0) - 0.5)
+      })
+      .where(eq(freelancers.id, freelancerProfile.id));
+    
+    return res.json({ 
+      message: 'Job request has been cancelled. Note that this will affect your match score.',
+      jobRequest: updatedJobRequest
+    });
+    
+  } catch (error) {
+    console.error('Error quitting job request:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

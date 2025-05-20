@@ -623,19 +623,106 @@ export function FreelancerHome() {
             <CardHeader>
               <CardTitle>Bookings</CardTitle>
               <CardDescription>
-                Your upcoming client appointments
+                Your active jobs and upcoming appointments
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Bookings Yet</h3>
-                <p className="text-muted-foreground max-w-md mx-auto">
-                  When clients book appointments with you, they will appear here.
-                </p>
-              </div>
+              {jobRequests.filter(req => req.status === 'accepted').length === 0 ? (
+                <div className="text-center py-8">
+                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Active Jobs</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    When you accept job requests, they will appear here for tracking.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {jobRequests
+                    .filter(req => req.status === 'accepted')
+                    .map((job) => (
+                      <Card key={job.id} className="overflow-hidden border-l-4 border-l-primary">
+                        <div className="p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <h3 className="font-medium text-lg">{job.title}</h3>
+                              <p className="text-muted-foreground text-sm">
+                                Client: {job.client ? 
+                                  (job.client.displayName || job.client.username) : 
+                                  (job.clientId ? `Client ${job.clientId}` : "Unknown Client")}
+                              </p>
+                            </div>
+                            <Badge className="bg-green-100 text-green-800">
+                              Active Job
+                            </Badge>
+                          </div>
+                          
+                          <p className="mb-4">{job.description}</p>
+                          
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center">
+                              <DollarSign className="h-4 w-4 text-muted-foreground mr-1" />
+                              <span className="font-medium">${job.budget}</span>
+                            </div>
+                            
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive"
+                                onClick={() => setConfirmJobAction({ id: job.id, action: 'quit' })}
+                              >
+                                Quit Job
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => setConfirmJobAction({ id: job.id, action: 'complete' })}
+                              >
+                                Mark Complete
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                </div>
+              )}
             </CardContent>
           </Card>
+          
+          {/* Confirmation dialog for completing/quitting jobs */}
+          {confirmJobAction && (
+            <AlertDialog open={!!confirmJobAction} onOpenChange={() => setConfirmJobAction(null)}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {confirmJobAction.action === 'complete' 
+                      ? 'Complete this job?' 
+                      : 'Quit this job?'}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {confirmJobAction.action === 'complete'
+                      ? 'Marking a job as complete will increase your match score and add it to your completed jobs count.'
+                      : 'Warning: Quitting a job will negatively impact your match score. This cannot be undone.'}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      if (confirmJobAction.action === 'complete') {
+                        handleCompleteJob(confirmJobAction.id);
+                      } else {
+                        handleQuitJob(confirmJobAction.id);
+                      }
+                    }}
+                    className={confirmJobAction.action === 'complete' ? 'bg-primary' : 'bg-destructive'}
+                  >
+                    {confirmJobAction.action === 'complete' ? 'Complete Job' : 'Quit Job'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </TabsContent>
         
         <TabsContent value="messages" className="space-y-4 pt-4">
