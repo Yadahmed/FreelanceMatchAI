@@ -130,6 +130,7 @@ export function FreelancerHome() {
   const [chatToDelete, setChatToDelete] = useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmJobAction, setConfirmJobAction] = useState<{id: number, action: 'complete' | 'quit'} | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -238,31 +239,158 @@ export function FreelancerHome() {
     });
   }, [chatsData?.chats, usersData?.users]);
 
+  // Accept a job request
   const handleAcceptRequest = async (requestId: number) => {
     try {
-      await apiRequest(`/api/freelancer/job-requests/${requestId}/accept`, {
-        method: 'POST'
+      const response = await fetch(`/api/freelancer/job-requests/${requestId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('authToken') ? {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          } : {})
+        },
+        body: JSON.stringify({ status: 'accepted' })
       });
       
-      // Invalidate cache to reflect updates
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to accept job request');
+      }
+      
+      toast({
+        title: "Job request accepted",
+        description: "You can find it in your Bookings tab",
+      });
+      
+      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/freelancer/job-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/freelancer/bookings'] });
       queryClient.invalidateQueries({ queryKey: ['/api/freelancer/dashboard'] });
+      
+      // Switch to the bookings tab
+      setSelectedTab("bookings");
     } catch (error) {
-      console.error('Error accepting job request:', error);
+      console.error("Error accepting job request:", error);
+      toast({
+        title: "Error accepting job request",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
   };
   
+  // Decline a job request
   const handleRejectRequest = async (requestId: number) => {
     try {
-      await apiRequest(`/api/freelancer/job-requests/${requestId}/reject`, {
-        method: 'POST'
+      const response = await fetch(`/api/freelancer/job-requests/${requestId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('authToken') ? {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          } : {})
+        },
+        body: JSON.stringify({ status: 'declined' })
       });
       
-      // Invalidate cache to reflect updates
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to decline job request');
+      }
+      
+      toast({
+        title: "Job request declined",
+      });
+      
+      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/freelancer/job-requests'] });
       queryClient.invalidateQueries({ queryKey: ['/api/freelancer/dashboard'] });
     } catch (error) {
-      console.error('Error rejecting job request:', error);
+      console.error("Error declining job request:", error);
+      toast({
+        title: "Error declining job request",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Mark a job as completed
+  const handleCompleteJob = async (jobRequestId: number) => {
+    try {
+      const response = await fetch(`/api/freelancer/job-requests/${jobRequestId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('authToken') ? {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          } : {})
+        },
+        body: JSON.stringify({ status: 'completed' })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to complete job');
+      }
+      
+      toast({
+        title: "Job marked as completed",
+        description: "Great work! Your match score has been increased.",
+      });
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/freelancer/job-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/freelancer/bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/freelancer/dashboard'] });
+      setConfirmJobAction(null);
+    } catch (error) {
+      console.error("Error completing job:", error);
+      toast({
+        title: "Error completing job",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Quit a job (this will penalize the freelancer)
+  const handleQuitJob = async (jobRequestId: number) => {
+    try {
+      const response = await fetch(`/api/freelancer/job-requests/${jobRequestId}/quit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('authToken') ? {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          } : {})
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to quit job');
+      }
+      
+      toast({
+        title: "Job cancelled",
+        description: "Your availability has been updated. Note that this will affect your match score.",
+        variant: "destructive",
+      });
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/freelancer/job-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/freelancer/bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/freelancer/dashboard'] });
+      setConfirmJobAction(null);
+    } catch (error) {
+      console.error("Error quitting job:", error);
+      toast({
+        title: "Error quitting job",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
   };
   
@@ -690,39 +818,40 @@ export function FreelancerHome() {
           </Card>
           
           {/* Confirmation dialog for completing/quitting jobs */}
-          {confirmJobAction && (
-            <AlertDialog open={!!confirmJobAction} onOpenChange={() => setConfirmJobAction(null)}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    {confirmJobAction.action === 'complete' 
-                      ? 'Complete this job?' 
-                      : 'Quit this job?'}
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {confirmJobAction.action === 'complete'
-                      ? 'Marking a job as complete will increase your match score and add it to your completed jobs count.'
-                      : 'Warning: Quitting a job will negatively impact your match score. This cannot be undone.'}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => {
-                      if (confirmJobAction.action === 'complete') {
-                        handleCompleteJob(confirmJobAction.id);
-                      } else {
-                        handleQuitJob(confirmJobAction.id);
-                      }
-                    }}
-                    className={confirmJobAction.action === 'complete' ? 'bg-primary' : 'bg-destructive'}
-                  >
-                    {confirmJobAction.action === 'complete' ? 'Complete Job' : 'Quit Job'}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+          <AlertDialog 
+            open={!!confirmJobAction} 
+            onOpenChange={(open) => !open && setConfirmJobAction(null)}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {confirmJobAction?.action === 'complete' 
+                    ? 'Complete this job?' 
+                    : 'Quit this job?'}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {confirmJobAction?.action === 'complete'
+                    ? 'Marking a job as complete will increase your match score and add it to your completed jobs count.'
+                    : 'Warning: Quitting a job will negatively impact your match score. This cannot be undone.'}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    if (confirmJobAction?.action === 'complete') {
+                      handleCompleteJob(confirmJobAction.id);
+                    } else if (confirmJobAction) {
+                      handleQuitJob(confirmJobAction.id);
+                    }
+                  }}
+                  className={confirmJobAction?.action === 'complete' ? 'bg-primary' : 'bg-destructive'}
+                >
+                  {confirmJobAction?.action === 'complete' ? 'Complete Job' : 'Quit Job'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </TabsContent>
         
         <TabsContent value="messages" className="space-y-4 pt-4">
