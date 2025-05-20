@@ -343,17 +343,26 @@ export async function completeJobRequest(req: Request, res: Response) {
     
     // Update the freelancer record with new metrics
     try {
+      // Make sure we're using the right data types
+      const completedJobsInt = Math.round(updatedCompletedJobs);
+      const consecutiveCompletionsInt = Math.round(currentStreak);
+      const jobPerformanceFloat = parseFloat(updatedJobPerformance.toFixed(2));
+      const responsivenessFloat = parseFloat(updatedResponsiveness.toFixed(2));
+      
+      console.log(`Updating freelancer metrics with: completedJobs=${completedJobsInt} (${typeof completedJobsInt}), streak=${consecutiveCompletionsInt} (${typeof consecutiveCompletionsInt})`);
+      console.log(`Performance metrics: jobPerformance=${jobPerformanceFloat} (${typeof jobPerformanceFloat}), responsiveness=${responsivenessFloat} (${typeof responsivenessFloat})`);
+      
       await db
         .update(freelancers)
         .set({ 
-          completedJobs: updatedCompletedJobs,
-          jobPerformance: updatedJobPerformance,
-          responsiveness: updatedResponsiveness,
-          consecutiveCompletions: currentStreak
+          completedJobs: completedJobsInt,
+          consecutiveCompletions: consecutiveCompletionsInt,
+          jobPerformance: jobPerformanceFloat, 
+          responsiveness: responsivenessFloat
         })
         .where(eq(freelancers.id, freelancerProfile.id));
       
-      console.log(`Updated freelancer ${freelancerProfile.id} metrics: completedJobs=${updatedCompletedJobs}, streak=${currentStreak}`);
+      console.log(`Updated freelancer ${freelancerProfile.id} metrics: completedJobs=${completedJobsInt}, streak=${consecutiveCompletionsInt}`);
     } catch (updateError) {
       console.error('Error updating freelancer metrics:', updateError);
       // Don't fail the whole request if updating metrics fails
@@ -435,16 +444,23 @@ export async function quitJobRequest(req: Request, res: Response) {
     
     console.log(`Applying quit penalty: -${penaltyAmount * 100}% and resetting streak`);
     
+    // Calculate new values ensuring proper data types
+    const newJobPerformance = parseFloat(Math.max(0, (freelancerProfile.jobPerformance || 0) - penaltyAmount).toFixed(2));
+    const newFairnessScore = parseFloat(Math.max(0, (freelancerProfile.fairnessScore || 0) - 0.05).toFixed(2));
+    const newResponsiveness = parseFloat(Math.max(0, (freelancerProfile.responsiveness || 0) - 0.05).toFixed(2));
+    
+    console.log(`New metrics after penalty: jobPerformance=${newJobPerformance}, fairnessScore=${newFairnessScore}, responsiveness=${newResponsiveness}`);
+    
     // Make sure values are between 0 and 1 for all metrics
     await db
       .update(freelancers)
       .set({ 
         // Apply 20% penalty to job performance (on a 0-1 scale)
-        jobPerformance: Math.max(0, (freelancerProfile.jobPerformance || 0) - penaltyAmount),
+        jobPerformance: newJobPerformance,
         // Decrease fairness score slightly
-        fairnessScore: Math.max(0, (freelancerProfile.fairnessScore || 0) - 0.05),
+        fairnessScore: newFairnessScore,
         // Also decrease responsiveness slightly
-        responsiveness: Math.max(0, (freelancerProfile.responsiveness || 0) - 0.05),
+        responsiveness: newResponsiveness,
         // Reset the consecutive completions streak to 0
         consecutiveCompletions: 0
       })
