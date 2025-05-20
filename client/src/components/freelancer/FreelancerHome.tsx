@@ -677,7 +677,11 @@ export function FreelancerHome() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {Array.isArray(jobRequests) && jobRequests.map((request: JobRequest) => (
+                  {Array.isArray(jobRequests) && 
+                    // Sort job requests by date, newest first
+                    [...jobRequests]
+                      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                      .map((request: JobRequest) => (
                     <Card key={request.id} className="overflow-hidden">
                       <div className="p-4">
                         <div className="flex justify-between items-start mb-2">
@@ -776,6 +780,8 @@ export function FreelancerHome() {
                 <div className="space-y-6">
                   {jobRequests
                     .filter(req => req.status === 'accepted')
+                    // Sort accepted jobs by date, newest first
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                     .map((job) => (
                       <Card key={job.id} className="overflow-hidden border-l-4 border-l-primary">
                         <div className="p-4">
