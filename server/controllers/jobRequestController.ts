@@ -178,7 +178,7 @@ export async function updateJobRequestStatus(req: Request, res: Response) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
     
-    if (!status || !['accepted', 'declined', 'completed'].includes(status)) {
+    if (!status || !['accepted', 'declined'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
     }
     
@@ -217,21 +217,6 @@ export async function updateJobRequestStatus(req: Request, res: Response) {
       .where(eq(jobRequests.id, parseInt(id)))
       .returning();
     
-    // If the status is 'completed', update the freelancer's match score metrics
-    if (status === 'completed') {
-      // Increment completed jobs count
-      await db
-        .update(freelancers)
-        .set({ 
-          completedJobs: freelancerProfile.completedJobs + 1,
-          // Increase job performance score (0-10 scale)
-          jobPerformance: Math.min(10, Math.round((freelancerProfile.jobPerformance || 0) + 1)),
-          // Also slightly increase responsiveness when completing jobs - ensure integer value
-          responsiveness: Math.min(10, Math.round((freelancerProfile.responsiveness || 0) + 1))
-        })
-        .where(eq(freelancers.id, freelancerProfile.id));
-    }
-    
     return res.json({ 
       message: `Job request ${status} successfully`, 
       jobRequest: updatedJobRequest
@@ -239,6 +224,86 @@ export async function updateJobRequestStatus(req: Request, res: Response) {
     
   } catch (error) {
     console.error('Error updating job request status:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+/**
+ * Mark a job request as completed and update freelancer metrics
+ */
+export async function completeJobRequest(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    
+    if (!req.user) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
+    // Find the freelancer profile associated with this user
+    const [freelancerProfile] = await db
+      .select()
+      .from(freelancers)
+      .where(eq(freelancers.userId, req.user.id));
+    
+    if (!freelancerProfile) {
+      return res.status(403).json({ message: 'You do not have a freelancer profile' });
+    }
+    
+    // Check if the job request exists, is accepted, and belongs to this freelancer
+    const [jobRequest] = await db
+      .select()
+      .from(jobRequests)
+      .where(
+        and(
+          eq(jobRequests.id, parseInt(id)),
+          eq(jobRequests.freelancerId, freelancerProfile.id),
+          eq(jobRequests.status, 'accepted')
+        )
+      );
+    
+    if (!jobRequest) {
+      return res.status(404).json({ 
+        message: 'Job request not found, does not belong to you, or cannot be completed in its current state' 
+      });
+    }
+    
+    // Update the job request status to completed
+    const [updatedJobRequest] = await db
+      .update(jobRequests)
+      .set({ 
+        status: 'completed',
+        updatedAt: new Date()
+      })
+      .where(eq(jobRequests.id, parseInt(id)))
+      .returning();
+    
+    // Update the freelancer's metrics
+    const updatedCompletedJobs = (freelancerProfile.completedJobs || 0) + 1;
+    const updatedJobPerformance = Math.min(10, Math.round((freelancerProfile.jobPerformance || 0) + 1));
+    const updatedResponsiveness = Math.min(10, Math.round((freelancerProfile.responsiveness || 0) + 1));
+    
+    // Update the freelancer record with integer values
+    await db
+      .update(freelancers)
+      .set({ 
+        completedJobs: updatedCompletedJobs,
+        jobPerformance: updatedJobPerformance,
+        responsiveness: updatedResponsiveness
+      })
+      .where(eq(freelancers.id, freelancerProfile.id));
+    
+    return res.json({ 
+      message: 'Job completed successfully',
+      jobRequest: updatedJobRequest,
+      metrics: {
+        completedJobs: updatedCompletedJobs,
+        jobPerformance: updatedJobPerformance,
+        responsiveness: updatedResponsiveness
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error completing job request:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

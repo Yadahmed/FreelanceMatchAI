@@ -336,6 +336,7 @@ router.patch('/freelancer/availability', requireFreelancer, updateAvailability);
 router.get('/freelancer/job-requests', requireFreelancer, jobRequestController.getFreelancerJobRequests);
 router.put('/freelancer/job-requests/:id/status', requireFreelancer, jobRequestController.updateJobRequestStatus);
 router.post('/freelancer/job-requests/:id/quit', requireFreelancer, jobRequestController.quitJobRequest);
+router.post('/freelancer/job-requests/:id/complete', requireFreelancer, jobRequestController.completeJobRequest);
 router.get('/freelancer/bookings', requireFreelancer, getFreelancerBookings);
 router.get('/freelancer/notifications', requireFreelancer, getNotifications);
 router.patch('/freelancer/notifications/:id', requireFreelancer, markNotificationAsRead);

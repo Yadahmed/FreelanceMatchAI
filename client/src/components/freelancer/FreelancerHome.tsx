@@ -298,9 +298,9 @@ export function FreelancerHome() {
   // Mark a job as completed
   const handleCompleteJob = async (jobRequestId: number) => {
     try {
-      await apiRequest(`/api/freelancer/job-requests/${jobRequestId}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ status: 'completed' })
+      // Use the dedicated endpoint for job completion
+      await apiRequest(`/api/freelancer/job-requests/${jobRequestId}/complete`, {
+        method: 'POST'
       });
       
       toast({
