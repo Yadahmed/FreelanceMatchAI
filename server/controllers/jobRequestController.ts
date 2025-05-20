@@ -327,38 +327,44 @@ export async function completeJobRequest(req: Request, res: Response) {
     const updatedCompletedJobs = (freelancerProfile.completedJobs || 0) + 1;
     const currentStreak = (freelancerProfile.consecutiveCompletions || 0) + 1;
     
-    // Calculate performance boost based on streak
-    let performanceBoost = 0.15; // Base 15% for first completion
+    // Calculate performance boost based on streak - using integer values (0-100 scale)
+    let performanceBoost = 15; // Base 15% for first completion (15 points out of 100)
     if (currentStreak === 2) {
-        performanceBoost = 0.18; // 18% for second consecutive completion
+        performanceBoost = 18; // 18% for second consecutive completion
     } else if (currentStreak >= 3) {
-        performanceBoost = 0.20; // 20% for third or more consecutive completion
+        performanceBoost = 20; // 20% for third or more consecutive completion
     }
     
-    console.log(`Applying completion streak bonus: ${performanceBoost * 100}% (streak: ${currentStreak})`);
+    console.log(`Applying completion streak bonus: +${performanceBoost} points (streak: ${currentStreak})`);
     
-    // Make sure values are between 0 and 1 for all metrics
-    const updatedJobPerformance = Math.min(1.0, (freelancerProfile.jobPerformance || 0) + performanceBoost);
-    const updatedResponsiveness = Math.min(1.0, (freelancerProfile.responsiveness || 0) + 0.05);
+    // Make sure values are between 0 and 100 for all metrics 
+    // Database schema uses integers (0-100) not floats (0-1)
+    const currentJobPerformance = freelancerProfile.jobPerformance || 0;
+    const currentResponsiveness = freelancerProfile.responsiveness || 0;
+    
+    const updatedJobPerformance = Math.min(100, currentJobPerformance + performanceBoost);
+    const updatedResponsiveness = Math.min(100, currentResponsiveness + 5); // +5 points for responsiveness
+    
+    console.log(`Current metrics: jobPerformance=${currentJobPerformance} → ${updatedJobPerformance}, responsiveness=${currentResponsiveness} → ${updatedResponsiveness}`);
     
     // Update the freelancer record with new metrics
     try {
-      // Make sure we're using the right data types
+      // Make sure we're using integers for all values as per DB schema
       const completedJobsInt = Math.round(updatedCompletedJobs);
       const consecutiveCompletionsInt = Math.round(currentStreak);
-      const jobPerformanceFloat = parseFloat(updatedJobPerformance.toFixed(2));
-      const responsivenessFloat = parseFloat(updatedResponsiveness.toFixed(2));
+      const jobPerformanceInt = Math.round(updatedJobPerformance);
+      const responsivenessInt = Math.round(updatedResponsiveness);
       
-      console.log(`Updating freelancer metrics with: completedJobs=${completedJobsInt} (${typeof completedJobsInt}), streak=${consecutiveCompletionsInt} (${typeof consecutiveCompletionsInt})`);
-      console.log(`Performance metrics: jobPerformance=${jobPerformanceFloat} (${typeof jobPerformanceFloat}), responsiveness=${responsivenessFloat} (${typeof responsivenessFloat})`);
+      console.log(`Updating freelancer metrics with: completedJobs=${completedJobsInt}, streak=${consecutiveCompletionsInt}`);
+      console.log(`Performance metrics: jobPerformance=${jobPerformanceInt}, responsiveness=${responsivenessInt}`);
       
       await db
         .update(freelancers)
         .set({ 
           completedJobs: completedJobsInt,
           consecutiveCompletions: consecutiveCompletionsInt,
-          jobPerformance: jobPerformanceFloat, 
-          responsiveness: responsivenessFloat
+          jobPerformance: jobPerformanceInt, 
+          responsiveness: responsivenessInt
         })
         .where(eq(freelancers.id, freelancerProfile.id));
       
@@ -439,23 +445,29 @@ export async function quitJobRequest(req: Request, res: Response) {
       .where(eq(jobRequests.id, parseInt(id)))
       .returning();
     
-    // Apply a flat 20% penalty to job performance score and reset streak
-    const penaltyAmount = 0.20; // 20% match score penalty
+    // Apply a flat 20-point penalty to job performance score and reset streak
+    const penaltyAmount = 20; // 20 points out of 100 penalty
     
-    console.log(`Applying quit penalty: -${penaltyAmount * 100}% and resetting streak`);
+    console.log(`Applying quit penalty: -${penaltyAmount} points and resetting streak`);
     
-    // Calculate new values ensuring proper data types
-    const newJobPerformance = parseFloat(Math.max(0, (freelancerProfile.jobPerformance || 0) - penaltyAmount).toFixed(2));
-    const newFairnessScore = parseFloat(Math.max(0, (freelancerProfile.fairnessScore || 0) - 0.05).toFixed(2));
-    const newResponsiveness = parseFloat(Math.max(0, (freelancerProfile.responsiveness || 0) - 0.05).toFixed(2));
+    // Database schema uses integers (0-100) not floats (0-1)
+    const currentJobPerformance = freelancerProfile.jobPerformance || 0;
+    const currentFairnessScore = freelancerProfile.fairnessScore || 0;
+    const currentResponsiveness = freelancerProfile.responsiveness || 0;
     
-    console.log(`New metrics after penalty: jobPerformance=${newJobPerformance}, fairnessScore=${newFairnessScore}, responsiveness=${newResponsiveness}`);
+    // Calculate new values ensuring they're integers and never below 0
+    const newJobPerformance = Math.max(0, currentJobPerformance - penaltyAmount);
+    const newFairnessScore = Math.max(0, currentFairnessScore - 5); // -5 points to fairness
+    const newResponsiveness = Math.max(0, currentResponsiveness - 5); // -5 points to responsiveness
     
-    // Make sure values are between 0 and 1 for all metrics
+    console.log(`Metrics before penalty: jobPerformance=${currentJobPerformance}, fairnessScore=${currentFairnessScore}, responsiveness=${currentResponsiveness}`);
+    console.log(`Metrics after penalty: jobPerformance=${newJobPerformance}, fairnessScore=${newFairnessScore}, responsiveness=${newResponsiveness}`);
+    
+    // Make sure values are between 0 and 100 for all metrics
     await db
       .update(freelancers)
       .set({ 
-        // Apply 20% penalty to job performance (on a 0-1 scale)
+        // Apply penalty to job performance (on a 0-100 scale)
         jobPerformance: newJobPerformance,
         // Decrease fairness score slightly
         fairnessScore: newFairnessScore,
