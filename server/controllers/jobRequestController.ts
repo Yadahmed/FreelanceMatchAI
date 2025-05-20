@@ -239,6 +239,9 @@ export async function completeJobRequest(req: Request, res: Response) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
     
+    // Log the request for debugging
+    console.log(`Job completion request for job ID: ${id} by user ${req.user.id}`);
+    
     // Find the freelancer profile associated with this user
     const [freelancerProfile] = await db
       .select()
@@ -246,54 +249,82 @@ export async function completeJobRequest(req: Request, res: Response) {
       .where(eq(freelancers.userId, req.user.id));
     
     if (!freelancerProfile) {
+      console.log('Freelancer profile not found for user:', req.user.id);
       return res.status(403).json({ message: 'You do not have a freelancer profile' });
     }
     
-    // Check if the job request exists and belongs to this freelancer
-    const [jobRequest] = await db
-      .select()
-      .from(jobRequests)
-      .where(
-        and(
-          eq(jobRequests.id, parseInt(id)),
-          eq(jobRequests.freelancerId, freelancerProfile.id)
-        )
-      );
+    console.log(`Found freelancer profile ID: ${freelancerProfile.id}`);
     
+    // Check if the job request exists and belongs to this freelancer
+    let jobRequest;
+    
+    try {
+      // Try parsing the ID as a number
+      const jobId = parseInt(id);
+      if (isNaN(jobId)) {
+        console.log(`Invalid job ID format: ${id}`);
+        return res.status(400).json({ message: 'Invalid job ID format' });
+      }
+      
+      [jobRequest] = await db
+        .select()
+        .from(jobRequests)
+        .where(
+          and(
+            eq(jobRequests.id, jobId),
+            eq(jobRequests.freelancerId, freelancerProfile.id)
+          )
+        );
+    } catch (dbError) {
+      console.error('Error querying job request:', dbError);
+      return res.status(500).json({ message: 'Database error when looking up job request' });
+    }
+    
+    // Job not found or doesn't belong to this freelancer
     if (!jobRequest) {
+      console.log(`Job request ${id} not found or does not belong to freelancer ${freelancerProfile.id}`);
       return res.status(404).json({ 
         message: 'Job request not found or does not belong to you' 
       });
     }
     
-    // Check if the job is in a state that allows completion (should not be declined)
+    console.log(`Found job request: ID=${jobRequest.id}, Status=${jobRequest.status}`);
+    
+    // Check job status constraints
     if (jobRequest.status === 'declined') {
       return res.status(400).json({
         message: 'This job cannot be completed because it was declined'
       });
     }
     
-    // Check if job is already completed
     if (jobRequest.status === 'completed') {
-      return res.status(400).json({
-        message: 'This job is already marked as completed'
+      return res.status(200).json({
+        success: true,
+        message: 'This job was already marked as completed',
+        alreadyCompleted: true
       });
     }
     
-    // Update the job request status to completed
-    const [updatedJobRequest] = await db
-      .update(jobRequests)
-      .set({ 
-        status: 'completed',
-        updatedAt: new Date()
-      })
-      .where(eq(jobRequests.id, parseInt(id)))
-      .returning();
+    // If we get here, the job can be completed. Update its status.
+    let updatedJobRequest;
+    try {
+      [updatedJobRequest] = await db
+        .update(jobRequests)
+        .set({ 
+          status: 'completed',
+          updatedAt: new Date()
+        })
+        .where(eq(jobRequests.id, jobRequest.id))
+        .returning();
+      
+      console.log(`Updated job request ${jobRequest.id} status to completed`);
+    } catch (updateError) {
+      console.error('Error updating job request status:', updateError);
+      return res.status(500).json({ message: 'Error updating job status' });
+    }
     
-    // Calculate completed jobs and streak
+    // Calculate performance metrics updates
     const updatedCompletedJobs = (freelancerProfile.completedJobs || 0) + 1;
-    
-    // Track consecutive completions for streak bonus
     const currentStreak = (freelancerProfile.consecutiveCompletions || 0) + 1;
     
     // Calculate performance boost based on streak
@@ -306,23 +337,31 @@ export async function completeJobRequest(req: Request, res: Response) {
     
     console.log(`Applying completion streak bonus: ${performanceBoost * 100}% (streak: ${currentStreak})`);
     
-    // Make sure to use float value between 0 and 1 for score attributes
+    // Make sure values are between 0 and 1 for all metrics
     const updatedJobPerformance = Math.min(1.0, (freelancerProfile.jobPerformance || 0) + performanceBoost);
     const updatedResponsiveness = Math.min(1.0, (freelancerProfile.responsiveness || 0) + 0.05);
     
-    // Update the freelancer record with streak count and improved scores
-    await db
-      .update(freelancers)
-      .set({ 
-        completedJobs: updatedCompletedJobs,
-        jobPerformance: updatedJobPerformance,
-        responsiveness: updatedResponsiveness,
-        consecutiveCompletions: currentStreak
-      })
-      .where(eq(freelancers.id, freelancerProfile.id));
+    // Update the freelancer record with new metrics
+    try {
+      await db
+        .update(freelancers)
+        .set({ 
+          completedJobs: updatedCompletedJobs,
+          jobPerformance: updatedJobPerformance,
+          responsiveness: updatedResponsiveness,
+          consecutiveCompletions: currentStreak
+        })
+        .where(eq(freelancers.id, freelancerProfile.id));
+      
+      console.log(`Updated freelancer ${freelancerProfile.id} metrics: completedJobs=${updatedCompletedJobs}, streak=${currentStreak}`);
+    } catch (updateError) {
+      console.error('Error updating freelancer metrics:', updateError);
+      // Don't fail the whole request if updating metrics fails
+      // We'll just log the error but still return success for the job completion
+    }
     
     // Return a simple plain response without complex objects
-    return res.status(200).send({
+    return res.status(200).json({
       success: true,
       message: 'Job completed successfully',
       streak: currentStreak,
@@ -331,7 +370,10 @@ export async function completeJobRequest(req: Request, res: Response) {
     
   } catch (error) {
     console.error('Error completing job request:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ 
+      message: 'Internal server error',
+      error: String(error)
+    });
   }
 }
 

@@ -827,25 +827,47 @@ export function FreelancerHome() {
                                 size="sm"
                                 onClick={async () => {
                                   try {
+                                    console.log("Attempting to complete job:", job.id);
                                     // Use apiRequest directly to complete the job
-                                    await apiRequest(`/api/freelancer/job-requests/${job.id}/complete`, {
+                                    const response = await apiRequest(`/api/freelancer/job-requests/${job.id}/complete`, {
                                       method: 'POST'
                                     });
                                     
-                                    // Show success toast
-                                    toast({
-                                      title: "Job marked as completed",
-                                      description: "Great work! Your match score has been increased.",
-                                    });
+                                    console.log("Job completion response:", response);
+                                    
+                                    // Get streak info from response
+                                    const streak = response.streak || 0;
+                                    const performanceBoost = response.performanceBoost || '+15%';
+                                    
+                                    // Handle already completed job
+                                    if (response.alreadyCompleted) {
+                                      toast({
+                                        title: "Job already completed",
+                                        description: "This job was already marked as completed.",
+                                      });
+                                    } else {
+                                      // Show success toast with streak info
+                                      toast({
+                                        title: "Job marked as completed",
+                                        description: `Great work! Your match score has been increased by ${performanceBoost}. Current streak: ${streak} ${streak > 1 ? 'jobs' : 'job'}.`,
+                                      });
+                                    }
                                     
                                     // Refresh data
                                     queryClient.invalidateQueries({ queryKey: ['/api/freelancer/job-requests'] });
                                     queryClient.invalidateQueries({ queryKey: ['/api/freelancer/dashboard'] });
                                   } catch (error) {
                                     console.error("Error completing job:", error);
+                                    
+                                    // Extract error message if available
+                                    let errorMessage = "There was a problem completing this job. Please try again.";
+                                    if (error && typeof error === 'object' && 'message' in error) {
+                                      errorMessage = String(error.message);
+                                    }
+                                    
                                     toast({
                                       title: "Error completing job",
-                                      description: "There was a problem completing this job. Please try again.",
+                                      description: errorMessage,
                                       variant: "destructive",
                                     });
                                   }
