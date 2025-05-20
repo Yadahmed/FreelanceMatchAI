@@ -83,6 +83,7 @@ export const freelancers = pgTable("freelancers", {
   responsiveness: integer("responsiveness").notNull().default(0),
   fairnessScore: integer("fairness_score").notNull().default(0),
   completedJobs: integer("completed_jobs").notNull().default(0),
+  consecutiveCompletions: integer("consecutive_completions").notNull().default(0), // Streak count for job completions
   location: text("location").notNull(),
   timeZone: text("time_zone"),
   availability: boolean("availability").notNull().default(true),

@@ -277,25 +277,44 @@ export async function completeJobRequest(req: Request, res: Response) {
       .where(eq(jobRequests.id, parseInt(id)))
       .returning();
     
-    // Update the freelancer's metrics
+    // Calculate completed jobs and streak
     const updatedCompletedJobs = (freelancerProfile.completedJobs || 0) + 1;
-    const updatedJobPerformance = Math.min(10, Math.round((freelancerProfile.jobPerformance || 0) + 1));
-    const updatedResponsiveness = Math.min(10, Math.round((freelancerProfile.responsiveness || 0) + 1));
     
-    // Update the freelancer record with integer values
+    // Track consecutive completions for streak bonus
+    const currentStreak = (freelancerProfile.consecutiveCompletions || 0) + 1;
+    
+    // Calculate performance boost based on streak
+    let performanceBoost = 0.15; // Base 15% for first completion
+    if (currentStreak === 2) {
+        performanceBoost = 0.18; // 18% for second consecutive completion
+    } else if (currentStreak >= 3) {
+        performanceBoost = 0.20; // 20% for third or more consecutive completion
+    }
+    
+    console.log(`Applying completion streak bonus: ${performanceBoost * 100}% (streak: ${currentStreak})`);
+    
+    // Make sure to use float value between 0 and 1 for score attributes
+    const updatedJobPerformance = Math.min(1.0, (freelancerProfile.jobPerformance || 0) + performanceBoost);
+    const updatedResponsiveness = Math.min(1.0, (freelancerProfile.responsiveness || 0) + 0.05);
+    
+    // Update the freelancer record with streak count and improved scores
     await db
       .update(freelancers)
       .set({ 
         completedJobs: updatedCompletedJobs,
         jobPerformance: updatedJobPerformance,
-        responsiveness: updatedResponsiveness
+        responsiveness: updatedResponsiveness,
+        consecutiveCompletions: currentStreak,
+        updatedAt: new Date()
       })
       .where(eq(freelancers.id, freelancerProfile.id));
     
     // Return a simple plain response without complex objects
     return res.status(200).send({
       success: true,
-      message: 'Job completed successfully'
+      message: 'Job completed successfully',
+      streak: currentStreak,
+      performanceBoost: `+${Math.round(performanceBoost * 100)}%`
     });
     
   } catch (error) {
@@ -357,21 +376,29 @@ export async function quitJobRequest(req: Request, res: Response) {
       .where(eq(jobRequests.id, parseInt(id)))
       .returning();
     
-    // Penalize the freelancer's match score metrics for quitting
+    // Apply a flat 20% penalty to job performance score and reset streak
+    const penaltyAmount = 0.20; // 20% match score penalty
+    
+    console.log(`Applying quit penalty: -${penaltyAmount * 100}% and resetting streak`);
+    
+    // Make sure values are between 0 and 1 for all metrics
     await db
       .update(freelancers)
       .set({ 
-        // Decrease job performance score (0-10 scale)
-        jobPerformance: Math.max(0, Math.round((freelancerProfile.jobPerformance || 0) - 2)),
-        // Decrease fairness score
-        fairnessScore: Math.max(0, Math.round((freelancerProfile.fairnessScore || 0) - 1)),
-        // Also decrease responsiveness slightly - ensure integer value
-        responsiveness: Math.max(0, Math.round((freelancerProfile.responsiveness || 0) - 1))
+        // Apply 20% penalty to job performance (on a 0-1 scale)
+        jobPerformance: Math.max(0, (freelancerProfile.jobPerformance || 0) - penaltyAmount),
+        // Decrease fairness score slightly
+        fairnessScore: Math.max(0, (freelancerProfile.fairnessScore || 0) - 0.05),
+        // Also decrease responsiveness slightly
+        responsiveness: Math.max(0, (freelancerProfile.responsiveness || 0) - 0.05),
+        // Reset the consecutive completions streak to 0
+        consecutiveCompletions: 0,
+        updatedAt: new Date()
       })
       .where(eq(freelancers.id, freelancerProfile.id));
     
     return res.json({ 
-      message: 'Job request has been cancelled. Note that this will affect your match score.',
+      message: 'Job request has been cancelled. Your match score has been reduced by 20% and your completion streak has been reset.',
       jobRequest: updatedJobRequest
     });
     
