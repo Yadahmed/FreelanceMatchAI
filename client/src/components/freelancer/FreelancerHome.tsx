@@ -92,9 +92,29 @@ interface JobRequest {
   description: string;
   budget: number;
   skills: string[];
-  status: 'pending' | 'accepted' | 'rejected' | 'completed';
+  status: 'pending' | 'accepted' | 'declined' | 'completed';
   createdAt: string;
   updatedAt: string;
+  client?: {
+    id: number;
+    displayName?: string;
+    username?: string;
+    photoURL?: string;
+  };
+}
+
+interface Booking {
+  id: number;
+  freelancerId: number;
+  clientId: number;
+  jobRequestId?: number;
+  title: string;
+  description?: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: 'confirmed' | 'cancelled' | 'completed' | 'in_progress';
+  createdAt: string;
   client?: {
     id: number;
     displayName?: string;
