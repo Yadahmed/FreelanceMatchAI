@@ -61,22 +61,9 @@ export default function JobRequestsPage() {
   const { isAuthenticated, currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('all');
 
-  // Fetch job requests
+  // Fetch job requests using the authenticated query system
   const { data, isLoading, error } = useQuery({
     queryKey: ['/api/client/job-requests'],
-    queryFn: async () => {
-      try {
-        const response = await fetch('/api/client/job-requests');
-        if (!response.ok) {
-          throw new Error('Failed to fetch job requests');
-        }
-        const data = await response.json();
-        return data.jobRequests as JobRequest[];
-      } catch (err) {
-        console.error('Error fetching job requests:', err);
-        throw err;
-      }
-    },
     enabled: isAuthenticated && currentUser?.isClient,
   });
 
