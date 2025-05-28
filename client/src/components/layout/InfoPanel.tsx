@@ -14,9 +14,7 @@ export function InfoPanel() {
         <div className="relative">
           <div className="absolute -top-10 -left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl -z-10"></div>
           <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl -z-10"></div>
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-            KurdJobs AI
-          </h1>
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">FreelanceMatchAI</h1>
           <Badge variant="outline" className="mt-2 bg-primary/5 text-primary border-primary/20">
             <Zap className="mr-1 h-3 w-3" /> AI-Powered
           </Badge>
@@ -26,7 +24,6 @@ export function InfoPanel() {
           Connecting Kurdistan's top freelance talent with global opportunities through intelligent matchmaking
         </p>
       </div>
-
       {/* Key Stats */}
       <div className="grid grid-cols-2 gap-4">
         <Card className="bg-gradient-to-br from-background to-muted/30 border border-muted-foreground/10">
@@ -53,7 +50,6 @@ export function InfoPanel() {
           </CardContent>
         </Card>
       </div>
-
       <div className="flex flex-col space-y-4">
         <h2 className="text-xl font-semibold flex items-center">
           <TrendingUp className="mr-2 h-5 w-5 text-primary" />
