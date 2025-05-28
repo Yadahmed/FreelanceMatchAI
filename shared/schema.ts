@@ -279,6 +279,42 @@ export const insertReviewSchema = createInsertSchema(reviews).pick({
   comment: true,
 });
 
+// Skill endorsements for freelancers
+export const skillEndorsements = pgTable("skill_endorsements", {
+  id: serial("id").primaryKey(),
+  freelancerId: integer("freelancer_id").notNull().references(() => freelancers.id),
+  endorserId: integer("endorser_id").notNull().references(() => users.id),
+  skillName: text("skill_name").notNull(),
+  endorsementType: text("endorsement_type").notNull().default("positive"), // positive, expert, mentor
+  comment: text("comment"),
+  isPublic: boolean("is_public").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertSkillEndorsementSchema = createInsertSchema(skillEndorsements).pick({
+  freelancerId: true,
+  endorserId: true,
+  skillName: true,
+  endorsementType: true,
+  comment: true,
+  isPublic: true,
+});
+
+// Skill endorsement notifications
+export const endorsementNotifications = pgTable("endorsement_notifications", {
+  id: serial("id").primaryKey(),
+  freelancerId: integer("freelancer_id").notNull().references(() => freelancers.id),
+  endorsementId: integer("endorsement_id").notNull().references(() => skillEndorsements.id),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertEndorsementNotificationSchema = createInsertSchema(endorsementNotifications).pick({
+  freelancerId: true,
+  endorsementId: true,
+  isRead: true,
+});
+
 // Define types based on the schemas
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -297,6 +333,12 @@ export type UserPreferences = typeof userPreferences.$inferSelect;
 
 export type InsertChat = z.infer<typeof insertChatSchema>;
 export type Chat = typeof chats.$inferSelect;
+
+export type InsertSkillEndorsement = z.infer<typeof insertSkillEndorsementSchema>;
+export type SkillEndorsement = typeof skillEndorsements.$inferSelect;
+
+export type InsertEndorsementNotification = z.infer<typeof insertEndorsementNotificationSchema>;
+export type EndorsementNotification = typeof endorsementNotifications.$inferSelect;
 
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;

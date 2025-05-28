@@ -7,7 +7,9 @@ import {
   Booking, InsertBooking,
   UserPreferences, InsertUserPreferences,
   Notification, InsertNotification,
-  Review, InsertReview
+  Review, InsertReview,
+  SkillEndorsement, InsertSkillEndorsement,
+  EndorsementNotification, InsertEndorsementNotification
 } from "@shared/schema";
 
 // Interface for storage methods
@@ -78,6 +80,18 @@ export interface IStorage {
   // Review methods
   getReviewsByFreelancerId(freelancerId: number): Promise<Review[]>;
   createReview(review: InsertReview): Promise<Review>;
+  
+  // Skill endorsement methods
+  getSkillEndorsementsByFreelancerId(freelancerId: number): Promise<SkillEndorsement[]>;
+  getSkillEndorsementsBySkill(freelancerId: number, skillName: string): Promise<SkillEndorsement[]>;
+  createSkillEndorsement(endorsement: InsertSkillEndorsement): Promise<SkillEndorsement>;
+  hasUserEndorsedSkill(endorserId: number, freelancerId: number, skillName: string): Promise<boolean>;
+  getEndorsementStats(freelancerId: number): Promise<{[skillName: string]: {count: number, types: string[]}}>;
+  
+  // Endorsement notification methods
+  getEndorsementNotifications(freelancerId: number): Promise<EndorsementNotification[]>;
+  createEndorsementNotification(notification: InsertEndorsementNotification): Promise<EndorsementNotification>;
+  markEndorsementNotificationAsRead(id: number): Promise<EndorsementNotification>;
 }
 
 // In-memory storage implementation
