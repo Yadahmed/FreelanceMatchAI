@@ -237,7 +237,7 @@ export function ChatInterface() {
                     <div className={`text-xs font-medium ${message.isUserMessage ? 'text-right mr-2' : 'ml-1'}`}>
                       {message.isUserMessage
                         ? (currentUser?.displayName || currentUser?.username || 'You')
-                        : 'KurdJobs AI'}
+                        : 'FreelanceMatchAI'}
                     </div>
                     <div
                       className={`rounded-xl p-4 shadow-sm ${
@@ -356,7 +356,7 @@ export function ChatInterface() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="space-y-1">
-                    <div className="text-xs font-medium ml-1">KurdJobs AI</div>
+                    <div className="text-xs font-medium ml-1">FreelanceMatchAI</div>
                     <div className="bg-muted/80 dark:bg-muted/40 rounded-xl rounded-tl-none p-4 shadow-sm">
                       <div className="flex space-x-1 items-center h-5">
                         <div className="w-2 h-2 rounded-full bg-primary/70 animate-bounce" style={{ animationDelay: '0ms' }}></div>

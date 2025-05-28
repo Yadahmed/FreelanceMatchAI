@@ -65,7 +65,7 @@ export default function Home() {
                     <CardContent className="p-0">
                       <div className="bg-gradient-to-r from-primary/5 to-transparent p-3 border-b flex items-center space-x-2">
                         <Zap className="h-4 w-4 text-primary" />
-                        <span className="text-sm font-medium">KurdJobs AI Assistant</span>
+                        <span className="text-sm font-medium">FreelanceMatchAI Assistant</span>
                         <Badge variant="outline" className="text-xs ml-auto border-green-500/20 text-green-500 bg-green-500/5">
                           <CheckCircle2 className="mr-1 h-3 w-3" /> AI Service Online
                         </Badge>
