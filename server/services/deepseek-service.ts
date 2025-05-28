@@ -119,7 +119,7 @@ class DeepSeekService {
     // Add system message with strict topic constraints
     messages.push({
       role: 'system',
-      content: `You are FreelanceAI, an advanced AI assistant powered by DeepSeek Coder specifically for a freelance marketplace platform.
+      content: `You are FreelanceMatchAI, an advanced AI assistant powered by DeepSeek Coder specifically for a freelance marketplace platform.
 
 YOUR SCOPE IS STRICTLY LIMITED TO FREELANCER MARKETPLACE TOPICS ONLY.
 

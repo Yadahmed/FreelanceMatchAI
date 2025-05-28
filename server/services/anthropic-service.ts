@@ -227,7 +227,7 @@ class AnthropicService {
       }
       
       // Use custom system prompt if provided in metadata
-      const systemPrompt = metadata?.system || `You are FreelanceAI, an advanced AI assistant specifically for a freelance marketplace platform.
+      const systemPrompt = metadata?.system || `You are FreelanceMatchAI, an advanced AI assistant specifically for a freelance marketplace platform.
 
 YOUR SCOPE IS STRICTLY LIMITED TO FREELANCER MARKETPLACE TOPICS ONLY.
 

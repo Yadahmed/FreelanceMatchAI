@@ -64,7 +64,7 @@ export function AIChat() {
           setMessages([
             {
               id: generateId(),
-              content: "Hi there! I'm FreelanceAI, your intelligent assistant. How can I help you today? You can ask me to find freelancers for your project or help you understand how our marketplace works.",
+              content: "Hi there! I'm FreelanceMatchAI, your intelligent assistant. How can I help you today? You can ask me to find freelancers for your project or help you understand how our marketplace works.",
               isUser: false,
               timestamp: new Date(),
             },
@@ -109,7 +109,7 @@ export function AIChat() {
             setActiveService(services.deepseek ? 'deepseek' : 'ollama');
             
             // Add welcome message
-            let welcomeMessage = "Hi there! I'm FreelanceAI, your intelligent assistant";
+            let welcomeMessage = "Hi there! I'm FreelanceMatchAI, your intelligent assistant";
             if (services.deepseek) {
               welcomeMessage += " powered by DeepSeek R1 API.";
             } else if (services.anthropic) {
@@ -155,7 +155,7 @@ export function AIChat() {
           ]);
         } else {
           // Generate a welcome message based on which service is being used
-          let welcomeMessage = "Hi there! I'm FreelanceAI, your intelligent assistant";
+          let welcomeMessage = "Hi there! I'm FreelanceMatchAI, your intelligent assistant";
           
           if (activeService === 'deepseek') {
             welcomeMessage += " powered by DeepSeek R1 API.";

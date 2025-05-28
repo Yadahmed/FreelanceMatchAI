@@ -85,7 +85,7 @@ class OllamaService {
     
     // Check for common patterns in messages
     if (lowerMessage.includes('hello') || lowerMessage.includes('hi ') || lowerMessage.includes('hey')) {
-      return "Hello! I'm the FreelanceAI assistant (running in fallback mode). How can I help you with finding freelancers or understanding our marketplace today?";
+      return "Hello! I'm the FreelanceMatchAI assistant (running in fallback mode). How can I help you with finding freelancers or understanding our marketplace today?";
     }
     
     if (lowerMessage.includes('find freelancer') || lowerMessage.includes('looking for')) {

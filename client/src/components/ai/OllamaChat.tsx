@@ -49,7 +49,7 @@ export function OllamaChat() {
           setMessages([
             {
               id: generateId(),
-              content: "Hi there! I'm FreelanceAI, your intelligent assistant powered by DeepSeek Coder running on Ollama. How can I help you today? You can ask me to find freelancers for your project or help you understand how our marketplace works.",
+              content: "Hi there! I'm FreelanceMatchAI, your intelligent assistant powered by DeepSeek Coder running on Ollama. How can I help you today? You can ask me to find freelancers for your project or help you understand how our marketplace works.",
               isUser: false,
               timestamp: new Date(),
             },
@@ -158,7 +158,7 @@ export function OllamaChat() {
           <span className="text-xs font-bold">AI</span>
         </Avatar>
         <div className="flex-1">
-          <h3 className="text-sm font-medium">FreelanceAI Assistant (DeepSeek via Ollama)</h3>
+          <h3 className="text-sm font-medium">FreelanceMatchAI Assistant (DeepSeek via Ollama)</h3>
           <div className="flex items-center">
             {isAIAvailable ? (
               <>
