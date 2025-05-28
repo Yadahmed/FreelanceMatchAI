@@ -62,13 +62,13 @@ export default function JobRequestsPage() {
   const [activeTab, setActiveTab] = useState<string>('all');
 
   // Fetch job requests using the authenticated query system
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<{ jobRequests: JobRequest[] }>({
     queryKey: ['/api/client/job-requests'],
     enabled: isAuthenticated && currentUser?.isClient,
   });
 
   // Filter job requests based on active tab
-  const filteredRequests = data?.filter(job => {
+  const filteredRequests = data?.jobRequests?.filter(job => {
     if (activeTab === 'all') return true;
     if (activeTab === 'pending') return job.status === 'pending';
     if (activeTab === 'accepted') return job.status === 'accepted';
@@ -234,7 +234,7 @@ export default function JobRequestsPage() {
                       <Avatar className="h-20 w-20 mb-3">
                         <AvatarImage src={job.freelancer.imageUrl || undefined} />
                         <AvatarFallback className="text-lg">
-                          {job.freelancer.displayName.substring(0, 2).toUpperCase()}
+                          {job.freelancer.displayName?.substring(0, 2).toUpperCase() || 'FL'}
                         </AvatarFallback>
                       </Avatar>
                       
