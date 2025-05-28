@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronDown, MessageSquare, User, Settings, LogOut, BrainCircuit, Search } from 'lucide-react';
+import { ChevronDown, MessageSquare, User, Settings, LogOut, BrainCircuit, Search, FileText } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { cn } from '@/lib/utils';
 
@@ -106,6 +106,16 @@ export function Header() {
                     <Link href="/profile" className="flex items-center">
                       <User className="mr-2 h-4 w-4 text-primary/80" />
                       <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                
+                {/* Job Requests - Only for clients */}
+                {isClient && (
+                  <DropdownMenuItem className="cursor-pointer rounded-lg transition-colors focus:bg-accent/80 hover:bg-accent/80 my-1" asChild>
+                    <Link href="/job-requests" className="flex items-center">
+                      <FileText className="mr-2 h-4 w-4 text-primary/80" />
+                      <span>Job Requests</span>
                     </Link>
                   </DropdownMenuItem>
                 )}
