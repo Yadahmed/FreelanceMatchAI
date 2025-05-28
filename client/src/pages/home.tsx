@@ -44,9 +44,6 @@ export default function Home() {
                           <Bot className="h-5 w-5 text-primary" />
                         </div>
                         <h2 className="text-2xl font-bold">AI Assistant</h2>
-                        <Badge variant="outline" className="bg-primary/5 text-primary">
-                          <Sparkles className="mr-1 h-3 w-3" /> DeepSeek API
-                        </Badge>
                       </div>
                       
                       {isAuthenticated && isClient && (

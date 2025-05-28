@@ -456,15 +456,7 @@ export function AIChat() {
                 </span>
               </>
             )}
-            
-            {/* Show which service is active */}
-            {isAIAvailable && activeService && (
-              <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-white/20 text-white/90 border border-white/20">
-                {activeService === 'deepseek' && 'DeepSeek API'}
-                {activeService === 'anthropic' && 'Anthropic API'}
-                {activeService === 'ollama' && 'Local Ollama'}
-              </span>
-            )}
+
           </div>
         </div>
       </div>
