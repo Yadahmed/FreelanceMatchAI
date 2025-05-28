@@ -80,16 +80,16 @@ export function FreelancerMention({ content }: FreelancerMentionProps) {
       console.log("Available freelancer IDs:", freelancers.map(f => f.id).join(', '));
       
       // First try to detect the exact format with [FREELANCER_ID:X] which is the most specific
-      const freelancerIdPattern = /\*\*\[FREELANCER_ID:(\d+)\]/;
-      const freelancerIdMatch = text.match(freelancerIdPattern);
-      if (freelancerIdMatch) {
+      const freelancerIdPattern = /\*\*\[FREELANCER_ID:(\d+)\]/g;
+      let freelancerIdMatch;
+      while ((freelancerIdMatch = freelancerIdPattern.exec(text)) !== null) {
         const id = parseInt(freelancerIdMatch[1], 10);
         const freelancer = freelancers.find(f => f.id === id);
         if (freelancer) {
           console.log(`Found direct [FREELANCER_ID:${id}] mention for ${freelancer.id}`);
           
           // Find where in the text it occurs and the whole entry
-          const matchIndex = text.indexOf(freelancerIdMatch[0]);
+          const matchIndex = freelancerIdMatch.index;
           
           // Find the start of the line containing this ID
           let lineStart = text.lastIndexOf('\n', matchIndex);
