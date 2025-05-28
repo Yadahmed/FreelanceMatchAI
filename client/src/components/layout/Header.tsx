@@ -39,7 +39,7 @@ export function Header() {
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center space-x-2 group">
             <BrainCircuit className="h-6 w-6 text-primary transition-transform duration-300 group-hover:scale-110" />
-            <span className="font-bold text-xl font-display tracking-tight transition-colors group-hover:text-primary">KurdJobs AI</span>
+            <span className="font-bold text-xl font-display tracking-tight transition-colors group-hover:text-primary">FreelanceJobAI</span>
           </Link>
         </div>
 

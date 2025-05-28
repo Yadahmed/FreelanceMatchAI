@@ -27,7 +27,7 @@ export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '0',
-      content: 'Hello! I\'m your KurdJobs AI assistant. Tell me what type of freelancer you\'re looking for, and I\'ll help match you with the best candidates for your project.',
+      content: 'Hello! I\'m your FreelanceMatchAI assistant. Tell me what type of freelancer you\'re looking for, and I\'ll help match you with the best candidates for your project.',
       isUserMessage: false,
       timestamp: new Date(),
     },
@@ -226,7 +226,7 @@ export function ChatInterface() {
                       </>
                     ) : (
                       <>
-                        <AvatarImage src="/ai-avatar.png" alt="KurdJobs AI" />
+                        <AvatarImage src="/ai-avatar.png" alt="FreelanceMatchAI" />
                         <AvatarFallback className="bg-secondary/10 text-secondary">
                           <Bot className="h-5 w-5" />
                         </AvatarFallback>

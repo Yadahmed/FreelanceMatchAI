@@ -8,7 +8,7 @@ export default function About() {
       <div className="text-center mb-12">
         <h1 className="text-3xl font-bold tracking-tight mb-2">How It Works</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          KurdJobs AI matches you with the perfect Kurdish freelancer using our intelligent AI-powered platform
+          FreelanceMatchAI matches you with the perfect freelancer using our intelligent AI-powered platform
         </p>
       </div>
 
