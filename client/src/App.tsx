@@ -18,6 +18,7 @@ import ClientProfile from "@/pages/client-profile";
 import About from "@/pages/about";
 import AdminPanel from "@/pages/AdminPanel";
 import AdminLogin from "@/pages/AdminLogin";
+import JobRequests from "@/pages/job-requests";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -88,7 +89,7 @@ function Router() {
         {/* Core client routes */}
         <Route path="/client-dashboard" component={Home} />
         <Route path="/client/dashboard" component={Home} />
-        <Route path="/job-requests" component={Home} />
+        <Route path="/job-requests" component={JobRequests} />
         <Route path="/client-messages" component={ClientMessages} />
         
         {/* Common routes for both user types */}
