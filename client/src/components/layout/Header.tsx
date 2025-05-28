@@ -117,12 +117,15 @@ export function Header() {
                   </Link>
                 </DropdownMenuItem>
                 
-                <DropdownMenuItem className="cursor-pointer rounded-lg transition-colors focus:bg-accent/80 hover:bg-accent/80 my-1" asChild>
-                  <Link href="/direct-chat" className="flex items-center">
-                    <BrainCircuit className="mr-2 h-4 w-4 text-primary/80" />
-                    <span>AI Diagnostic Tool</span>
-                  </Link>
-                </DropdownMenuItem>
+                {/* AI Diagnostic Tool - Only for admin users */}
+                {currentUser?.isAdmin && (
+                  <DropdownMenuItem className="cursor-pointer rounded-lg transition-colors focus:bg-accent/80 hover:bg-accent/80 my-1" asChild>
+                    <Link href="/direct-chat" className="flex items-center">
+                      <BrainCircuit className="mr-2 h-4 w-4 text-primary/80" />
+                      <span>AI Diagnostic Tool</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 
                 <DropdownMenuSeparator className="my-1" />
                 

@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Send, User, Bot, Loader2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Send, User, Bot, Loader2, Trash2, ExternalLink } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -315,15 +315,27 @@ export default function MessagesPage() {
       
       <Card>
         <CardContent className="p-0">
-          <div className="p-4 border-b flex items-center space-x-4">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={freelancer?.imageUrl || undefined} alt={freelancerName} />
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
-            <div>
-              <h2 className="text-lg font-medium">{freelancerName}</h2>
-              <p className="text-sm text-muted-foreground">{freelancer?.profession}</p>
+          <div className="p-4 border-b flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={freelancer?.imageUrl || undefined} alt={freelancerName} />
+                <AvatarFallback>{initials}</AvatarFallback>
+              </Avatar>
+              <div>
+                <h2 className="text-lg font-medium">{freelancerName}</h2>
+                <p className="text-sm text-muted-foreground">{freelancer?.profession}</p>
+              </div>
             </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setLocation(`/freelancer/${freelancerId}`)}
+              className="flex items-center gap-2 hover:bg-primary/5 hover:text-primary"
+            >
+              <User className="h-4 w-4" />
+              View Profile
+              <ExternalLink className="h-3 w-3" />
+            </Button>
           </div>
           
           <ScrollArea className="h-[500px] p-4">
